@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Verify — RocketCanvas{% endblock %}
+{% block content %}
+<style>
+  .auth-wrap { min-height: calc(100vh - 56px); display:flex; align-items:center; justify-content:center; margin-top:-2rem; }
+  .auth-box { width:100%; max-width:380px; background:var(--surface); border:1px solid var(--border); padding:2.5rem; }
+  .auth-logo { font-size:1.6rem; font-weight:700; letter-spacing:0.12em; color:var(--accent); text-transform:uppercase; margin-bottom:0.25rem; }
+  .auth-sub { font-family:var(--mono); font-size:0.8rem; color:var(--muted); margin-bottom:2rem; }
+  .code-input {
+    width:100%; text-align:center; font-size:2rem; letter-spacing:0.4em;
+    font-family:var(--mono); background:var(--surface2); border:1px solid var(--border);
+    color:var(--text); padding:1rem; outline:none; margin-bottom:1.5rem; transition:border-color 0.2s;
+  }
+  .code-input:focus { border-color:var(--accent); }
+</style>
+<div class="auth-wrap">
+  <div class="auth-box">
+    <div class="auth-logo">2FA Check</div>
+    <div class="auth-sub">// check your email for a 6-digit code</div>
+    <form method="POST">
+      <input class="code-input" type="text" name="code" maxlength="6" placeholder="000000" autofocus required/>
+      <button class="btn btn-primary" style="width:100%" type="submit">Verify</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

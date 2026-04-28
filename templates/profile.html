@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Profile — RocketCanvas{% endblock %}
+{% block content %}
+<style>
+  .profile-header {
+    background: var(--surface); border: 1px solid var(--border);
+    padding: 2rem; display: flex; align-items: center; gap: 2rem; margin-bottom: 2rem;
+  }
+  .avatar {
+    width: 72px; height: 72px; background: var(--surface2);
+    border: 2px solid var(--accent); display: flex; align-items: center;
+    justify-content: center; font-size: 2rem; font-weight: 700; color: var(--accent);
+    flex-shrink: 0; text-transform: uppercase;
+  }
+  .profile-name { font-size: 1.8rem; font-weight: 700; letter-spacing: 0.06em; margin-bottom: 0.25rem; }
+  .profile-email { font-family: var(--mono); font-size: 0.8rem; color: var(--muted); }
+  .profile-joined { font-family: var(--mono); font-size: 0.75rem; color: var(--muted); margin-top: 0.25rem; }
+
+  .section-title {
+    font-size: 0.8rem; font-weight: 700; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 1rem;
+    padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+  }
+  .card { background: var(--surface); border: 1px solid var(--border); padding: 1.5rem; margin-bottom: 1.5rem; }
+
+  .rl-link-form { display: flex; gap: 0.75rem; }
+  .rl-link-form .input { flex: 1; }
+
+  .quick-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+  .quick-link {
+    background: var(--surface2); border: 1px solid var(--border); padding: 1.25rem;
+    text-decoration: none; color: var(--text); transition: border-color 0.15s;
+    display: flex; flex-direction: column; gap: 0.4rem;
+  }
+  .quick-link:hover { border-color: var(--accent); }
+  .quick-link .ql-label { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+  .quick-link .ql-title { font-size: 1.1rem; font-weight: 700; }
+</style>
+
+<div class="profile-header">
+  <div class="avatar">{{ current_user.username[0] }}</div>
+  <div>
+    <div class="profile-name">{{ current_user.username }}</div>
+    <div class="profile-email">{{ current_user.email }}</div>
+    <div class="profile-joined">Member since {{ current_user.created_at.strftime('%B %Y') }}</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="section-title">Linked RL Account</div>
+  <form class="rl-link-form" method="POST" action="{{ url_for('link_rl') }}">
+    <input class="input" type="text" name="rl_username"
+      placeholder="Enter your Rocket League username"
+      value="{{ current_user.rl_username or '' }}"/>
+    <button class="btn btn-primary" type="submit">Save</button>
+  </form>
+</div>
+
+<div class="card">
+  <div class="section-title">Quick Actions</div>
+  <div class="quick-links">
+    <a class="quick-link" href="{{ url_for('dashboard') }}{% if current_user.rl_username %}?player={{ current_user.rl_username }}{% endif %}">
+      <span class="ql-label">Jump to</span>
+      <span class="ql-title">My Dashboard →</span>
+    </a>
+    <a class="quick-link" href="{{ url_for('dashboard') }}">
+      <span class="ql-label">Search</span>
+      <span class="ql-title">Any Player →</span>
+    </a>
+  </div>
+</div>
+{% endblock %}

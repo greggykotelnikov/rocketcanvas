@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — RocketCanvas{% endblock %}
+{% block content %}
+<style>
+  .search-row { display:flex; gap:0.75rem; margin-bottom:2rem; }
+  .search-row .input { flex:1; }
+
+  .stats-strip {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 1px; background: var(--border); margin-bottom: 2rem;
+  }
+  .stat-tile {
+    background: var(--surface); padding: 1.1rem 1.25rem;
+  }
+  .stat-tile .st-label { font-size:0.7rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); margin-bottom:0.3rem; }
+  .stat-tile .st-val   { font-size:1.5rem; font-weight:700; font-family:var(--mono); }
+  .stat-tile .st-val.green { color:var(--win); }
+  .stat-tile .st-val.red   { color:var(--loss); }
+  .stat-tile .st-val.blue  { color:var(--accent); }
+
+  .charts-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; margin-bottom:2rem; }
+  .chart-card  { background:var(--surface); border:1px solid var(--border); padding:1.5rem; }
+  .chart-title { font-size:0.75rem; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); margin-bottom:1rem; }
+
+  /* Replay table */
+  .replay-table { width:100%; border-collapse:collapse; font-size:0.88rem; }
+  .replay-table th {
+    text-align:left; font-size:0.7rem; font-weight:700; letter-spacing:0.1em;
+    text-transform:uppercase; color:var(--muted); padding:0.6rem 0.75rem;
+    border-bottom:1px solid var(--border); background:var(--surface);
+  }
+  .replay-table td { padding:0.7rem 0.75rem; border-bottom:1px solid var(--border); font-family:var(--mono); font-size:0.82rem; }
+  .replay-table tr:hover td { background:var(--surface2); }
+
+  .badge {
+    display:inline-block; padding:0.2rem 0.5rem; font-size:0.7rem;
+    font-weight:700; letter-spacing:0.08em; text-transform:uppercase; font-family:var(--ui);
+  }
+  .badge.win  { color:var(--win);  border:1px solid var(--win);  background:rgba(0,230,118,0.06); }
+  .badge.loss { color:var(--loss); border:1px solid var(--loss); background:rgba(255,23,68,0.06); }
+  .badge.unknown { color:var(--muted); border:1px solid var(--muted); }
+
+  .empty { text-align:center; padding:4rem; font-family:var(--mono); color:var(--muted); font-size:0.85rem; }
+
+  @media(max-width:700px) { .charts-grid { grid-template-columns:1fr; } }
+</style>
+
+<!-- Search -->
+<form class="search-row" method="GET" action="{{ url_for('dashboard') }}">
+  <input class="input" type="text" name="player" placeholder="Search player name..." value="{{ player or '' }}" autofocus/>
+  <button class="btn btn-primary" type="submit">Search</button>
+</form>
+
+{% if player and replays %}
+
+  <!-- Compute stats for JS -->
+  {% set wins   = replays | selectattr('result','equalto','win')  | list %}
+  {% set losses = replays | selectattr('result','equalto','loss') | list %}
+  {% set known  = wins|length + losses|length %}
+  {% set wr     = ((wins|length / known * 100) | round(1)) if known > 0 else 0 %}
+
+  <!-- Stats strip -->
+  <div class="stats-strip">
+    <div class="stat-tile"><div class="st-label">Replays</div><div class="st-val blue">{{ replays|length }}</div></div>
+    <div class="stat-tile"><div class="st-label">Wins</div><div class="st-val green">{{ wins|length }}</div></div>
+    <div class="stat-tile"><div class="st-label">Losses</div><div class="st-val red">{{ losses|length }}</div></div>
+    <div class="stat-tile"><div class="st-label">Win Rate</div><div class="st-val {% if wr >= 50 %}green{% else %}red{% endif %}">{{ wr }}%</div></div>
+    <div class="stat-tile"><div class="st-label">Avg Duration</div>
+      <div class="st-val blue">
+        {% set avg_dur = (replays | map(attribute='duration') | list | sum / replays|length) | round | int %}
+        {{ avg_dur // 60 }}m {{ avg_dur % 60 }}s
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">Win Rate Trend (rolling 5)</div>
+      <canvas id="wrChart" height="180"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Goals Per Game</div>
+      <canvas id="goalsChart" height="180"></canvas>
+    </div>
+  </div>
+
+  <!-- Replay table -->
+  <table class="replay-table">
+    <thead>
+      <tr>
+        <th>Result</th>
+        <th>Map</th>
+        <th>Playlist</th>
+        <th>Score</th>
+        <th>Date</th>
+        <th>Duration</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in replays %}
+      <tr>
+        <td><span class="badge {{ r.result }}">
+          {% if r.result == 'win' %}W{% elif r.result == 'loss' %}L{% else %}?{% endif %}
+        </span></td>
+        <td>{{ r.map_name or r.map_code }}</td>
+        <td>{{ r.playlist_name }}</td>
+        <td>
+          <span style="color:#5b9cf6">{{ r.blue.goals or 0 }}</span>
+          <span style="color:var(--muted)"> – </span>
+          <span style="color:#f97316">{{ r.orange.goals or 0 }}</span>
+        </td>
+        <td>{{ r.date[:10] }}</td>
+        <td>{{ r.duration // 60 }}m {{ r.duration % 60 }}s</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Chart.js data -->
+  <script>
+    const replays = {{ replays | tojson }};
+    const player  = {{ player | tojson }};
+
+    // Win rate rolling 5
+    const results = replays.map(r => r.result);
+    const wrData  = [];
+    for (let i = 4; i < results.length; i++) {
+      const window = results.slice(i - 4, i + 1);
+      const w = window.filter(x => x === 'win').length;
+      wrData.push(parseFloat(((w / 5) * 100).toFixed(1)));
+    }
+
+    new Chart(document.getElementById('wrChart'), {
+      type: 'line',
+      data: {
+        labels: wrData.map((_, i) => `#${i + 5}`),
+        datasets: [{
+          data: wrData, borderColor: '#00c8f0', backgroundColor: 'rgba(0,200,240,0.08)',
+          tension: 0.4, pointRadius: 2, fill: true, borderWidth: 2
+        }]
+      },
+      options: {
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: '#4a5470', font: { family: 'Share Tech Mono', size: 10 } }, grid: { color: '#1a1f2e' } },
+          y: { min: 0, max: 100, ticks: { color: '#4a5470', font: { family: 'Share Tech Mono', size: 10 }, callback: v => v + '%' }, grid: { color: '#1a1f2e' } }
+        }
+      }
+    });
+
+    // Goals per game
+    const goalsData = replays.map(r => {
+      const blueNames   = (r.blue?.players  || []).map(p => p.name.toLowerCase());
+      const orangeNames = (r.orange?.players || []).map(p => p.name.toLowerCase());
+      if (blueNames.includes(player.toLowerCase()))   return r.blue?.goals  || 0;
+      if (orangeNames.includes(player.toLowerCase())) return r.orange?.goals || 0;
+      return null;
+    }).filter(v => v !== null);
+
+    new Chart(document.getElementById('goalsChart'), {
+      type: 'bar',
+      data: {
+        labels: goalsData.map((_, i) => `#${i + 1}`),
+        datasets: [{
+          data: goalsData, backgroundColor: 'rgba(0,200,240,0.5)',
+          borderColor: '#00c8f0', borderWidth: 1
+        }]
+      },
+      options: {
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: '#4a5470', font: { family: 'Share Tech Mono', size: 10 } }, grid: { color: '#1a1f2e' } },
+          y: { ticks: { color: '#4a5470', font: { family: 'Share Tech Mono', size: 10 } }, grid: { color: '#1a1f2e' } }
+        }
+      }
+    });
+  </script>
+
+{% elif player %}
+  <div class="empty">no replays found for "{{ player }}"</div>
+{% else %}
+  <div class="empty">search a player name above to load stats</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}RocketCanvas{% endblock %}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:       #080a0f;
+      --surface:  #0e1118;
+      --surface2: #13161e;
+      --border:   #1a1f2e;
+      --accent:   #00c8f0;
+      --accent2:  #0077ff;
+      --win:      #00e676;
+      --loss:     #ff1744;
+      --text:     #dce4f0;
+      --muted:    #4a5470;
+      --mono:     'Share Tech Mono', monospace;
+      --ui:       'Rajdhani', sans-serif;
+    }
+    body { background: var(--bg); color: var(--text); font-family: var(--ui); min-height: 100vh; }
+
+    /* NAV */
+    nav {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky; top: 0; z-index: 100;
+    }
+    .nav-logo {
+      font-size: 1.3rem; font-weight: 700; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--accent); text-decoration: none;
+    }
+    .nav-links { display: flex; gap: 0.25rem; align-items: center; }
+    .nav-links a {
+      color: var(--muted); font-size: 0.9rem; font-weight: 600;
+      letter-spacing: 0.05em; text-decoration: none; text-transform: uppercase;
+      padding: 0.4rem 0.9rem; border-radius: 2px; transition: color 0.15s, background 0.15s;
+    }
+    .nav-links a:hover { color: var(--text); background: var(--surface2); }
+    .nav-links a.active { color: var(--accent); }
+    .nav-user {
+      font-family: var(--mono); font-size: 0.8rem; color: var(--muted);
+    }
+
+    /* FLASH */
+    .flash { padding: 0.7rem 1.25rem; font-size: 0.85rem; font-family: var(--mono);
+      border-left: 3px solid; margin-bottom: 1rem; }
+    .flash.error   { border-color: var(--loss); color: var(--loss); background: #1a0a0e; }
+    .flash.success { border-color: var(--win);  color: var(--win);  background: #0a1a10; }
+
+    /* BUTTONS */
+    .btn {
+      display: inline-block; padding: 0.6rem 1.5rem;
+      font-family: var(--ui); font-weight: 700; font-size: 0.95rem;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      border: none; cursor: pointer; text-decoration: none; transition: opacity 0.15s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn-primary { background: var(--accent); color: var(--bg); }
+    .btn-ghost   { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+
+    /* INPUTS */
+    .input {
+      width: 100%; background: var(--surface2); border: 1px solid var(--border);
+      color: var(--text); font-family: var(--mono); font-size: 0.9rem;
+      padding: 0.7rem 1rem; outline: none; transition: border-color 0.2s;
+    }
+    .input:focus { border-color: var(--accent); }
+    .input::placeholder { color: var(--muted); }
+    label { display: block; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--muted); margin-bottom: 0.4rem; }
+
+    /* PAGE WRAPPER */
+    .page { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+  </style>
+  {% block head %}{% endblock %}
+
+<link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo.png') }}"/>
+</head>
+<body>
+{% if current_user.is_authenticated %}
+<nav>
+  <a href="{{ url_for('profile') }}" class="nav-logo">RocketCanvas</a>
+  <div class="nav-links">
+    <a href="{{ url_for('profile') }}" {% if request.endpoint == 'profile' %}class="active"{% endif %}>Profile</a>
+    <a href="{{ url_for('dashboard') }}" {% if request.endpoint == 'dashboard' %}class="active"{% endif %}>Dashboard</a>
+    <a href="{{ url_for('logout') }}">Logout</a>
+  </div>
+  <div class="nav-user">{{ current_user.username }}</div>
+</nav>
+{% endif %}
+
+<div class="page">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="flash {{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</div>
+</body>
+</html>

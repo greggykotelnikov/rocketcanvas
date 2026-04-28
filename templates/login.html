@@ -1,0 +1,384 @@
+{% extends "base.html" %}
+{% block title %}{% if mode == 'register' %}Register{% else %}Sign In{% endif %} — RocketCanvas{% endblock %}
+{% block head %}
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+
+  body {
+    overflow: hidden;
+  }
+
+  .auth-scene {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 0;
+  }
+
+  /* Sliding image strip on the left side of the screen */
+  .image-strip {
+    position: fixed;
+    left: 0; top: 0;
+    width: 52%;
+    height: 100vh;
+    overflow: hidden;
+    z-index: 0;
+  }
+
+  .strip-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    animation: stripScroll 18s linear infinite;
+    will-change: transform;
+  }
+
+  .strip-img {
+    width: 100%;
+    height: 34vh;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+    filter: saturate(1.3) brightness(0.75);
+  }
+
+  @keyframes stripScroll {
+    0%   { transform: translateY(0); }
+    100% { transform: translateY(-50%); }
+  }
+
+  /* Overlay on the image strip */
+  .strip-overlay {
+    position: fixed;
+    left: 0; top: 0;
+    width: 52%;
+    height: 100vh;
+    background: linear-gradient(
+      to right,
+      rgba(8,10,15,0.15) 0%,
+      rgba(8,10,15,0.6) 70%,
+      rgba(8,10,15,1) 100%
+    );
+    z-index: 1;
+  }
+
+  /* Diagonal accent line */
+  .accent-line {
+    position: fixed;
+    left: 50%;
+    top: 0;
+    width: 2px;
+    height: 100vh;
+    background: linear-gradient(to bottom, transparent, #00c8f0, transparent);
+    opacity: 0.3;
+    z-index: 2;
+    transform: rotate(3deg);
+  }
+
+  /* Right side — dark panel */
+  .auth-panel {
+    position: fixed;
+    right: 0; top: 0;
+    width: 50%;
+    height: 100vh;
+    background: rgba(8,10,15,0.97);
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+  }
+
+  .auth-inner {
+    width: 100%;
+    max-width: 420px;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Branding */
+  .brand {
+    margin-bottom: 2.5rem;
+  }
+
+  .brand-logo {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.8rem;
+    font-weight: 900;
+    letter-spacing: 0.15em;
+    color: #00c8f0;
+    text-transform: uppercase;
+    line-height: 1;
+    margin-bottom: 0.4rem;
+    text-shadow: 0 0 30px rgba(0,200,240,0.4);
+  }
+
+  .brand-sub {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.75rem;
+    color: #4a5470;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .brand-sub span {
+    color: #00c8f0;
+    opacity: 0.6;
+  }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid #1a1f2e;
+    gap: 0;
+  }
+
+  .tab {
+    flex: 1;
+    text-align: center;
+    padding: 0.65rem;
+    font-family: 'Orbitron', monospace;
+    font-weight: 700;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #4a5470;
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: color 0.2s, border-color 0.2s;
+  }
+
+  .tab:hover { color: #dce4f0; }
+  .tab.active {
+    color: #00c8f0;
+    border-bottom-color: #00c8f0;
+  }
+
+  /* Fields */
+  .field {
+    margin-bottom: 1.25rem;
+  }
+
+  .field label {
+    display: block;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #4a5470;
+    margin-bottom: 0.5rem;
+  }
+
+  .field input {
+    width: 100%;
+    background: #0e1118;
+    border: 1px solid #1a1f2e;
+    color: #dce4f0;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.9rem;
+    padding: 0.75rem 1rem;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .field input:focus {
+    border-color: #00c8f0;
+    box-shadow: 0 0 0 3px rgba(0,200,240,0.08);
+  }
+
+  .field input::placeholder { color: #2a3050; }
+
+  /* Submit button */
+  .btn-submit {
+    width: 100%;
+    padding: 0.85rem;
+    background: #00c8f0;
+    color: #080a0f;
+    font-family: 'Orbitron', monospace;
+    font-weight: 700;
+    font-size: 0.8rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    border: none;
+    cursor: pointer;
+    margin-top: 0.5rem;
+    position: relative;
+    overflow: hidden;
+    transition: opacity 0.2s, box-shadow 0.2s;
+  }
+
+  .btn-submit:hover {
+    opacity: 0.9;
+    box-shadow: 0 0 20px rgba(0,200,240,0.35);
+  }
+
+  .btn-submit::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.5s;
+  }
+
+  .btn-submit:hover::after {
+    transform: translateX(100%);
+  }
+
+  /* Corner accent */
+  .corner-accent {
+    position: absolute;
+    top: 2rem; right: 2rem;
+    width: 40px; height: 40px;
+    border-top: 2px solid #00c8f0;
+    border-right: 2px solid #00c8f0;
+    opacity: 0.4;
+  }
+
+  .corner-accent-bl {
+    position: absolute;
+    bottom: 2rem; left: 2rem;
+    width: 40px; height: 40px;
+    border-bottom: 2px solid #00c8f0;
+    border-left: 2px solid #00c8f0;
+    opacity: 0.4;
+  }
+
+  /* Flash messages */
+  .flash {
+    padding: 0.65rem 1rem;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.8rem;
+    border-left: 3px solid;
+    margin-bottom: 1.25rem;
+  }
+  .flash.error   { border-color: #ff1744; color: #ff1744; background: rgba(255,23,68,0.07); }
+  .flash.success { border-color: #00e676; color: #00e676; background: rgba(0,230,118,0.07); }
+
+  /* Stats ticker at bottom of image panel */
+  .stats-ticker {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 1rem;
+    z-index: 3;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.72rem;
+    color: rgba(0,200,240,0.5);
+    letter-spacing: 0.08em;
+    pointer-events: none;
+  }
+
+  .ticker-line {
+    margin-bottom: 0.25rem;
+    animation: blink 3s ease infinite;
+  }
+
+  .ticker-line:nth-child(2) { animation-delay: 1s; }
+  .ticker-line:nth-child(3) { animation-delay: 2s; }
+
+  @keyframes blink {
+    0%, 90%, 100% { opacity: 0.5; }
+    45% { opacity: 1; }
+  }
+
+  /* Scanline overlay */
+  .scanlines {
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.03) 2px,
+      rgba(0,0,0,0.03) 4px
+    );
+    pointer-events: none;
+    z-index: 10;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Override page wrapper for full bleed -->
+<style> .page { max-width: none; padding: 0; margin: 0; } </style>
+
+<div class="scanlines"></div>
+
+<!-- Left: sliding image strip -->
+<div class="image-strip">
+  <div class="strip-inner">
+    <!-- Doubled for seamless loop -->
+    <img class="strip-img" src="{{ url_for('static', filename='images/img1.jpg') }}" alt="">
+    <img class="strip-img" src="{{ url_for('static', filename='images/img2.jpg') }}" alt="">
+    <img class="strip-img" src="{{ url_for('static', filename='images/img3.jpg') }}" alt="">
+    <img class="strip-img" src="{{ url_for('static', filename='images/img4.jpeg') }}" alt="">
+    <img class="strip-img" src="{{ url_for('static', filename='images/img1.jpg') }}" alt="">
+    <img class="strip-img" src="{{ url_for('static', filename='images/img2.jpg') }}" alt="">
+    <img class="strip-img" src="{{ url_for('static', filename='images/img3.jpg') }}" alt="">
+    <img class="strip-img" src="{{ url_for('static', filename='images/img4.jpeg') }}" alt="">
+  </div>
+</div>
+
+<div class="strip-overlay"></div>
+<div class="accent-line"></div>
+
+<!-- Stats ticker -->
+<div class="stats-ticker">
+  <div class="ticker-line">// ROCKET LEAGUE STAT TRACKER</div>
+  <div class="ticker-line">// SEASON DATA LIVE</div>
+  <div class="ticker-line">// POWERED BY BALLCHASING.COM</div>
+</div>
+
+<!-- Right: auth panel -->
+<div class="auth-panel">
+  <div class="corner-accent"></div>
+  <div class="corner-accent-bl"></div>
+
+  <div class="auth-inner">
+    <div class="brand">
+      <div class="brand-logo">RocketCanvas</div>
+      <div class="brand-sub"><span>//</span> rocket league stat tracker</div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <div class="tabs">
+      <a href="{{ url_for('login') }}"    class="tab {% if mode == 'login'    %}active{% endif %}">Sign In</a>
+      <a href="{{ url_for('register') }}" class="tab {% if mode == 'register' %}active{% endif %}">Register</a>
+    </div>
+
+    <form method="POST">
+      {% if mode == 'register' %}
+      <div class="field">
+        <label>Username</label>
+        <input type="text" name="username" placeholder="your_username" required/>
+      </div>
+      {% endif %}
+      <div class="field">
+        <label>Email</label>
+        <input type="email" name="email" placeholder="your@email.com" required/>
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input type="password" name="password" placeholder="••••••••" required/>
+      </div>
+      <button class="btn-submit" type="submit">
+        {% if mode == 'register' %}Create Account{% else %}Sign In{% endif %}
+      </button>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
