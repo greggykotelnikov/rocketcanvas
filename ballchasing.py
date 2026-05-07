@@ -30,4 +30,9 @@ def search_replays_by_player(player_name, count=10):
     }
     r = requests.get(f"{BASE_URL}/replays", headers=HEADERS, params=params)
     r.raise_for_status()
-    return r.json()  # has 'list' key with replay objects
+    return r.json()  # has 'list' key with replay objects\
+
+def get_replay_detail(replay_id):
+    r = requests.get(f"{BASE_URL}/replays/{replay_id}", headers=HEADERS)
+    r.raise_for_status()
+    return r.json()

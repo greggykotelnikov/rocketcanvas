@@ -57,14 +57,19 @@ def dashboard():
         try:
             data = search_replays_by_player(player, count=50)
             raw  = data.get("list", [])
+
+            if raw:
+                import json                         #temp
+                print(json.dumps(raw[0], indent=2))
+
             for r in raw:
                 blue_names   = [p["name"].lower() for p in r.get("blue",   {}).get("players", [])]
                 orange_names = [p["name"].lower() for p in r.get("orange", {}).get("players", [])]
                 blue_goals   = r.get("blue",   {}).get("goals", 0) or 0
                 orange_goals = r.get("orange", {}).get("goals", 0) or 0
-                if player.lower() in blue_names:
+                if any(player.lower() in name for name in blue_names):
                     r["result"] = "win" if blue_goals > orange_goals else "loss"
-                elif player.lower() in orange_names:
+                elif any(player.lower() in name for name in orange_names):
                     r["result"] = "win" if orange_goals > blue_goals else "loss"
                 else:
                     r["result"] = "unknown"
@@ -73,6 +78,7 @@ def dashboard():
             replays = []
     return render_template("dashboard.html", player=player, replays=replays, user=current_user)
 
+    
 
 @app.route("/link-rl", methods=["POST"])
 @login_required
