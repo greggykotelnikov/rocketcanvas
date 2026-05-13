@@ -18,3 +18,9 @@ class TwoFactorCode(db.Model):
     code       = db.Column(db.String(6), nullable=False)
     expires_at = db.Column(db.DateTime, nullable=False)
     used       = db.Column(db.Boolean, default=False)
+
+
+class CarHitbox(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    car_name = db.Column(db.String(100), nullable=False, unique=True)
+    hitbox_class = db.Column(db.String(50), nullable=False)
