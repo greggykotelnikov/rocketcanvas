@@ -7,6 +7,8 @@ from dotenv import load_dotenv
 from models import db, User
 from auth import register_auth_routes, bcrypt as auth_bcrypt
 from ballchasing import search_replays_by_player
+from models import CarHitbox
+from collections import defaultdict
 
 load_dotenv()
 
@@ -89,6 +91,32 @@ def link_rl():
     db.session.commit()
     flash("Rocket League username saved.", "success")
     return redirect(url_for("profile"))
+
+
+@app.route('/hitbox', methods=['GET', 'POST'])
+@login_required
+def hitbox_lookup():
+    result = None
+    car_name = None
+    all_cars = CarHitbox.query.order_by(CarHitbox.hitbox_class, CarHitbox.car_name).all()
+ 
+    if request.method == 'POST':
+        car_name = request.form.get('car_name', '').strip()
+        car = CarHitbox.query.filter(
+            CarHitbox.car_name.ilike(f'%{car_name}%')
+        ).first()
+        if car:
+            result = {'car': car.car_name, 'hitbox': car.hitbox_class, 'found': True}
+        else:
+            result = {'car': car_name, 'hitbox': None, 'found': False}
+ 
+    # Group cars by hitbox class for the full table 
+    grouped = defaultdict(list)
+    for car in all_cars:
+        grouped[car.hitbox_class].append(car.car_name)
+ 
+    return render_template('hitbox.html', result=result, car_name=car_name, grouped=grouped)
+ 
 
 
 if __name__ == "__main__":

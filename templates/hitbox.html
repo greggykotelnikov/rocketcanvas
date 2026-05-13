@@ -1,0 +1,312 @@
+{% extends "base.html" %}
+
+{% block title %}Hitbox Lookup — RocketCanvas{% endblock %}
+
+{% block content %}
+<div class="hitbox-page">
+
+  <!-- Header -->
+  <div class="hitbox-header">
+    <h1 class="hitbox-title">Hitbox Lookup</h1>
+    <p class="hitbox-sub">Find out which hitbox class your car uses</p>
+  </div>
+
+  <!-- Search -->
+  <div class="hitbox-search-wrapper">
+    <form method="POST" action="/hitbox" class="hitbox-form">
+      <div class="search-row">
+        <input
+          type="text"
+          name="car_name"
+          class="hitbox-input"
+          placeholder="Search car name e.g. Fennec, Dominus..."
+          value="{{ car_name or '' }}"
+          autocomplete="off"
+          list="car-suggestions"
+        />
+        <datalist id="car-suggestions">
+          {% for hitbox, cars in grouped.items() %}
+            {% for car in cars %}
+              <option value="{{ car }}">
+            {% endfor %}
+          {% endfor %}
+        </datalist>
+        <button type="submit" class="hitbox-btn">Search</button>
+      </div>
+    </form>
+
+    <!-- Result -->
+    {% if result %}
+      <div class="hitbox-result {% if result.found %}found{% else %}not-found{% endif %}">
+        {% if result.found %}
+          <div class="result-inner">
+            <span class="result-car">{{ result.car }}</span>
+            <span class="result-arrow">→</span>
+            <span class="result-hitbox hitbox-badge hitbox-{{ result.hitbox | lower }}">{{ result.hitbox }}</span>
+          </div>
+          <p class="result-desc">{{ hitbox_descriptions[result.hitbox] if hitbox_descriptions is defined else '' }}</p>
+        {% else %}
+          <div class="result-inner">
+            <span class="result-car">{{ result.car }}</span>
+            <span class="result-arrow">—</span>
+            <span class="not-found-text">Car not found in database</span>
+          </div>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Full Table -->
+  <div class="hitbox-table-section">
+    <h2 class="table-title">All Cars by Hitbox Class</h2>
+    <div class="hitbox-grid">
+      {% set hitbox_colors = {
+        'Octane': '#7c3aed',
+        'Dominus': '#db2777',
+        'Breakout': '#0891b2',
+        'Hybrid': '#059669',
+        'Plank': '#d97706',
+        'Merc': '#dc2626'
+      } %}
+      {% for hitbox_class, cars in grouped.items() | sort %}
+        <div class="hitbox-card">
+          <div class="hitbox-card-header hitbox-{{ hitbox_class | lower }}">
+            <span class="hitbox-class-name">{{ hitbox_class }}</span>
+            <span class="hitbox-count">{{ cars | length }} cars</span>
+          </div>
+          <ul class="hitbox-car-list">
+            {% for car in cars | sort %}
+              <li class="hitbox-car-item">{{ car }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+
+<style>
+  .hitbox-page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  /* Header */
+  .hitbox-header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+
+  .hitbox-title {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.4rem;
+  }
+
+  .hitbox-sub {
+    color: #a78bfa;
+    font-size: 1rem;
+  }
+
+  /* Search */
+  .hitbox-search-wrapper {
+    max-width: 620px;
+    margin: 0 auto 3rem;
+  }
+
+  .search-row {
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  .hitbox-input {
+    flex: 1;
+    background: #1e1b4b;
+    border: 1px solid #4c1d95;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 1rem;
+    padding: 0.75rem 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .hitbox-input:focus {
+    border-color: #7c3aed;
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
+  }
+
+  .hitbox-input::placeholder {
+    color: #6d6a8a;
+  }
+
+  .hitbox-btn {
+    background: #7c3aed;
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    transition: background 0.2s, transform 0.1s;
+    white-space: nowrap;
+  }
+
+  .hitbox-btn:hover {
+    background: #6d28d9;
+    transform: translateY(-1px);
+  }
+
+  /* Result */
+  .hitbox-result {
+    margin-top: 1rem;
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    animation: fadeIn 0.3s ease;
+  }
+
+  .hitbox-result.found {
+    background: rgba(124, 58, 237, 0.15);
+    border: 1px solid rgba(124, 58, 237, 0.4);
+  }
+
+  .hitbox-result.not-found {
+    background: rgba(220, 38, 38, 0.1);
+    border: 1px solid rgba(220, 38, 38, 0.3);
+  }
+
+  .result-inner {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.1rem;
+  }
+
+  .result-car {
+    color: #fff;
+    font-weight: 600;
+  }
+
+  .result-arrow {
+    color: #6d6a8a;
+  }
+
+  .not-found-text {
+    color: #f87171;
+  }
+
+  /* Hitbox badges */
+  .result-hitbox {
+    font-weight: 700;
+    font-size: 1rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    color: #fff;
+  }
+
+  .hitbox-octane   { background: #7c3aed; }
+  .hitbox-dominus  { background: #db2777; }
+  .hitbox-breakout { background: #0891b2; }
+  .hitbox-hybrid   { background: #059669; }
+  .hitbox-plank    { background: #d97706; }
+  .hitbox-merc     { background: #dc2626; }
+
+  /* Table section */
+  .table-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 1.5rem;
+    text-align: center;
+  }
+
+  .hitbox-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.25rem;
+  }
+
+  .hitbox-card {
+    background: #1e1b4b;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #2d2a6e;
+  }
+
+  .hitbox-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    color: #fff;
+  }
+
+  .hitbox-card-header.hitbox-octane   { background: #7c3aed; }
+  .hitbox-card-header.hitbox-dominus  { background: #db2777; }
+  .hitbox-card-header.hitbox-breakout { background: #0891b2; }
+  .hitbox-card-header.hitbox-hybrid   { background: #059669; }
+  .hitbox-card-header.hitbox-plank    { background: #d97706; }
+  .hitbox-card-header.hitbox-merc     { background: #dc2626; }
+
+  .hitbox-class-name {
+    font-weight: 700;
+    font-size: 1rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .hitbox-count {
+    font-size: 0.8rem;
+    opacity: 0.85;
+  }
+
+  .hitbox-car-list {
+    list-style: none;
+    padding: 0.5rem 0;
+    margin: 0;
+    max-height: 280px;
+    overflow-y: auto;
+  }
+
+  .hitbox-car-list::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .hitbox-car-list::-webkit-scrollbar-track {
+    background: #1e1b4b;
+  }
+
+  .hitbox-car-list::-webkit-scrollbar-thumb {
+    background: #4c1d95;
+    border-radius: 2px;
+  }
+
+  .hitbox-car-item {
+    padding: 0.4rem 1rem;
+    color: #c4b5fd;
+    font-size: 0.9rem;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    transition: background 0.15s, color 0.15s;
+    cursor: default;
+  }
+
+  .hitbox-car-item:hover {
+    background: rgba(124, 58, 237, 0.1);
+    color: #fff;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 600px) {
+    .search-row { flex-direction: column; }
+    .hitbox-grid { grid-template-columns: 1fr; }
+  }
+</style>
+{% endblock %}
