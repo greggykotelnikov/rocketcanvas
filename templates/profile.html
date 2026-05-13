@@ -1,72 +1,254 @@
 {% extends "base.html" %}
 {% block title %}Profile — RocketCanvas{% endblock %}
 {% block content %}
-<style>
-  .profile-header {
-    background: var(--surface); border: 1px solid var(--border);
-    padding: 2rem; display: flex; align-items: center; gap: 2rem; margin-bottom: 2rem;
+<style nonce="{{ nonce }}">
+  /* ── PROFILE HEADER ─────────────────────────────────────────────── */
+  .profile-hero {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius2);
+    padding: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    overflow: hidden;
   }
+  .profile-hero::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: linear-gradient(90deg, var(--accent2), var(--accent), var(--accent3));
+  }
+
+  /* Avatar */
+  .avatar-wrap { position: relative; flex-shrink: 0; }
   .avatar {
-    width: 72px; height: 72px; background: var(--surface2);
-    border: 2px solid var(--accent); display: flex; align-items: center;
-    justify-content: center; font-size: 2rem; font-weight: 700; color: var(--accent);
-    flex-shrink: 0; text-transform: uppercase;
+    width: 88px; height: 88px; border-radius: 50%;
+    border: 3px solid var(--accent);
+    overflow: hidden; flex-shrink: 0;
+    background: var(--surface2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2.2rem; font-weight: 700; color: var(--accent);
+    text-transform: uppercase;
+    box-shadow: 0 0 24px rgba(168,85,247,0.3);
+    transition: box-shadow var(--t);
   }
-  .profile-name { font-size: 1.8rem; font-weight: 700; letter-spacing: 0.06em; margin-bottom: 0.25rem; }
-  .profile-email { font-family: var(--mono); font-size: 0.8rem; color: var(--muted); }
-  .profile-joined { font-family: var(--mono); font-size: 0.75rem; color: var(--muted); margin-top: 0.25rem; }
+  .avatar:hover { box-shadow: 0 0 36px rgba(168,85,247,0.5); }
+  .avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .avatar-edit-btn {
+    position: absolute; bottom: 0; right: 0;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--accent); border: 2px solid var(--surface);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.75rem; cursor: pointer; color: #fff; transition: all var(--t);
+    text-decoration: none;
+  }
+  .avatar-edit-btn:hover { background: var(--accent2); transform: scale(1.1); }
 
-  .section-title {
+  .profile-info { flex: 1; min-width: 0; }
+  .profile-username {
+    font-size: 1.9rem; font-weight: 700; letter-spacing: 0.04em; line-height: 1.1;
+    margin-bottom: 0.15rem; word-break: break-all;
+  }
+  .profile-rank {
     font-size: 0.8rem; font-weight: 700; letter-spacing: 0.12em;
-    text-transform: uppercase; color: var(--muted); margin-bottom: 1rem;
-    padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+    text-transform: uppercase; color: var(--accent3); margin-bottom: 0.5rem;
+    font-family: var(--mono);
   }
-  .card { background: var(--surface); border: 1px solid var(--border); padding: 1.5rem; margin-bottom: 1.5rem; }
+  .profile-bio { font-size: 0.9rem; color: var(--text2); margin-bottom: 0.5rem; }
+  .profile-meta { font-family: var(--mono); font-size: 0.75rem; color: var(--muted); display: flex; gap: 1rem; flex-wrap: wrap; }
 
-  .rl-link-form { display: flex; gap: 0.75rem; }
-  .rl-link-form .input { flex: 1; }
-
-  .quick-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+  /* ── QUICK LINKS ─────────────────────────────────────────────────── */
+  .quick-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; }
   .quick-link {
-    background: var(--surface2); border: 1px solid var(--border); padding: 1.25rem;
-    text-decoration: none; color: var(--text); transition: border-color 0.15s;
-    display: flex; flex-direction: column; gap: 0.4rem;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius2); overflow: hidden;
+    text-decoration: none; color: var(--text);
+    transition: border-color var(--t), box-shadow var(--t), transform var(--t);
+    display: flex; flex-direction: column;
   }
-  .quick-link:hover { border-color: var(--accent); }
-  .quick-link .ql-label { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
-  .quick-link .ql-title { font-size: 1.1rem; font-weight: 700; }
+  .quick-link:hover {
+    border-color: var(--accent);
+    box-shadow: 0 0 24px var(--accent-glow);
+    transform: translateY(-3px);
+  }
+  .ql-thumb {
+    width: 100%; height: 110px;
+    object-fit: cover;
+    object-position: center;
+    display: block;
+    filter: sepia(1) hue-rotate(235deg) saturate(2.5) brightness(0.85);
+    transition: filter var(--t), transform 0.35s ease;
+  }
+  .quick-link:hover .ql-thumb {
+    filter: sepia(1) hue-rotate(235deg) saturate(3.5) brightness(1.1);
+    transform: scale(1.04);
+  }
+  .ql-body {
+    padding: 0.9rem 1rem 1rem;
+    text-align: center;
+    display: flex; flex-direction: column; align-items: center; gap: 0.25rem;
+  }
+  .ql-label { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+  .ql-title { font-size: 1rem; font-weight: 700; }
+
+  /* ── EDIT PANEL ─────────────────────────────────────────────────── */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media(max-width: 600px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .profile-hero { flex-direction: column; text-align: center; }
+    .profile-meta { justify-content: center; }
+  }
+
+  /* Avatar upload hidden input */
+  #avatarFileInput { display: none; }
+
+  /* Rank badge */
+  .rank-badge {
+    display: inline-block; font-size: 0.65rem; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 0.15rem 0.5rem; border-radius: 4px;
+    background: var(--accent-glow2); border: 1px solid var(--accent);
+    color: var(--accent); margin-left: 0.5rem; vertical-align: middle;
+  }
 </style>
 
-<div class="profile-header">
-  <div class="avatar">{{ current_user.username[0] }}</div>
-  <div>
-    <div class="profile-name">{{ current_user.username }}</div>
-    <div class="profile-email">{{ current_user.email }}</div>
-    <div class="profile-joined">Member since {{ current_user.created_at.strftime('%B %Y') }}</div>
+<!-- Profile hero -->
+<div class="profile-hero">
+  <div class="avatar-wrap">
+    <div class="avatar" id="avatarDisplay">
+      {% if current_user.avatar_url %}
+        <img src="{{ url_for('static', filename='uploads/avatars/' + current_user.avatar_url) }}"
+             id="avatarImg" alt="Profile photo"/>
+      {% else %}
+        <span id="avatarLetter">{{ current_user.username[0] }}</span>
+      {% endif %}
+    </div>
+    <label class="avatar-edit-btn" for="avatarFileInput" title="Upload photo">✎</label>
+  </div>
+
+  <div class="profile-info">
+    <div class="profile-username">
+      {{ current_user.username }}
+      {% if current_user.rank %}
+        <span class="rank-badge">{{ current_user.rank }}</span>
+      {% endif %}
+    </div>
+    {% if current_user.rank %}
+      <div class="profile-rank">{{ current_user.rank }}</div>
+    {% endif %}
+    {% if current_user.bio %}
+      <div class="profile-bio">{{ current_user.bio }}</div>
+    {% endif %}
+    <div class="profile-meta">
+      <span>{{ current_user.email }}</span>
+      <span>Member since {{ current_user.created_at.strftime('%B %Y') }}</span>
+      {% if current_user.rl_username %}
+        <span>🎮 {{ current_user.rl_username }}</span>
+      {% endif %}
+    </div>
   </div>
 </div>
 
+<!-- Avatar upload (hidden, triggered by label) -->
+<form id="avatarForm" class="hidden" method="POST" action="{{ url_for('update_avatar') }}" enctype="multipart/form-data">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+  <input type="file" name="avatar" id="avatarFileInput" accept="image/*"/>
+</form>
+
+<!-- Edit Profile -->
 <div class="card">
-  <div class="section-title">Linked RL Account</div>
-  <form class="rl-link-form" method="POST" action="{{ url_for('link_rl') }}">
-    <input class="input" type="text" name="rl_username"
-      placeholder="Enter your Rocket League username"
-      value="{{ current_user.rl_username or '' }}"/>
-    <button class="btn btn-primary" type="submit">Save</button>
+  <div class="section-title">Edit Profile</div>
+  <form method="POST" action="{{ url_for('update_profile') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+    <div class="form-grid">
+      <div class="field">
+        <label>RL Username</label>
+        <input class="input" type="text" name="rl_username"
+          placeholder="Your Rocket League username"
+          value="{{ current_user.rl_username or '' }}"/>
+      </div>
+      <div class="field">
+        <label>Rank / Title</label>
+        <select class="input" name="rank">
+          <option value="">— None —</option>
+          {% set ranks = [
+            'Bronze I','Bronze II','Bronze III',
+            'Silver I','Silver II','Silver III',
+            'Gold I','Gold II','Gold III',
+            'Platinum I','Platinum II','Platinum III',
+            'Diamond I','Diamond II','Diamond III',
+            'Champion I','Champion II','Champion III',
+            'Grand Champion I','Grand Champion II','Grand Champion III',
+            'Supersonic Legend'
+          ] %}
+          {% for r in ranks %}
+            <option value="{{ r }}" {% if current_user.rank == r %}selected{% endif %}>{{ r }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label>Bio</label>
+      <textarea class="input" name="bio" placeholder="Tell others about yourself…" rows="3">{{ current_user.bio or '' }}</textarea>
+    </div>
+    <button class="btn btn-primary" type="submit">Save Changes</button>
   </form>
 </div>
 
+<!-- Quick Actions -->
 <div class="card">
   <div class="section-title">Quick Actions</div>
   <div class="quick-links">
     <a class="quick-link" href="{{ url_for('dashboard') }}{% if current_user.rl_username %}?player={{ current_user.rl_username }}{% endif %}">
-      <span class="ql-label">Jump to</span>
-      <span class="ql-title">My Dashboard →</span>
+      <img class="ql-thumb" src="{{ url_for('static', filename='images/dashboard.png') }}" alt="Dashboard preview">
+      <div class="ql-body">
+        <span class="ql-label">Jump to</span>
+        <span class="ql-title">My Dashboard →</span>
+      </div>
+    </a>
+    <a class="quick-link" href="{{ url_for('analytics') }}{% if current_user.rl_username %}?player={{ current_user.rl_username }}{% endif %}">
+      <img class="ql-thumb" src="{{ url_for('static', filename='images/analytic_image.jpg') }}" alt="Analytics preview">
+      <div class="ql-body">
+        <span class="ql-label">Deep dive</span>
+        <span class="ql-title">My Analytics →</span>
+      </div>
+    </a>
+    <a class="quick-link" href="{{ url_for('hitbox_lookup') }}">
+      <img class="ql-thumb" src="{{ url_for('static', filename='images/car_hitboxes.png') }}" alt="Hitbox tool preview">
+      <div class="ql-body">
+        <span class="ql-label">Look up</span>
+        <span class="ql-title">Hitbox Tool →</span>
+      </div>
     </a>
     <a class="quick-link" href="{{ url_for('dashboard') }}">
-      <span class="ql-label">Search</span>
-      <span class="ql-title">Any Player →</span>
+      <img class="ql-thumb" src="{{ url_for('static', filename='images/players.png') }}" alt="Search players">
+      <div class="ql-body">
+        <span class="ql-label">Search</span>
+        <span class="ql-title">Any Player →</span>
+      </div>
     </a>
   </div>
 </div>
+
+<script nonce="{{ nonce }}">
+  // Auto-submit avatar form on file select
+  const avatarInput = document.getElementById('avatarFileInput');
+  if (avatarInput) {
+    avatarInput.addEventListener('change', function() {
+      if (this.files && this.files[0]) {
+        // Preview immediately
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const display = document.getElementById('avatarDisplay');
+          display.innerHTML = '<img src="' + e.target.result + '" id="avatarImg" alt="avatar"/>';
+        };
+        reader.readAsDataURL(this.files[0]);
+        // Submit
+        document.getElementById('avatarForm').submit();
+      }
+    });
+  }
+</script>
 {% endblock %}

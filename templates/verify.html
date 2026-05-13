@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Verify — RocketCanvas{% endblock %}
 {% block content %}
-<style>
+<style nonce="{{ nonce }}">
   .auth-wrap { min-height: calc(100vh - 56px); display:flex; align-items:center; justify-content:center; margin-top:-2rem; }
   .auth-box { width:100%; max-width:380px; background:var(--surface); border:1px solid var(--border); padding:2.5rem; }
   .auth-logo { font-size:1.6rem; font-weight:700; letter-spacing:0.12em; color:var(--accent); text-transform:uppercase; margin-bottom:0.25rem; }
@@ -16,10 +16,11 @@
 <div class="auth-wrap">
   <div class="auth-box">
     <div class="auth-logo">2FA Check</div>
-    <div class="auth-sub">// check your email for a 6-digit code</div>
+    <div class="auth-sub">check your email for a 6-digit code</div>
     <form method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
       <input class="code-input" type="text" name="code" maxlength="6" placeholder="000000" autofocus required/>
-      <button class="btn btn-primary" style="width:100%" type="submit">Verify</button>
+      <button class="btn btn-primary w-full" type="submit">Verify</button>
     </form>
   </div>
 </div>

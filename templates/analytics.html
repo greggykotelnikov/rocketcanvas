@@ -1,0 +1,448 @@
+{% extends "base.html" %}
+{% block title %}Analytics — RocketCanvas{% endblock %}
+{% block content %}
+<style nonce="{{ nonce }}">
+  /* ── HEADER ─────────────────────────────────────────────────────── */
+  .analytics-header { margin-bottom: 2rem; }
+  .analytics-title { font-size: 1.6rem; font-weight: 700; margin-bottom: 0.25rem; }
+  .analytics-sub { font-family: var(--mono); font-size: 0.8rem; color: var(--muted); margin-bottom: 1.25rem; }
+  .search-row { display: flex; gap: 0.75rem; }
+  .search-row .input { flex: 1; }
+
+  /* ── TOP STATS ───────────────────────────────────────────────────── */
+  .kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem; margin-bottom: 2rem;
+  }
+  .kpi {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius2); padding: 1.2rem 1.25rem;
+    transition: border-color var(--t), transform var(--t), box-shadow var(--t);
+    cursor: default; position: relative; overflow: hidden;
+  }
+  .kpi::after {
+    content: '';
+    position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    opacity: 0; transition: opacity var(--t);
+  }
+  .kpi:hover { border-color: var(--border2); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+  .kpi:hover::after { opacity: 1; }
+  .kpi-label { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.5rem; }
+  .kpi-val { font-size: 1.55rem; font-weight: 700; font-family: var(--mono); line-height: 1; }
+  .kpi-val.text-lg { font-size: 1rem; word-break: break-word; line-height: 1.2; }
+  .kpi-val.text-md { font-size: 1rem; }
+  .kpi-sub { font-size: 0.7rem; color: var(--muted); font-family: var(--mono); margin-top: 0.3rem; }
+  .c-green  { color: var(--win); }
+  .c-red    { color: var(--loss); }
+  .c-purple { color: var(--accent); }
+  .c-lilac  { color: var(--accent3); }
+
+  /* ── CHARTS ──────────────────────────────────────────────────────── */
+  .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem; }
+  .charts-row.full { grid-template-columns: 1fr; }
+  .chart-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius2); padding: 1.5rem;
+    transition: border-color var(--t);
+  }
+  .chart-card:hover { border-color: var(--border2); }
+  .chart-card-title {
+    font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 1.1rem;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .chart-card-title::before {
+    content: ''; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--accent); flex-shrink: 0;
+  }
+
+  /* ── STREAKS ─────────────────────────────────────────────────────── */
+  .streaks-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.25rem; }
+  .streak-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius2); padding: 1.2rem 1.25rem;
+    text-align: center;
+  }
+  .streak-label { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.4rem; }
+  .streak-val   { font-size: 2rem; font-weight: 700; font-family: var(--mono); }
+  .streak-sub   { font-size: 0.72rem; color: var(--muted); font-family: var(--mono); margin-top: 0.25rem; }
+
+  /* ── EMPTY ─────────────────────────────────────────────────────── */
+  .empty-state {
+    text-align: center;
+    font-family: var(--mono); color: var(--muted); font-size: 0.85rem;
+    border: 1px solid var(--border); border-radius: var(--radius2);
+    overflow: hidden; background: var(--surface);
+  }
+  .empty-state-img {
+    width: 100%; height: 220px;
+    object-fit: cover; object-position: center 40%;
+    display: block;
+    filter: sepia(1) hue-rotate(235deg) saturate(2) brightness(0.65);
+    border-bottom: 1px solid var(--border);
+  }
+  .empty-state-body { padding: 2rem; }
+
+  @media(max-width: 720px) {
+    .charts-row { grid-template-columns: 1fr; }
+    .kpi-strip { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+
+<div class="analytics-header">
+  <div class="analytics-title">Analytics</div>
+  <div class="analytics-sub">deep dive into performance data — win rates, maps, activity patterns</div>
+  <form class="search-row" method="GET" action="{{ url_for('analytics') }}">
+    <input class="input" type="text" id="analyticsSearch" name="player"
+      placeholder="Enter player name…"
+      value="{{ player or '' }}" autofocus/>
+    <button class="btn btn-primary" type="submit">Analyse</button>
+  </form>
+</div>
+
+{% if player and replays %}
+
+  <!-- ── KPI Strip ─────────────────────────────────────────────────── -->
+  <div class="kpi-strip">
+    <div class="kpi">
+      <div class="kpi-label">Games</div>
+      <div class="kpi-val">{{ stats.total }}</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Win Rate</div>
+      <div class="kpi-val {% if stats.wr >= 50 %}c-green{% else %}c-red{% endif %}">{{ stats.wr }}%</div>
+      <div class="kpi-sub">{{ stats.wins }}W / {{ stats.losses }}L</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Best Map</div>
+      <div class="kpi-val text-lg">{{ stats.best_map }}</div>
+      <div class="kpi-sub">{{ stats.best_map_wr }}% WR</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Top Playlist</div>
+      <div class="kpi-val text-md">{{ stats.top_playlist }}</div>
+      <div class="kpi-sub">{{ stats.top_playlist_pct }}% of games</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Win Streak</div>
+      <div class="kpi-val">{{ stats.best_win_streak }}</div>
+      <div class="kpi-sub">best streak</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Avg Duration</div>
+      <div class="kpi-val">{{ stats.avg_dur_m }}m {{ stats.avg_dur_s }}s</div>
+    </div>
+  </div>
+
+  <!-- ── Row 1: Win Rate Trend + Playlist Breakdown ──────────────── -->
+  <div class="charts-row">
+    <div class="chart-card">
+      <div class="chart-card-title">Win Rate Trend (rolling 5)</div>
+      <canvas id="wrTrendChart" height="200"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-card-title">Playlist Breakdown</div>
+      <canvas id="playlistChart" height="200"></canvas>
+    </div>
+  </div>
+
+  <!-- ── Row 2: Map Performance + Activity by Hour ─────────────────── -->
+  <div class="charts-row">
+    <div class="chart-card">
+      <div class="chart-card-title">Map Win Rate (top 6 maps)</div>
+      <canvas id="mapChart" height="220"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-card-title">Activity by Hour of Day</div>
+      <canvas id="hourChart" height="220"></canvas>
+    </div>
+  </div>
+
+  <!-- ── Row 3: Goal Differential ─────────────────────────────────── -->
+  <div class="charts-row full">
+    <div class="chart-card">
+      <div class="chart-card-title">Goal Differential Per Game</div>
+      <canvas id="diffChart" height="140"></canvas>
+    </div>
+  </div>
+
+  <!-- ── Row 4: W/L Breakdown + Avg Goals ──────────────────────────── -->
+  <div class="charts-row">
+    <div class="chart-card">
+      <div class="chart-card-title">Win / Loss Breakdown</div>
+      <canvas id="wlChart" height="200"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-card-title">Avg Goals Scored vs Conceded</div>
+      <canvas id="goalsAvgChart" height="200"></canvas>
+    </div>
+  </div>
+
+  <!-- ── Row 5: Cumulative Wins ─────────────────────────────────────── -->
+  <div class="charts-row full">
+    <div class="chart-card">
+      <div class="chart-card-title">Cumulative Wins Over Time</div>
+      <canvas id="cumWinsChart" height="130"></canvas>
+    </div>
+  </div>
+
+  <!-- ── Streaks ────────────────────────────────────────────────────── -->
+  <div class="streaks-grid">
+    <div class="streak-card">
+      <div class="streak-label">Best Win Streak</div>
+      <div class="streak-val c-green">{{ stats.best_win_streak }}</div>
+      <div class="streak-sub">consecutive wins</div>
+    </div>
+    <div class="streak-card">
+      <div class="streak-label">Worst Loss Streak</div>
+      <div class="streak-val c-red">{{ stats.worst_loss_streak }}</div>
+      <div class="streak-sub">consecutive losses</div>
+    </div>
+    <div class="streak-card">
+      <div class="streak-label">Current Streak</div>
+      <div class="streak-val {% if stats.current_streak_type == 'win' %}c-green{% elif stats.current_streak_type == 'loss' %}c-red{% endif %}">{{ stats.current_streak }}</div>
+      <div class="streak-sub">{{ stats.current_streak_type }}</div>
+    </div>
+    <div class="streak-card">
+      <div class="streak-label">Avg Goal Diff</div>
+      <div class="streak-val {% if stats.avg_diff >= 0 %}c-green{% else %}c-red{% endif %}">
+        {% if stats.avg_diff >= 0 %}+{% endif %}{{ stats.avg_diff }}
+      </div>
+      <div class="streak-sub">per game</div>
+    </div>
+  </div>
+
+  <!-- Chart.js ────────────────────────────────────────────────────── -->
+  <script nonce="{{ nonce }}">
+    const PURPLE       = '#b06eff';
+    const PURPLE_DIM   = 'rgba(176,110,255,0.1)';
+    const PURPLE_BAR   = 'rgba(176,110,255,0.55)';
+    const GREEN        = '#10e88a';
+    const GREEN_DIM    = 'rgba(16,232,138,0.1)';
+    const RED          = '#f43f5e';
+    const RED_DIM      = 'rgba(244,63,94,0.1)';
+    const GRID         = getComputedStyle(document.documentElement).getPropertyValue('--border').trim() || '#1c1f38';
+    const TICK         = getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() || '#454d6a';
+    const MONO         = 'Share Tech Mono, monospace';
+    const RAJDHANI     = 'Rajdhani, sans-serif';
+
+    const baseAxis = {
+      x: { ticks: { color: TICK, font: { family: MONO, size: 10 } }, grid: { color: GRID } },
+      y: { ticks: { color: TICK, font: { family: MONO, size: 10 } }, grid: { color: GRID } }
+    };
+
+    // ── Win Rate Trend ──────────────────────────────────────────────
+    const wrLabels = {{ stats.wr_trend_labels | tojson }};
+    const wrValues = {{ stats.wr_trend_values | tojson }};
+    new Chart(document.getElementById('wrTrendChart'), {
+      type: 'line',
+      data: {
+        labels: wrLabels,
+        datasets: [{
+          data: wrValues,
+          borderColor: PURPLE, backgroundColor: PURPLE_DIM,
+          tension: 0.45, pointRadius: 3, pointBackgroundColor: PURPLE,
+          fill: true, borderWidth: 2
+        }]
+      },
+      options: {
+        plugins: { legend: { display: false } },
+        scales: {
+          x: baseAxis.x,
+          y: { ...baseAxis.y, min: 0, max: 100, ticks: { ...baseAxis.y.ticks, callback: v => v + '%' } }
+        }
+      }
+    });
+
+    // ── Playlist Breakdown ──────────────────────────────────────────
+    const plLabels = {{ stats.playlist_labels | tojson }};
+    const plValues = {{ stats.playlist_values | tojson }};
+    new Chart(document.getElementById('playlistChart'), {
+      type: 'doughnut',
+      data: {
+        labels: plLabels,
+        datasets: [{
+          data: plValues,
+          backgroundColor: ['#a855f7','#7c3aed','#c084fc','#6d28d9','#ddd6fe','#4c1d95'],
+          borderColor: 'var(--surface)',
+          borderWidth: 2,
+          hoverOffset: 6
+        }]
+      },
+      options: {
+        cutout: '62%',
+        plugins: {
+          legend: {
+            display: true,
+            position: 'bottom',
+            labels: { color: TICK, font: { family: MONO, size: 10 }, padding: 12, boxWidth: 12 }
+          }
+        }
+      }
+    });
+
+    // ── Map Win Rate ────────────────────────────────────────────────
+    const mapLabels = {{ stats.map_labels  | tojson }};
+    const mapWRs    = {{ stats.map_wr_vals | tojson }};
+    const mapColors = mapWRs.map(v => v >= 50 ? 'rgba(34,209,122,0.5)' : 'rgba(244,63,94,0.5)');
+    const mapBorder = mapWRs.map(v => v >= 50 ? GREEN : RED);
+    new Chart(document.getElementById('mapChart'), {
+      type: 'bar',
+      data: {
+        labels: mapLabels,
+        datasets: [{
+          data: mapWRs,
+          backgroundColor: mapColors,
+          borderColor: mapBorder,
+          borderWidth: 1,
+          borderRadius: 4
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ...baseAxis.x, min: 0, max: 100, ticks: { ...baseAxis.x.ticks, callback: v => v + '%' } },
+          y: baseAxis.y
+        }
+      }
+    });
+
+    // ── Activity by Hour ────────────────────────────────────────────
+    const hourLabels = {{ stats.hour_labels  | tojson }};
+    const hourValues = {{ stats.hour_values  | tojson }};
+    new Chart(document.getElementById('hourChart'), {
+      type: 'bar',
+      data: {
+        labels: hourLabels,
+        datasets: [{
+          data: hourValues,
+          backgroundColor: PURPLE_BAR,
+          borderColor: PURPLE,
+          borderWidth: 1,
+          borderRadius: 3
+        }]
+      },
+      options: {
+        plugins: { legend: { display: false } },
+        scales: baseAxis
+      }
+    });
+
+    // ── Goal Differential ──────────────────────────────────────────
+    const diffLabels = {{ stats.diff_labels | tojson }};
+    const diffValues = {{ stats.diff_values | tojson }};
+    const diffColors = diffValues.map(v => v >= 0 ? 'rgba(16,232,138,0.5)' : 'rgba(244,63,94,0.5)');
+    const diffBorder = diffValues.map(v => v >= 0 ? GREEN : RED);
+    new Chart(document.getElementById('diffChart'), {
+      type: 'bar',
+      data: {
+        labels: diffLabels,
+        datasets: [{
+          data: diffValues,
+          backgroundColor: diffColors,
+          borderColor: diffBorder,
+          borderWidth: 1,
+          borderRadius: 3
+        }]
+      },
+      options: {
+        plugins: { legend: { display: false } },
+        scales: {
+          x: baseAxis.x,
+          y: { ...baseAxis.y, ticks: { ...baseAxis.y.ticks, callback: v => (v >= 0 ? '+' : '') + v } }
+        }
+      }
+    });
+
+    // ── W/L Breakdown ──────────────────────────────────────────────
+    new Chart(document.getElementById('wlChart'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Wins', 'Losses'],
+        datasets: [{
+          data: [{{ stats.wins }}, {{ stats.losses }}],
+          backgroundColor: ['rgba(16,232,138,0.7)', 'rgba(244,63,94,0.7)'],
+          borderColor: [GREEN, RED],
+          borderWidth: 2,
+          hoverOffset: 8
+        }]
+      },
+      options: {
+        cutout: '58%',
+        plugins: {
+          legend: {
+            display: true, position: 'bottom',
+            labels: { color: TICK, font: { family: MONO, size: 11 }, padding: 16, boxWidth: 14 }
+          }
+        }
+      }
+    });
+
+    // ── Avg Goals Scored vs Conceded ────────────────────────────────
+    new Chart(document.getElementById('goalsAvgChart'), {
+      type: 'bar',
+      data: {
+        labels: ['Avg Goals Scored', 'Avg Goals Conceded'],
+        datasets: [{
+          data: [{{ stats.avg_scored }}, {{ stats.avg_conceded }}],
+          backgroundColor: ['rgba(176,110,255,0.6)', 'rgba(244,63,94,0.55)'],
+          borderColor: [PURPLE, RED],
+          borderWidth: 1,
+          borderRadius: 6,
+          borderSkipped: false
+        }]
+      },
+      options: {
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ...baseAxis.x, grid: { display: false } },
+          y: { ...baseAxis.y, beginAtZero: true }
+        }
+      }
+    });
+
+    // ── Cumulative Wins Over Time ────────────────────────────────────
+    const cumLabels = {{ stats.cum_labels | tojson }};
+    const cumValues = {{ stats.cumulative_wins | tojson }};
+    new Chart(document.getElementById('cumWinsChart'), {
+      type: 'line',
+      data: {
+        labels: cumLabels,
+        datasets: [{
+          data: cumValues,
+          borderColor: GREEN,
+          backgroundColor: 'rgba(16,232,138,0.08)',
+          tension: 0.3, pointRadius: 0,
+          fill: true, borderWidth: 2
+        }]
+      },
+      options: {
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ...baseAxis.x, ticks: { ...baseAxis.x.ticks, maxTicksLimit: 10 } },
+          y: { ...baseAxis.y, beginAtZero: true, ticks: { ...baseAxis.y.ticks, stepSize: 1 } }
+        }
+      }
+    });
+  </script>
+
+{% elif player %}
+  <div class="empty-state">
+    <img class="empty-state-img" src="{{ url_for('static', filename='images/players.png') }}" alt="">
+    <div class="empty-state-body">
+      <p>No replays found for "<strong>{{ player }}</strong>"</p>
+      <p class="hint-text">Check the spelling — ballchasing.com usernames are case-sensitive.</p>
+    </div>
+  </div>
+{% else %}
+  <div class="empty-state">
+    <img class="empty-state-img" src="{{ url_for('static', filename='images/analytic_image.jpg') }}" alt="">
+    <div class="empty-state-body">
+      <p>Enter a player name above to generate analytics</p>
+    </div>
+  </div>
+{% endif %}
+{% endblock %}

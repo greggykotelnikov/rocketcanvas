@@ -3,14 +3,14 @@ from flask_login import login_user, logout_user, login_required, current_user
 from flask_mail import Message
 from flask_bcrypt import Bcrypt
 from datetime import datetime, timedelta
-import random
+import secrets
 from models import db, User, TwoFactorCode
 
 auth = Blueprint('auth', __name__)
 bcrypt = Bcrypt()
 
 def send_2fa_email(mail, user):
-    code = str(random.randint(100000, 999999))
+    code = str(secrets.randbelow(900000) + 100000)
     expires = datetime.utcnow() + timedelta(minutes=10)
 
     # Invalidate old codes

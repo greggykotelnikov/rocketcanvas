@@ -14,6 +14,7 @@
   <!-- Search -->
   <div class="hitbox-search-wrapper">
     <form method="POST" action="/hitbox" class="hitbox-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
       <div class="search-row">
         <input
           type="text"
@@ -86,7 +87,7 @@
 
 </div>
 
-<style>
+<style nonce="{{ nonce }}">
   .hitbox-page {
     max-width: 1100px;
     margin: 0 auto;
@@ -102,12 +103,12 @@
   .hitbox-title {
     font-size: 2.2rem;
     font-weight: 700;
-    color: #fff;
+    color: var(--text);
     margin-bottom: 0.4rem;
   }
 
   .hitbox-sub {
-    color: #a78bfa;
+    color: var(--accent3);
     font-size: 1rem;
   }
 
@@ -124,59 +125,65 @@
 
   .hitbox-input {
     flex: 1;
-    background: #1e1b4b;
-    border: 1px solid #4c1d95;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
     border-radius: 8px;
-    color: #fff;
+    color: var(--text);
     font-size: 1rem;
     padding: 0.75rem 1rem;
     outline: none;
-    transition: border-color 0.2s;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    font-family: var(--mono);
   }
 
   .hitbox-input:focus {
-    border-color: #7c3aed;
-    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2);
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
   }
 
   .hitbox-input::placeholder {
-    color: #6d6a8a;
+    color: var(--muted);
   }
 
   .hitbox-btn {
-    background: #7c3aed;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
     border: none;
     border-radius: 8px;
     color: #fff;
     cursor: pointer;
     font-size: 0.95rem;
-    font-weight: 600;
+    font-weight: 700;
+    font-family: var(--ui);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
     padding: 0.75rem 1.5rem;
-    transition: background 0.2s, transform 0.1s;
+    box-shadow: 0 4px 20px rgba(168,85,247,0.3);
+    transition: box-shadow 0.2s, transform 0.1s, filter 0.2s;
     white-space: nowrap;
   }
 
   .hitbox-btn:hover {
-    background: #6d28d9;
+    box-shadow: 0 6px 28px rgba(168,85,247,0.5);
     transform: translateY(-1px);
+    filter: brightness(1.1);
   }
 
   /* Result */
   .hitbox-result {
     margin-top: 1rem;
-    border-radius: 10px;
+    border-radius: var(--radius2);
     padding: 1rem 1.25rem;
     animation: fadeIn 0.3s ease;
   }
 
   .hitbox-result.found {
-    background: rgba(124, 58, 237, 0.15);
-    border: 1px solid rgba(124, 58, 237, 0.4);
+    background: var(--accent-glow2);
+    border: 1px solid var(--border2);
   }
 
   .hitbox-result.not-found {
-    background: rgba(220, 38, 38, 0.1);
-    border: 1px solid rgba(220, 38, 38, 0.3);
+    background: rgba(244, 63, 94, 0.08);
+    border: 1px solid rgba(244, 63, 94, 0.3);
   }
 
   .result-inner {
@@ -187,16 +194,16 @@
   }
 
   .result-car {
-    color: #fff;
+    color: var(--text);
     font-weight: 600;
   }
 
   .result-arrow {
-    color: #6d6a8a;
+    color: var(--muted);
   }
 
   .not-found-text {
-    color: #f87171;
+    color: var(--loss);
   }
 
   /* Hitbox badges */
@@ -217,11 +224,15 @@
 
   /* Table section */
   .table-title {
-    font-size: 1.4rem;
+    font-size: 1.1rem;
     font-weight: 700;
-    color: #fff;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
     margin-bottom: 1.5rem;
     text-align: center;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
   }
 
   .hitbox-grid {
@@ -231,10 +242,17 @@
   }
 
   .hitbox-card {
-    background: #1e1b4b;
-    border-radius: 12px;
+    background: var(--surface);
+    border-radius: var(--radius2);
     overflow: hidden;
-    border: 1px solid #2d2a6e;
+    border: 1px solid var(--border);
+    transition: border-color var(--t), box-shadow var(--t), transform var(--t);
+  }
+
+  .hitbox-card:hover {
+    border-color: var(--border2);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
   }
 
   .hitbox-card-header {
@@ -254,14 +272,16 @@
 
   .hitbox-class-name {
     font-weight: 700;
-    font-size: 1rem;
-    letter-spacing: 0.05em;
+    font-size: 0.9rem;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
+    font-family: var(--ui);
   }
 
   .hitbox-count {
-    font-size: 0.8rem;
-    opacity: 0.85;
+    font-size: 0.78rem;
+    font-family: var(--mono);
+    opacity: 0.9;
   }
 
   .hitbox-car-list {
@@ -272,31 +292,33 @@
     overflow-y: auto;
   }
 
-  .hitbox-car-list::-webkit-scrollbar {
-    width: 4px;
-  }
-
-  .hitbox-car-list::-webkit-scrollbar-track {
-    background: #1e1b4b;
-  }
-
-  .hitbox-car-list::-webkit-scrollbar-thumb {
-    background: #4c1d95;
-    border-radius: 2px;
-  }
+  .hitbox-car-list::-webkit-scrollbar { width: 4px; }
+  .hitbox-car-list::-webkit-scrollbar-track { background: var(--surface); }
+  .hitbox-car-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 
   .hitbox-car-item {
     padding: 0.4rem 1rem;
-    color: #c4b5fd;
-    font-size: 0.9rem;
-    border-bottom: 1px solid rgba(255,255,255,0.04);
+    color: var(--text2);
+    font-size: 0.88rem;
+    font-family: var(--mono);
+    border-bottom: 1px solid var(--border);
     transition: background 0.15s, color 0.15s;
     cursor: default;
   }
 
+  .hitbox-car-item:last-child { border-bottom: none; }
+
   .hitbox-car-item:hover {
-    background: rgba(124, 58, 237, 0.1);
-    color: #fff;
+    background: var(--accent-glow2);
+    color: var(--text);
+  }
+
+  /* Result desc */
+  .result-desc {
+    font-size: 0.82rem;
+    color: var(--text2);
+    font-family: var(--mono);
+    margin-top: 0.5rem;
   }
 
   @keyframes fadeIn {

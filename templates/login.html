@@ -1,10 +1,9 @@
 {% extends "base.html" %}
 {% block title %}{% if mode == 'register' %}Register{% else %}Sign In{% endif %} — RocketCanvas{% endblock %}
 {% block head %}
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+  <style nonce="{{ nonce }}">
+    body {
 
-  body {
     overflow: hidden;
   }
 
@@ -55,12 +54,7 @@
     left: 0; top: 0;
     width: 52%;
     height: 100vh;
-    background: linear-gradient(
-      to right,
-      rgba(8,10,15,0.15) 0%,
-      rgba(8,10,15,0.6) 70%,
-      rgba(8,10,15,1) 100%
-    );
+    background: linear-gradient(to right, rgba(8,10,15,0.15) 0%, rgba(8,10,15,0.6) 70%, rgba(8,10,15,1) 100%);
     z-index: 1;
   }
 
@@ -71,7 +65,7 @@
     top: 0;
     width: 2px;
     height: 100vh;
-    background: linear-gradient(to bottom, transparent, #00c8f0, transparent);
+    background: linear-gradient(to bottom, transparent, #a855f7, transparent);
     opacity: 0.3;
     z-index: 2;
     transform: rotate(3deg);
@@ -112,11 +106,11 @@
     font-size: 1.8rem;
     font-weight: 900;
     letter-spacing: 0.15em;
-    color: #00c8f0;
+    color: #a855f7;
     text-transform: uppercase;
     line-height: 1;
     margin-bottom: 0.4rem;
-    text-shadow: 0 0 30px rgba(0,200,240,0.4);
+    text-shadow: 0 0 30px rgba(168,85,247,0.4);
   }
 
   .brand-sub {
@@ -128,8 +122,8 @@
   }
 
   .brand-sub span {
-    color: #00c8f0;
-    opacity: 0.6;
+    color: #a855f7;
+    opacity: 0.7;
   }
 
   /* Tabs */
@@ -158,8 +152,8 @@
 
   .tab:hover { color: #dce4f0; }
   .tab.active {
-    color: #00c8f0;
-    border-bottom-color: #00c8f0;
+    color: #a855f7;
+    border-bottom-color: #a855f7;
   }
 
   /* Fields */
@@ -190,8 +184,8 @@
   }
 
   .field input:focus {
-    border-color: #00c8f0;
-    box-shadow: 0 0 0 3px rgba(0,200,240,0.08);
+    border-color: #a855f7;
+    box-shadow: 0 0 0 3px rgba(168,85,247,0.12);
   }
 
   .field input::placeholder { color: #2a3050; }
@@ -200,8 +194,8 @@
   .btn-submit {
     width: 100%;
     padding: 0.85rem;
-    background: #00c8f0;
-    color: #080a0f;
+    background: linear-gradient(135deg, #a855f7, #7c3aed);
+    color: #fff;
     font-family: 'Orbitron', monospace;
     font-weight: 700;
     font-size: 0.8rem;
@@ -217,7 +211,7 @@
 
   .btn-submit:hover {
     opacity: 0.9;
-    box-shadow: 0 0 20px rgba(0,200,240,0.35);
+    box-shadow: 0 0 20px rgba(168,85,247,0.45);
   }
 
   .btn-submit::after {
@@ -238,8 +232,8 @@
     position: absolute;
     top: 2rem; right: 2rem;
     width: 40px; height: 40px;
-    border-top: 2px solid #00c8f0;
-    border-right: 2px solid #00c8f0;
+    border-top: 2px solid #a855f7;
+    border-right: 2px solid #a855f7;
     opacity: 0.4;
   }
 
@@ -247,8 +241,8 @@
     position: absolute;
     bottom: 2rem; left: 2rem;
     width: 40px; height: 40px;
-    border-bottom: 2px solid #00c8f0;
-    border-left: 2px solid #00c8f0;
+    border-bottom: 2px solid #a855f7;
+    border-left: 2px solid #a855f7;
     opacity: 0.4;
   }
 
@@ -271,7 +265,7 @@
     z-index: 3;
     font-family: 'Share Tech Mono', monospace;
     font-size: 0.72rem;
-    color: rgba(0,200,240,0.5);
+    color: rgba(168,85,247,0.5);
     letter-spacing: 0.08em;
     pointer-events: none;
   }
@@ -308,7 +302,7 @@
 
 {% block content %}
 <!-- Override page wrapper for full bleed -->
-<style> .page { max-width: none; padding: 0; margin: 0; } </style>
+<style nonce="{{ nonce }}"> .page { max-width: none; padding: 0; margin: 0; } </style>
 
 <div class="scanlines"></div>
 
@@ -332,9 +326,9 @@
 
 <!-- Stats ticker -->
 <div class="stats-ticker">
-  <div class="ticker-line">// ROCKET LEAGUE STAT TRACKER</div>
-  <div class="ticker-line">// SEASON DATA LIVE</div>
-  <div class="ticker-line">// POWERED BY BALLCHASING.COM</div>
+  <div class="ticker-line">ROCKET LEAGUE STAT TRACKER</div>
+  <div class="ticker-line">SEASON DATA LIVE</div>
+  <div class="ticker-line">POWERED BY BALLCHASING.COM</div>
 </div>
 
 <!-- Right: auth panel -->
@@ -345,7 +339,7 @@
   <div class="auth-inner">
     <div class="brand">
       <div class="brand-logo">RocketCanvas</div>
-      <div class="brand-sub"><span>//</span> rocket league stat tracker</div>
+      <div class="brand-sub">rocket league stat tracker</div>
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -360,6 +354,7 @@
     </div>
 
     <form method="POST">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
       {% if mode == 'register' %}
       <div class="field">
         <label>Username</label>
