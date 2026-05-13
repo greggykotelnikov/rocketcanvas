@@ -5,3 +5,4 @@ __pycache__/
 instance/
 *.db
 *.sqlite
+hitbox_images/
