@@ -41,6 +41,26 @@ def register_auth_routes(app, mail):
             username = request.form.get("username", "").strip()
             password = request.form.get("password", "")
 
+            if len(username) > 80:
+                flash("Username must be under 80 characters.", "error")
+                return render_template("login.html", mode="register")
+            
+            if len(password) > 100:
+                flash("Password is too long.", "error")
+                return render_template("login.html", mode="register")
+            
+            if len(password) < 8:
+                flash("Password must be at least 8 characters long.", "error")
+                return render_template("login.html", mode="register")
+            
+            if not any(char.isdigit() for char in password):
+                flash("Password must contain at least one number.", "error")
+                return render_template("login.html", mode="register")
+            
+            if not any(not char.isalnum() for char in password):
+                flash("Password must contain at least one special character.", "error")
+                return render_template("login.html", mode="register")
+
             if User.query.filter_by(email=email).first():
                 flash("Email already registered.", "error")
                 return render_template("login.html", mode="register")

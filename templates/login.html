@@ -358,16 +358,21 @@
       {% if mode == 'register' %}
       <div class="field">
         <label>Username</label>
-        <input type="text" name="username" placeholder="your_username" required/>
+        <input type="text" name="username" placeholder="your_username" maxlength="80" required/>
       </div>
       {% endif %}
       <div class="field">
         <label>Email</label>
-        <input type="email" name="email" placeholder="your@email.com" required/>
+        <input type="email" name="email" placeholder="your@email.com" maxlength="120" required/>
       </div>
       <div class="field">
         <label>Password</label>
-        <input type="password" name="password" placeholder="••••••••" required/>
+        <input type="password" name="password" placeholder="••••••••" maxlength="100" {% if mode == 'register' %}minlength="8" pattern="(?=.*\d)(?=.*[^a-zA-Z0-9]).{8,}" title="Must be at least 8 characters long, contain a number and a special character"{% endif %} required/>
+        {% if mode == 'register' %}
+        <small style="color: #4a5470; font-family: 'Share Tech Mono', monospace; font-size: 0.65rem; margin-top: 0.25rem; display: block;">
+          Min 8 chars, 1 number, 1 special char.
+        </small>
+        {% endif %}
       </div>
       <button class="btn-submit" type="submit">
         {% if mode == 'register' %}Create Account{% else %}Sign In{% endif %}

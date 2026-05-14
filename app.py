@@ -2,6 +2,7 @@ import os
 import secrets as _secrets
 from collections import defaultdict
 from datetime import datetime
+from functools import lru_cache
 
 from flask import Flask, flash, request, render_template, redirect, url_for
 from flask_login import LoginManager, login_required, current_user
@@ -17,7 +18,7 @@ from PIL import Image
 from models import db, User
 from auth import register_auth_routes, bcrypt as auth_bcrypt
 from ballchasing import search_replays_by_player
-from models import CarHitbox
+from models import CarHitbox, CarDesign
 
 load_dotenv()
 
@@ -32,15 +33,17 @@ app.config["MAIL_USERNAME"]               = os.getenv("MAIL_USERNAME")
 app.config["MAIL_PASSWORD"]               = os.getenv("MAIL_PASSWORD")
 app.config["MAIL_DEFAULT_SENDER"]         = os.getenv("MAIL_DEFAULT_SENDER")
 app.config["SESSION_COOKIE_SAMESITE"]     = "Lax"
-app.config["SESSION_COOKIE_SECURE"]       = os.getenv("FLASK_ENV", "development") == "production"
+app.config["SESSION_COOKIE_SECURE"]       = True
 app.config["SESSION_COOKIE_HTTPONLY"]     = True
 app.config["WTF_CSRF_ENABLED"]            = True
 app.config["MAX_CONTENT_LENGTH"]          = 4 * 1024 * 1024   # 4 MB avatar limit
 
 AVATAR_UPLOAD_DIR = os.path.join(app.root_path, "static", "uploads", "avatars")
+DESIGN_UPLOAD_DIR = os.path.join(app.root_path, "static", "uploads", "designs")
 ALLOWED_IMAGE_EXT = {"png", "jpg", "jpeg", "webp", "gif"}
 
 os.makedirs(AVATAR_UPLOAD_DIR, exist_ok=True)
+os.makedirs(DESIGN_UPLOAD_DIR, exist_ok=True)
 
 # ── Extensions ─────────────────────────────────────────────────────────
 db.init_app(app)
@@ -70,7 +73,7 @@ with app.app_context():
     # Add new columns if upgrading from older schema
     from sqlalchemy import text
     with db.engine.connect() as conn:
-        for col, defn in [("rank", "VARCHAR(50)"), ("bio", "VARCHAR(300)"), ("avatar_url", "VARCHAR(200)")]:
+        for col, defn in [("rank", "VARCHAR(50)"), ("bio", "VARCHAR(300)"), ("avatar_url", "VARCHAR(200)"), ("platform", "VARCHAR(50)")]:
             try:
                 conn.execute(text(f"ALTER TABLE user ADD COLUMN {col} {defn}"))
                 conn.commit()
@@ -114,8 +117,6 @@ def add_security_headers(response):
 # ── Helper ─────────────────────────────────────────────────────────────
 def allowed_image(filename: str) -> bool:
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_IMAGE_EXT
-
-
 # ── Routes ─────────────────────────────────────────────────────────────
 @app.route("/")
 def index():
@@ -134,6 +135,7 @@ def update_profile():
     current_user.rl_username = request.form.get("rl_username", "").strip() or None
     current_user.rank        = request.form.get("rank", "").strip() or None
     current_user.bio         = request.form.get("bio", "").strip()[:300] or None
+    current_user.platform    = request.form.get("platform", "").strip() or None
     db.session.commit()
     flash("Profile updated.", "success")
     return redirect(url_for("profile"))
@@ -172,6 +174,71 @@ def update_avatar():
     db.session.commit()
     flash("Avatar updated.", "success")
     return redirect(url_for("profile"))
+
+
+@app.route("/profile/avatar/preset", methods=["POST"])
+@login_required
+def set_preset_avatar():
+    import shutil
+    preset = request.form.get("preset")
+    valid_presets = ["octane.png", "dominus.png", "fennec.png"]
+    if preset in valid_presets:
+        src = os.path.join(app.root_path, "static", "avatars", "placeholders", preset)
+        filename = f"{current_user.id}_{preset}"
+        dst = os.path.join(AVATAR_UPLOAD_DIR, filename)
+        shutil.copyfile(src, dst)
+        current_user.avatar_url = filename
+        db.session.commit()
+        flash("Avatar updated.", "success")
+    else:
+        flash("Invalid preset selected.", "error")
+    return redirect(url_for("profile"))
+
+
+@app.route("/gallery")
+@login_required
+def gallery():
+    designs = CarDesign.query.order_by(CarDesign.created_at.desc()).all()
+    return render_template("gallery.html", designs=designs)
+
+
+@app.route("/gallery/upload", methods=["POST"])
+@login_required
+def upload_design():
+    title = request.form.get("title", "").strip()
+    file = request.files.get("design_image")
+    
+    if not title:
+        flash("Title is required.", "error")
+        return redirect(url_for("gallery"))
+    if not file or file.filename == "":
+        flash("No image selected.", "error")
+        return redirect(url_for("gallery"))
+    if not allowed_image(file.filename):
+        flash("Only image files are allowed.", "error")
+        return redirect(url_for("gallery"))
+        
+    ext = file.filename.rsplit(".", 1)[1].lower()
+    import uuid
+    filename = f"{uuid.uuid4().hex}.{ext}"
+    filepath = os.path.join(DESIGN_UPLOAD_DIR, filename)
+    
+    try:
+        img = Image.open(file)
+        if img.mode != "RGB":
+            img = img.convert("RGB")
+        img.thumbnail((1920, 1080), Image.LANCZOS)
+        img.save(filepath)
+    except Exception:
+        flash("Could not process image.", "error")
+        return redirect(url_for("gallery"))
+        
+    new_design = CarDesign(user_id=current_user.id, title=title, image_filename=filename)
+    db.session.add(new_design)
+    db.session.commit()
+    flash("Design uploaded successfully!", "success")
+    
+    return redirect(url_for("gallery"))
 
 
 @app.route("/link-rl", methods=["POST"])
@@ -397,10 +464,20 @@ def hitbox_lookup():
     for car in all_cars:
         grouped[car.hitbox_class].append(car.car_name)
 
-    return render_template("hitbox.html", result=result, car_name=car_name, grouped=grouped)
+    return render_template(
+        "hitbox.html",
+        result=result,
+        car_name=car_name,
+        grouped=grouped
+    )
+
+@app.route("/recommend")
+@login_required
+def recommend():
+    return render_template("recommend.html")
 
 
 if __name__ == "__main__":
     import werkzeug.serving
     werkzeug.serving.WSGIRequestHandler.server_version = ""
-    app.run(debug=True)
+    app.run(debug=True, ssl_context=('localhost+2.pem', 'localhost+2-key.pem'))

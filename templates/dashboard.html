@@ -52,7 +52,7 @@
   .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 2rem; }
   .chart-card {
     background: var(--surface); border: 1px solid var(--border);
-    border-radius: var(--radius2); padding: 1.5rem;
+    border-radius: var(--radius2); padding: 1.25rem 1.25rem 0.75rem 1.25rem;
     transition: border-color var(--t);
   }
   .chart-card:hover { border-color: var(--border2); }
@@ -61,7 +61,7 @@
     text-transform: uppercase; color: var(--muted); margin-bottom: 1rem;
     display: flex; align-items: center; gap: 0.5rem;
   }
-  .chart-title::before { content: ''; display: inline-block; width: 8px; height: 8px; background: var(--accent); border-radius: 50%; }
+  .chart-wrap { position: relative; height: 200px; }
 
   /* ── REPLAY TABLE ────────────────────────────────────────────────── */
   .table-wrap {
@@ -169,11 +169,11 @@
   <div class="charts-grid">
     <div class="chart-card">
       <div class="chart-title">Win Rate Trend (rolling 5)</div>
-      <canvas id="wrChart" height="180"></canvas>
+      <div class="chart-wrap"><canvas id="wrChart"></canvas></div>
     </div>
     <div class="chart-card">
       <div class="chart-title">Goals Per Game</div>
-      <canvas id="goalsChart" height="180"></canvas>
+      <div class="chart-wrap"><canvas id="goalsChart"></canvas></div>
     </div>
   </div>
 
@@ -222,19 +222,60 @@
   </div>
 
   <!-- Chart.js scripts -->
-  <script>
+  <script nonce="{{ nonce }}">
     const replays = {{ replays | tojson }};
     const player  = {{ player  | tojson }};
 
     const PURPLE      = '#a855f7';
     const PURPLE_DIM  = 'rgba(168,85,247,0.08)';
     const GRID_COLOR  = getComputedStyle(document.documentElement).getPropertyValue('--border').trim() || '#1e2237';
-    const TICK_COLOR  = '#4e566e';
-    const MONO        = 'Share Tech Mono, monospace';
+    const TICK_COLOR  = getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() || '#4e566e';
+    const UI_FONT     = 'Inter, sans-serif';
 
     const baseScales = {
-      x: { ticks: { color: TICK_COLOR, font: { family: MONO, size: 10 } }, grid: { color: '#1e2237' } },
-      y: { ticks: { color: TICK_COLOR, font: { family: MONO, size: 10 } }, grid: { color: '#1e2237' } }
+      x: {
+        ticks: { color: TICK_COLOR, font: { family: UI_FONT, size: 10, weight: 500 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 8 },
+        grid: { color: 'rgba(148, 163, 184, 0.12)', drawBorder: false }
+      },
+      y: {
+        ticks: { color: TICK_COLOR, font: { family: UI_FONT, size: 10, weight: 500 } },
+        grid: { color: 'rgba(148, 163, 184, 0.16)', drawBorder: false }
+      }
+    };
+
+    const commonOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      animation: { duration: 500, easing: 'easeOutQuart' },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(11, 12, 24, 0.95)',
+          borderColor: 'rgba(176, 110, 255, 0.4)',
+          borderWidth: 1,
+          titleFont: { family: UI_FONT, weight: 700, size: 11 },
+          bodyFont: { family: UI_FONT, weight: 500, size: 11 },
+          padding: 10,
+          displayColors: false
+        }
+      }
+    };
+
+    const chartAreaBgPlugin = {
+      id: 'chartAreaBg',
+      beforeDraw(chart, args, opts) {
+        const { ctx, chartArea } = chart;
+        if (!chartArea) return;
+        const { left, top, width, height } = chartArea;
+        const bg = ctx.createLinearGradient(0, top, 0, top + height);
+        bg.addColorStop(0, opts.topColor || 'rgba(168,85,247,0.06)');
+        bg.addColorStop(1, opts.bottomColor || 'rgba(168,85,247,0.0)');
+        ctx.save();
+        ctx.fillStyle = bg;
+        ctx.fillRect(left, top, width, height);
+        ctx.restore();
+      }
     };
 
     // ── Win rate rolling 5 ──────────────────────────────────────────
@@ -244,26 +285,61 @@
       const w = results.slice(i - 4, i + 1).filter(x => x === 'win').length;
       wrData.push(parseFloat(((w / 5) * 100).toFixed(1)));
     }
+    const wrSmooth = wrData.map((_, i) => {
+      const start = Math.max(0, i - 2);
+      const window = wrData.slice(start, i + 1);
+      const avg = window.reduce((sum, v) => sum + v, 0) / window.length;
+      return parseFloat(avg.toFixed(1));
+    });
 
-    new Chart(document.getElementById('wrChart'), {
+    const wrCtx = document.getElementById('wrChart').getContext('2d');
+    
+    const wrChart = new Chart(wrCtx, {
       type: 'line',
       data: {
         labels: wrData.map((_, i) => `#${i + 5}`),
-        datasets: [{
-          data: wrData,
-          borderColor: PURPLE,
-          backgroundColor: PURPLE_DIM,
-          tension: 0.45, pointRadius: 3, pointBackgroundColor: PURPLE,
-          fill: true, borderWidth: 2
-        }]
+        datasets: [
+          {
+            data: wrData,
+            borderColor: PURPLE,
+            backgroundColor: (context) => {
+              const chart = context.chart;
+              const {ctx, chartArea} = chart;
+              if (!chartArea) return 'rgba(168, 85, 247, 0.1)';
+              const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+              gradient.addColorStop(0, 'rgba(168, 85, 247, 0.30)');
+              gradient.addColorStop(1, 'rgba(168, 85, 247, 0.02)');
+              return gradient;
+            },
+            tension: 0.35, pointRadius: 2, pointHoverRadius: 4, pointBackgroundColor: '#c084fc',
+            fill: true, borderWidth: 2.5
+          },
+          {
+            data: wrSmooth,
+            borderColor: 'rgba(208,159,255,0.95)',
+            borderDash: [6, 4],
+            tension: 0.2,
+            pointRadius: 0,
+            borderWidth: 2,
+            fill: false
+          }
+        ]
       },
       options: {
-        plugins: { legend: { display: false } },
+        ...commonOptions,
+        plugins: {
+          ...commonOptions.plugins,
+          chartAreaBg: {
+            topColor: 'rgba(176,110,255,0.08)',
+            bottomColor: 'rgba(176,110,255,0.01)'
+          }
+        },
         scales: {
           x: baseScales.x,
-          y: { ...baseScales.y, min: 0, max: 100, ticks: { ...baseScales.y.ticks, callback: v => v + '%' } }
+          y: { ...baseScales.y, min: 0, max: 100, ticks: { ...baseScales.y.ticks, callback: v => v + '%', maxTicksLimit: 6 } }
         }
-      }
+      },
+      plugins: [chartAreaBgPlugin]
     });
 
     // ── Goals per game ──────────────────────────────────────────────
@@ -274,22 +350,66 @@
       if (orangeNames.some(n => n.includes(player.toLowerCase()))) return r.orange?.goals || 0;
       return null;
     }).filter(v => v !== null);
+    const goalsAvg = goalsData.map((_, i) => {
+      const start = Math.max(0, i - 4);
+      const window = goalsData.slice(start, i + 1);
+      const avg = window.reduce((sum, v) => sum + v, 0) / window.length;
+      return parseFloat(avg.toFixed(2));
+    });
 
-    new Chart(document.getElementById('goalsChart'), {
+    const goalsChart = new Chart(document.getElementById('goalsChart'), {
       type: 'bar',
       data: {
         labels: goalsData.map((_, i) => `#${i + 1}`),
-        datasets: [{
-          data: goalsData,
-          backgroundColor: 'rgba(168,85,247,0.45)',
-          borderColor: PURPLE, borderWidth: 1,
-          borderRadius: 4
-        }]
+        datasets: [
+          {
+            type: 'bar',
+            data: goalsData,
+            backgroundColor: 'rgba(168,85,247,0.32)',
+            borderColor: 'rgba(192,132,252,0.9)', borderWidth: 1.2,
+            borderRadius: 6,
+            borderSkipped: false,
+            barPercentage: 0.85,
+            categoryPercentage: 0.9
+          },
+          {
+            type: 'line',
+            data: goalsAvg,
+            borderColor: 'rgba(208,159,255,0.95)',
+            borderWidth: 2,
+            borderDash: [6, 4],
+            tension: 0.25,
+            pointRadius: 0,
+            fill: false
+          }
+        ]
       },
       options: {
-        plugins: { legend: { display: false } },
-        scales: baseScales
-      }
+        ...commonOptions,
+        plugins: {
+          ...commonOptions.plugins,
+          chartAreaBg: {
+            topColor: 'rgba(176,110,255,0.06)',
+            bottomColor: 'rgba(176,110,255,0.0)'
+          }
+        },
+        scales: {
+          x: baseScales.x,
+          y: { ...baseScales.y, beginAtZero: true, ticks: { ...baseScales.y.ticks, precision: 0, maxTicksLimit: 6 } }
+        }
+      },
+      plugins: [chartAreaBgPlugin]
+    });
+
+    window.addEventListener('rc-theme-changed', () => {
+      const refreshedTick = getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() || '#4e566e';
+      [wrChart, goalsChart].forEach((chart) => {
+        chart.options.scales.x.grid.color = 'rgba(148, 163, 184, 0.12)';
+        chart.options.scales.x.ticks.color = refreshedTick;
+        chart.options.scales.y.grid.color = 'rgba(148, 163, 184, 0.16)';
+        chart.options.scales.y.ticks.color = refreshedTick;
+        chart.update();
+      });
     });
   </script>
 

@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Car Recommendation — RocketCanvas{% endblock %}
+{% block content %}
+<style nonce="{{ nonce }}">
+  .recommend-header { margin-bottom: 2rem; }
+  .recommend-title { font-size: 1.6rem; font-weight: 700; margin-bottom: 0.25rem; }
+  .recommend-sub { font-family: var(--mono); font-size: 0.8rem; color: var(--muted); margin-bottom: 1.25rem; }
+  
+  .rec-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius2); padding: 3rem 2rem; text-align: center;
+    position: relative; overflow: hidden; margin-bottom: 2rem;
+  }
+  .rec-card::before {
+    content: ''; position: absolute; top: -50%; left: -50%; right: -50%; bottom: -50%;
+    background: radial-gradient(circle, var(--accent-glow) 0%, transparent 60%);
+    opacity: 0.15; pointer-events: none;
+  }
+  .rec-label {
+    font-size: 0.85rem; font-weight: 700; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--accent3); margin-bottom: 1rem;
+  }
+  .rec-text { font-size: 1.1rem; line-height: 1.6; color: var(--text); margin-bottom: 2rem; }
+  .rec-car {
+    font-size: 2.5rem; font-weight: 800; color: var(--accent);
+    text-shadow: 0 0 25px var(--accent-glow);
+    display: inline-block;
+    margin-top: 0.5rem;
+  }
+  
+  .no-rank-state {
+    text-align: center; padding: 3rem; background: var(--surface);
+    border: 1px solid var(--border); border-radius: var(--radius2);
+  }
+</style>
+
+<div class="recommend-header">
+  <div class="recommend-title">Car Matchmaker</div>
+  <div class="recommend-sub">Find the optimal hitbox and car for your current skill level</div>
+</div>
+
+{% if current_user.rank %}
+  {% set rec = "Octane or Fennec" %}
+  {% if "Bronze" in current_user.rank or "Silver" in current_user.rank %}
+    {% set rec = "Gizmo or X-Devil" %}
+  {% elif "Gold" in current_user.rank %}
+    {% set rec = "Dominus or Breakout" %}
+  {% elif "Platinum" in current_user.rank %}
+    {% set rec = "Merc" %}
+  {% elif "Diamond" in current_user.rank %}
+    {% set rec = "Dominus or Batmobile" %}
+  {% elif "Champion" in current_user.rank or "Supersonic" in current_user.rank %}
+    {% set rec = "Octane or Fennec" %}
+  {% endif %}
+
+  <div class="rec-card">
+    <div class="rec-label">Your Perfect Match</div>
+    <div class="rec-text">
+      Based on your rank (<strong style="color: var(--accent);">{{ current_user.rank }}</strong>), the best car for you is:<br/>
+      <span class="rec-car">{{ rec }}</span>
+    </div>
+    <p style="font-size: 0.85rem; color: var(--muted); max-width: 600px; margin: 0 auto; line-height: 1.5;">
+      Different ranks have different playstyles. Our system recommends cars that fit the mechanics typically required at your level. Equip it in-game and see if your win rate improves!
+    </p>
+  </div>
+{% else %}
+  <div class="no-rank-state">
+    <div style="font-size: 1.2rem; font-weight: 700; margin-bottom: 1rem;">We need your rank!</div>
+    <div style="color: var(--muted); margin-bottom: 1.5rem; font-size: 0.95rem;">To give you a personalized car recommendation, please set your Rocket League rank in your profile.</div>
+    <a href="{{ url_for('profile') }}" class="btn btn-primary">Go to Profile</a>
+  </div>
+{% endif %}
+
+{% endblock %}

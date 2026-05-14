@@ -12,28 +12,28 @@
 
     /* ── DESIGN TOKENS ─────────────────────────────────────────────── */
     :root {
-      --bg:          #050509;
-      --surface:     #0b0c18;
-      --surface2:    #101120;
-      --surface3:    #161829;
-      --border:      #1c1f38;
-      --border2:     #2a2d50;
-      --accent:      #b06eff;
-      --accent2:     #7c3aed;
-      --accent3:     #d09fff;
-      --accent-glow: rgba(176, 110, 255, 0.22);
-      --accent-glow2:rgba(176, 110, 255, 0.09);
-      --win:         #10e88a;
-      --loss:        #ff4d6a;
-      --text:        #ffffff;
-      --text2:       #cbd5e1;
-      --muted:       #94a3b8;
-      --mono:        'JetBrains Mono', monospace;
-      --ui:          'Inter', sans-serif;
-      --radius:      8px;
-      --radius2:     12px;
-      --t:           0.2s ease;
-    }
+  --bg:          #030308;
+  --surface:     #1a1535;
+  --surface2:    #221d45;
+  --surface3:    #1a1640;
+  --border:      #3d3875;
+  --border2:     #5a52a0;
+  --accent:      #b06eff;
+  --accent2:     #7c3aed;
+  --accent3:     #d09fff;
+  --accent-glow: rgba(176, 110, 255, 0.22);
+  --accent-glow2:rgba(176, 110, 255, 0.09);
+  --win:         #10e88a;
+  --loss:        #ff4d6a;
+  --text:        #ffffff;
+  --text2:       #cbd5e1;
+  --muted:       #94a3b8;
+  --mono:        'JetBrains Mono', monospace;
+  --ui:          'Inter', sans-serif;
+  --radius:      8px;
+  --radius2:     12px;
+  --t:           0.2s ease;
+  }
 
     /* ── LIGHT MODE ─────────────────────────────────────────────────── */
     [data-theme="light"] {
@@ -269,6 +269,78 @@
 
     /* ── DIVIDER ────────────────────────────────────────────────────── */
     hr.divider { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
+
+    /* ── FOOTER ─────────────────────────────────────────────────────── */
+    .site-footer {
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      padding: 3rem 2rem 2rem;
+      margin-top: 4rem;
+    }
+    .footer-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 2.5rem;
+    }
+    .footer-brand .footer-logo {
+      font-size: 1.1rem; font-weight: 700; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--accent);
+      display: flex; align-items: center; gap: 0.45rem;
+      margin-bottom: 0.75rem; text-decoration: none;
+    }
+    .footer-logo-icon {
+      width: 18px; height: 18px;
+      background: var(--accent);
+      clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+      flex-shrink: 0;
+    }
+    .footer-desc {
+      font-size: 0.8rem; color: var(--muted); line-height: 1.65;
+      font-family: var(--mono); max-width: 320px;
+    }
+    .footer-pills {
+      display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.85rem;
+    }
+    .footer-pill {
+      font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; padding: 0.2rem 0.55rem;
+      border: 1px solid var(--border); border-radius: 999px;
+      color: var(--muted); background: transparent;
+    }
+    .footer-col-title {
+      font-size: 0.68rem; font-weight: 700; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 0.85rem;
+    }
+    .footer-links {
+      list-style: none; display: flex; flex-direction: column; gap: 0.5rem;
+    }
+    .footer-links a {
+      font-size: 0.82rem; color: var(--text2); text-decoration: none;
+      transition: color var(--t);
+    }
+    .footer-links a:hover { color: var(--accent); }
+    .footer-bottom {
+      max-width: 1100px; margin: 2rem auto 0;
+      padding-top: 1.25rem; border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 1rem; flex-wrap: wrap;
+    }
+    .footer-copy {
+      font-size: 0.75rem; color: var(--muted); font-family: var(--mono);
+    }
+    .footer-copy span { color: var(--accent); }
+    .footer-mit {
+      font-size: 0.72rem; color: var(--muted);
+      border: 1px solid var(--border); border-radius: 999px;
+      padding: 0.18rem 0.6rem; font-family: var(--mono);
+    }
+    @media(max-width: 720px) {
+      .footer-inner { grid-template-columns: 1fr; gap: 1.75rem; }
+      .footer-bottom { flex-direction: column; align-items: flex-start; }
+    }
   </style>
   {% block head %}{% endblock %}
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo.png') }}"/>
@@ -285,13 +357,15 @@
   <div class="nav-center">
     <a href="{{ url_for('profile') }}"      {% if request.endpoint == 'profile'      %}class="active"{% endif %}>Profile</a>
     <a href="{{ url_for('dashboard') }}"    {% if request.endpoint == 'dashboard'    %}class="active"{% endif %}>Dashboard</a>
+    <a href="{{ url_for('gallery') }}"      {% if request.endpoint == 'gallery'      %}class="active"{% endif %}>Gallery</a>
     <a href="{{ url_for('analytics') }}"    {% if request.endpoint == 'analytics'    %}class="active"{% endif %}>Analytics</a>
     <a href="{{ url_for('hitbox_lookup') }}" {% if request.endpoint == 'hitbox_lookup' %}class="active"{% endif %}>Hitbox</a>
+    <a href="{{ url_for('recommend') }}"    {% if request.endpoint == 'recommend'    %}class="active"{% endif %}>Recommend</a>
     <a href="{{ url_for('logout') }}">Logout</a>
   </div>
 
   <div class="nav-right">
-    <button class="theme-toggle" id="themeToggle" title="Toggle theme" onclick="toggleTheme()">🌙</button>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme" type="button">🌙</button>
     <div class="nav-user-wrap">
       <div class="nav-avatar" id="navAvatar">
         {% if current_user.avatar_url %}
@@ -315,6 +389,56 @@
   {% block content %}{% endblock %}
 </div>
 
+<footer class="site-footer">
+  <div class="footer-inner">
+
+    <!-- Brand -->
+    <div class="footer-brand">
+      <a href="{{ url_for('profile') if current_user.is_authenticated else url_for('login') }}" class="footer-logo">
+        <span class="footer-logo-icon"></span>
+        RocketCanvas
+      </a>
+      <p class="footer-desc">
+        A Rocket League stat tracker, hitbox lookup tool, and player analytics dashboard, which is powered by the ballchasing.com API. Track win rates, map performance, goal differentials, streaks, and more.
+      </p>
+      <div class="footer-pills">
+        <span class="footer-pill">Flask</span>
+        <span class="footer-pill">Chart.js</span>
+        <span class="footer-pill">SQLite</span>
+        <span class="footer-pill">2FA</span>
+        <span class="footer-pill">Ballchasing API</span>
+        <span class="footer-pill">ML Hitbox</span>
+      </div>
+    </div>
+
+    <!-- Features -->
+    <div>
+      <div class="footer-col-title">Features</div>
+      <ul class="footer-links">
+        <li><a href="{{ url_for('dashboard') if current_user.is_authenticated else '#' }}"> Dashboard</a></li>
+        <li><a href="{{ url_for('analytics') if current_user.is_authenticated else '#' }}"> Analytics</a></li>
+        <li><a href="{{ url_for('hitbox_lookup') if current_user.is_authenticated else '#' }}"> Hitbox Lookup</a></li>
+        <li><a href="{{ url_for('profile') if current_user.is_authenticated else '#' }}"> Profile</a></li>
+      </ul>
+    </div>
+
+    <!-- About -->
+    <div>
+      <div class="footer-col-title">About</div>
+      <ul class="footer-links">
+        <li><a href="https://ballchasing.com" target="_blank" rel="noopener noreferrer">ballchasing.com ↗</a></li>
+        <li><a href="https://github.com/greggykotelnikov" target="_blank" rel="noopener noreferrer">GitHub ↗</a></li>
+      </ul>
+    </div>
+
+  </div>
+
+  <div class="footer-bottom">
+    <p class="footer-copy">&copy; 2026 <span>Greg Kotelnikov</span> RocketCanvas. All rights reserved.</p>
+    <span class="footer-mit">MIT License</span>
+  </div>
+</footer>
+
 <script nonce="{{ nonce }}">
   // ── Theme management ──────────────────────────────────────────────
   (function() {
@@ -335,7 +459,15 @@
     document.documentElement.setAttribute('data-theme', next);
     localStorage.setItem('rc-theme', next);
     updateToggleIcon();
+    window.dispatchEvent(new CustomEvent('rc-theme-changed', { detail: { theme: next } }));
   }
+
+  (function bindThemeToggle() {
+    const btn = document.getElementById('themeToggle');
+    if (btn) {
+      btn.addEventListener('click', toggleTheme);
+    }
+  })();
 </script>
 </body>
 </html>

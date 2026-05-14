@@ -13,6 +13,7 @@ class User(UserMixin, db.Model):
     rank          = db.Column(db.String(50),  nullable=True)
     bio           = db.Column(db.String(300), nullable=True)
     avatar_url    = db.Column(db.String(200), nullable=True)
+    platform      = db.Column(db.String(50),  nullable=True)
     created_at    = db.Column(db.DateTime,    default=datetime.utcnow)
 
 class TwoFactorCode(db.Model):
@@ -27,3 +28,13 @@ class CarHitbox(db.Model):
     id           = db.Column(db.Integer, primary_key=True)
     car_name     = db.Column(db.String(100), nullable=False, unique=True)
     hitbox_class = db.Column(db.String(50),  nullable=False)
+
+class CarDesign(db.Model):
+    id             = db.Column(db.Integer, primary_key=True)
+    user_id        = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    title          = db.Column(db.String(150), nullable=False)
+    image_filename = db.Column(db.String(255), nullable=False)
+    created_at     = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationship to user
+    user = db.relationship('User', backref=db.backref('designs', lazy=True))

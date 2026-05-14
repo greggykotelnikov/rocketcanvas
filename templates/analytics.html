@@ -44,7 +44,7 @@
   .charts-row.full { grid-template-columns: 1fr; }
   .chart-card {
     background: var(--surface); border: 1px solid var(--border);
-    border-radius: var(--radius2); padding: 1.5rem;
+    border-radius: var(--radius2); padding: 1.25rem 1.25rem 0.75rem 1.25rem;
     transition: border-color var(--t);
   }
   .chart-card:hover { border-color: var(--border2); }
@@ -52,10 +52,6 @@
     font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em;
     text-transform: uppercase; color: var(--muted); margin-bottom: 1.1rem;
     display: flex; align-items: center; gap: 0.5rem;
-  }
-  .chart-card-title::before {
-    content: ''; width: 8px; height: 8px; border-radius: 50%;
-    background: var(--accent); flex-shrink: 0;
   }
 
   /* ── STREAKS ─────────────────────────────────────────────────────── */
@@ -140,11 +136,11 @@
   <div class="charts-row">
     <div class="chart-card">
       <div class="chart-card-title">Win Rate Trend (rolling 5)</div>
-      <canvas id="wrTrendChart" height="200"></canvas>
+      <div style="position: relative; height: 200px;"><canvas id="wrTrendChart"></canvas></div>
     </div>
     <div class="chart-card">
       <div class="chart-card-title">Playlist Breakdown</div>
-      <canvas id="playlistChart" height="200"></canvas>
+      <div style="position: relative; height: 200px;"><canvas id="playlistChart"></canvas></div>
     </div>
   </div>
 
@@ -152,11 +148,11 @@
   <div class="charts-row">
     <div class="chart-card">
       <div class="chart-card-title">Map Win Rate (top 6 maps)</div>
-      <canvas id="mapChart" height="220"></canvas>
+      <div style="position: relative; height: 220px;"><canvas id="mapChart"></canvas></div>
     </div>
     <div class="chart-card">
       <div class="chart-card-title">Activity by Hour of Day</div>
-      <canvas id="hourChart" height="220"></canvas>
+      <div style="position: relative; height: 220px;"><canvas id="hourChart"></canvas></div>
     </div>
   </div>
 
@@ -164,7 +160,7 @@
   <div class="charts-row full">
     <div class="chart-card">
       <div class="chart-card-title">Goal Differential Per Game</div>
-      <canvas id="diffChart" height="140"></canvas>
+      <div style="position: relative; height: 140px;"><canvas id="diffChart"></canvas></div>
     </div>
   </div>
 
@@ -172,11 +168,11 @@
   <div class="charts-row">
     <div class="chart-card">
       <div class="chart-card-title">Win / Loss Breakdown</div>
-      <canvas id="wlChart" height="200"></canvas>
+      <div style="position: relative; height: 200px;"><canvas id="wlChart"></canvas></div>
     </div>
     <div class="chart-card">
       <div class="chart-card-title">Avg Goals Scored vs Conceded</div>
-      <canvas id="goalsAvgChart" height="200"></canvas>
+      <div style="position: relative; height: 200px;"><canvas id="goalsAvgChart"></canvas></div>
     </div>
   </div>
 
@@ -184,7 +180,7 @@
   <div class="charts-row full">
     <div class="chart-card">
       <div class="chart-card-title">Cumulative Wins Over Time</div>
-      <canvas id="cumWinsChart" height="130"></canvas>
+      <div style="position: relative; height: 130px;"><canvas id="cumWinsChart"></canvas></div>
     </div>
   </div>
 
@@ -216,6 +212,9 @@
 
   <!-- Chart.js ────────────────────────────────────────────────────── -->
   <script nonce="{{ nonce }}">
+    Chart.defaults.maintainAspectRatio = false;
+    Chart.defaults.responsive = true;
+
     const PURPLE       = '#b06eff';
     const PURPLE_DIM   = 'rgba(176,110,255,0.1)';
     const PURPLE_BAR   = 'rgba(176,110,255,0.55)';
@@ -229,7 +228,7 @@
     const RAJDHANI     = 'Rajdhani, sans-serif';
 
     const baseAxis = {
-      x: { ticks: { color: TICK, font: { family: MONO, size: 10 } }, grid: { color: GRID } },
+      x: { ticks: { color: TICK, font: { family: MONO, size: 10 }, maxRotation: 0, autoSkip: true }, grid: { color: GRID } },
       y: { ticks: { color: TICK, font: { family: MONO, size: 10 } }, grid: { color: GRID } }
     };
 
@@ -242,12 +241,23 @@
         labels: wrLabels,
         datasets: [{
           data: wrValues,
-          borderColor: PURPLE, backgroundColor: PURPLE_DIM,
+          borderColor: PURPLE,
+          backgroundColor: (context) => {
+            const chart = context.chart;
+            const {ctx, chartArea} = chart;
+            if (!chartArea) return PURPLE_DIM;
+            const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+            gradient.addColorStop(0, 'rgba(176,110,255,0.3)');
+            gradient.addColorStop(1, 'rgba(176,110,255,0.02)');
+            return gradient;
+          },
           tension: 0.45, pointRadius: 3, pointBackgroundColor: PURPLE,
           fill: true, borderWidth: 2
         }]
       },
       options: {
+        responsive: true,
+        maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
           x: baseAxis.x,
@@ -272,6 +282,8 @@
         }]
       },
       options: {
+        responsive: true,
+        maintainAspectRatio: false,
         cutout: '62%',
         plugins: {
           legend: {
@@ -301,6 +313,8 @@
         }]
       },
       options: {
+        responsive: true,
+        maintainAspectRatio: false,
         indexAxis: 'y',
         plugins: { legend: { display: false } },
         scales: {
@@ -326,6 +340,8 @@
         }]
       },
       options: {
+        responsive: true,
+        maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: baseAxis
       }
@@ -349,6 +365,8 @@
         }]
       },
       options: {
+        responsive: true,
+        maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
           x: baseAxis.x,
@@ -371,6 +389,8 @@
         }]
       },
       options: {
+        responsive: true,
+        maintainAspectRatio: false,
         cutout: '58%',
         plugins: {
           legend: {
@@ -396,6 +416,8 @@
         }]
       },
       options: {
+        responsive: true,
+        maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
           x: { ...baseAxis.x, grid: { display: false } },
@@ -420,6 +442,8 @@
         }]
       },
       options: {
+        responsive: true,
+        maintainAspectRatio: false,
         plugins: { legend: { display: false } },
         scales: {
           x: { ...baseAxis.x, ticks: { ...baseAxis.x.ticks, maxTicksLimit: 10 } },

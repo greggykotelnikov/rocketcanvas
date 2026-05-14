@@ -129,23 +129,45 @@
   </div>
 
   <div class="profile-info">
+    {% set r = current_user.rank or "" %}
+    {% set r_col = "var(--accent)" %}
+    {% if "Supersonic" in r %} {% set r_col = "#ffffff" %}
+    {% elif "Grand Champion" in r %} {% set r_col = "#ef4444" %}
+    {% elif "Champion" in r %} {% set r_col = "#ec4899" %}
+    {% elif "Diamond" in r %} {% set r_col = "#3b82f6" %}
+    {% elif "Platinum" in r %} {% set r_col = "#38bdf8" %}
+    {% elif "Gold" in r %} {% set r_col = "#eab308" %}
+    {% elif "Silver" in r %} {% set r_col = "#94a3b8" %}
+    {% elif "Bronze" in r %} {% set r_col = "#d97706" %}
+    {% endif %}
     <div class="profile-username">
       {{ current_user.username }}
       {% if current_user.rank %}
-        <span class="rank-badge">{{ current_user.rank }}</span>
+        <span class="rank-badge" style="color: {{ r_col }}; border-color: {{ r_col }}; background: {{ r_col }}1a;">{{ current_user.rank }}</span>
       {% endif %}
     </div>
     {% if current_user.rank %}
-      <div class="profile-rank">{{ current_user.rank }}</div>
+      <div class="profile-rank" style="color: {{ r_col }}; margin-bottom: 0.5rem;">
+        {{ current_user.rank }}
+      </div>
     {% endif %}
     {% if current_user.bio %}
       <div class="profile-bio">{{ current_user.bio }}</div>
     {% endif %}
-    <div class="profile-meta">
+    <div class="profile-meta" style="align-items: center;">
       <span>{{ current_user.email }}</span>
       <span>Member since {{ current_user.created_at.strftime('%B %Y') }}</span>
       {% if current_user.rl_username %}
-        <span>🎮 {{ current_user.rl_username }}</span>
+        <span style="display: flex; align-items: center; gap: 0.4rem;">
+          {% if current_user.platform %}
+            <span style="padding: 0.15rem 0.4rem; background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; color: var(--muted); letter-spacing: 0.05em; line-height: 1;">
+              {{ current_user.platform }}
+            </span>
+          {% else %}
+            🎮
+          {% endif %}
+          {{ current_user.rl_username }}
+        </span>
       {% endif %}
     </div>
   </div>
@@ -162,12 +184,21 @@
   <div class="section-title">Edit Profile</div>
   <form method="POST" action="{{ url_for('update_profile') }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-    <div class="form-grid">
+    <div class="form-grid" style="grid-template-columns: 1fr 1fr 1fr;">
       <div class="field">
         <label>RL Username</label>
         <input class="input" type="text" name="rl_username"
-          placeholder="Your Rocket League username"
+          placeholder="Your username"
           value="{{ current_user.rl_username or '' }}"/>
+      </div>
+      <div class="field">
+        <label>Platform</label>
+        <select class="input" name="platform">
+          <option value="">— None —</option>
+          {% for p in ['Steam', 'Epic Games', 'PlayStation', 'Xbox', 'Nintendo'] %}
+            <option value="{{ p }}" {% if current_user.platform == p %}selected{% endif %}>{{ p }}</option>
+          {% endfor %}
+        </select>
       </div>
       <div class="field">
         <label>Rank / Title</label>
@@ -197,6 +228,66 @@
   </form>
 </div>
 
+<!-- Preset Avatars -->
+<div class="card">
+  <div class="section-title">Choose an Avatar</div>
+  <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 1rem;">Select one of our stylish placeholder avatars.</p>
+  <form method="POST" action="{{ url_for('set_preset_avatar') }}" style="display: flex; gap: 1rem; flex-wrap: wrap;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+    
+    <label class="preset-label">
+      <input type="radio" name="preset" value="octane.png" class="preset-radio" required/>
+      <img src="{{ url_for('static', filename='avatars/placeholders/octane.png') }}" class="preset-img" alt="Neon Octane"/>
+    </label>
+    
+    <label class="preset-label">
+      <input type="radio" name="preset" value="dominus.png" class="preset-radio"/>
+      <img src="{{ url_for('static', filename='avatars/placeholders/dominus.png') }}" class="preset-img" alt="Golden Dominus"/>
+    </label>
+    
+    <label class="preset-label">
+      <input type="radio" name="preset" value="fennec.png" class="preset-radio"/>
+      <img src="{{ url_for('static', filename='avatars/placeholders/fennec.png') }}" class="preset-img" alt="Cyber Fennec"/>
+    </label>
+    
+    <div style="width: 100%; margin-top: 0.5rem;">
+      <button class="btn btn-ghost btn-sm" type="submit">Set Selected Avatar</button>
+    </div>
+  </form>
+</div>
+
+<style nonce="{{ nonce }}">
+  .preset-label {
+    cursor: pointer;
+    position: relative;
+    border-radius: 50%;
+    overflow: hidden;
+    width: 70px;
+    height: 70px;
+    border: 3px solid transparent;
+    transition: all var(--t);
+  }
+  .preset-radio {
+    display: none;
+  }
+  .preset-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .preset-radio:checked + .preset-img {
+    opacity: 0.8;
+  }
+  .preset-label:hover {
+    transform: scale(1.05);
+    border-color: var(--accent-glow);
+  }
+  .preset-label:has(> .preset-radio:checked) {
+    border-color: var(--accent);
+    box-shadow: 0 0 15px var(--accent-glow);
+  }
+</style>
+
 <!-- Quick Actions -->
 <div class="card">
   <div class="section-title">Quick Actions</div>
@@ -205,28 +296,28 @@
       <img class="ql-thumb" src="{{ url_for('static', filename='images/dashboard.png') }}" alt="Dashboard preview">
       <div class="ql-body">
         <span class="ql-label">Jump to</span>
-        <span class="ql-title">My Dashboard →</span>
+        <span class="ql-title">My Dashboard</span>
       </div>
     </a>
     <a class="quick-link" href="{{ url_for('analytics') }}{% if current_user.rl_username %}?player={{ current_user.rl_username }}{% endif %}">
       <img class="ql-thumb" src="{{ url_for('static', filename='images/analytic_image.jpg') }}" alt="Analytics preview">
       <div class="ql-body">
         <span class="ql-label">Deep dive</span>
-        <span class="ql-title">My Analytics →</span>
+        <span class="ql-title">My Analytics</span>
       </div>
     </a>
     <a class="quick-link" href="{{ url_for('hitbox_lookup') }}">
       <img class="ql-thumb" src="{{ url_for('static', filename='images/car_hitboxes.png') }}" alt="Hitbox tool preview">
       <div class="ql-body">
         <span class="ql-label">Look up</span>
-        <span class="ql-title">Hitbox Tool →</span>
+        <span class="ql-title">Hitbox Tool</span>
       </div>
     </a>
     <a class="quick-link" href="{{ url_for('dashboard') }}">
       <img class="ql-thumb" src="{{ url_for('static', filename='images/players.png') }}" alt="Search players">
       <div class="ql-body">
         <span class="ql-label">Search</span>
-        <span class="ql-title">Any Player →</span>
+        <span class="ql-title">Any Player</span>
       </div>
     </a>
   </div>

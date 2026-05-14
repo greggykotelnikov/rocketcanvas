@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% block title %}Design Gallery — RocketCanvas{% endblock %}
+{% block content %}
+<style nonce="{{ nonce }}">
+  .gallery-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+  }
+  .gallery-title {
+    font-size: 2rem;
+    font-weight: 700;
+  }
+  .upload-btn {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: #fff;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius);
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.95rem;
+    box-shadow: 0 4px 20px rgba(168,85,247,0.3);
+    transition: all var(--t);
+    border: none;
+    cursor: pointer;
+  }
+  .upload-btn:hover {
+    box-shadow: 0 6px 28px rgba(168,85,247,0.5);
+    transform: translateY(-2px);
+  }
+
+  /* ── MODAL ───────────────────────────────────────────────────────── */
+  .modal-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(5px);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1000;
+    opacity: 0; pointer-events: none;
+    transition: opacity var(--t);
+  }
+  .modal-overlay.active { opacity: 1; pointer-events: auto; }
+  .modal-content {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius2);
+    padding: 2rem;
+    width: 100%; max-width: 500px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+    position: relative;
+  }
+  .modal-close {
+    position: absolute; top: 1rem; right: 1.5rem;
+    font-size: 1.5rem; cursor: pointer; color: var(--muted);
+    transition: color var(--t);
+  }
+  .modal-close:hover { color: var(--text); }
+
+  /* ── EMPTY STATE ─────────────────────────────────────────────────── */
+  .empty-state {
+    text-align: center;
+    font-family: var(--mono); color: var(--muted); font-size: 0.85rem;
+    border: 1px solid var(--border); border-radius: var(--radius2);
+    overflow: hidden; background: var(--surface);
+  }
+  .empty-state-img {
+    width: 100%; height: 220px;
+    object-fit: cover; object-position: center 40%;
+    display: block;
+    filter: grayscale(100%) sepia(100%) hue-rotate(235deg) saturate(400%) brightness(0.7) contrast(1.1);
+    border-bottom: 1px solid var(--border);
+  }
+  .empty-state-body {
+    padding: 2rem;
+  }
+
+  /* Gallery Grid */
+  .gallery-grid {
+    column-count: 3;
+    column-gap: 1.5rem;
+  }
+  @media(max-width: 900px) { .gallery-grid { column-count: 2; } }
+  @media(max-width: 600px) { .gallery-grid { column-count: 1; } }
+  
+  .design-card {
+    break-inside: avoid;
+    margin-bottom: 1.5rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius2);
+    overflow: hidden;
+    transition: border-color var(--t), transform var(--t), box-shadow var(--t);
+  }
+  .design-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(168,85,247,0.15);
+  }
+  .design-img {
+    width: 100%;
+    display: block;
+    object-fit: cover;
+    border-bottom: 1px solid var(--border);
+  }
+  .design-info { padding: 1rem; }
+  .design-title { font-weight: 700; font-size: 1.1rem; margin-bottom: 0.25rem; }
+  .design-meta { font-size: 0.8rem; color: var(--muted); display: flex; justify-content: space-between;}
+  .design-author { color: var(--accent3); font-weight: 600; }
+  
+  .empty-state {
+    text-align: center; padding: 4rem 2rem;
+    color: var(--muted); font-size: 1.1rem;
+    background: var(--surface2); border-radius: var(--radius2);
+    border: 1px dashed var(--border2);
+  }
+</style>
+
+<div class="gallery-header">
+  <div>
+    <h1 class="gallery-title">Car Design Gallery</h1>
+    <p style="color: var(--muted); margin-top: 0.25rem;">Browse and share your custom Rocket League presets.</p>
+  </div>
+  <button class="upload-btn" id="openUploadModalBtn">
+    + Upload Design
+  </button>
+</div>
+
+{% if designs %}
+  <div class="gallery-grid">
+    {% for design in designs %}
+      <div class="design-card">
+        <img src="{{ url_for('static', filename='uploads/designs/' ~ design.image_filename) }}" alt="{{ design.title }}" class="design-img" loading="lazy"/>
+        <div class="design-info">
+          <div class="design-title">{{ design.title }}</div>
+          <div class="design-meta">
+            <span>By <span class="design-author">{{ design.user.username }}</span></span>
+            <span>{{ design.created_at.strftime('%b %d, %Y') }}</span>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="empty-state">
+    <img class="empty-state-img" src="{{ url_for('static', filename='images/car_design_gallery.png') }}" alt=""/>
+    <div class="empty-state-body">
+      <p>No designs uploaded yet. Be the first to share your preset!</p>
+    </div>
+  </div>
+{% endif %}
+
+<!-- Upload Modal -->
+<div class="modal-overlay" id="uploadModal">
+  <div class="modal">
+    <button class="modal-close" onclick="document.getElementById('uploadModal').classList.remove('active')">&times;</button>
+    <h2 class="modal-title">Upload Design</h2>
+    <form method="POST" action="{{ url_for('upload_design') }}" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      
+      <div class="field">
+        <label>Design Title</label>
+        <input type="text" name="title" class="input" placeholder="e.g. Neon Cyberpunk Fennec" required maxlength="150"/>
+      </div>
+      
+      <div class="field">
+        <label>Image</label>
+        <input type="file" name="design_image" class="input" accept="image/*" required style="padding: 0.5rem;"/>
+        <div class="hint-text">Supported: PNG, JPG, WEBP.</div>
+      </div>
+      
+      <button type="submit" class="upload-btn" style="width: 100%; margin-top: 1rem;">Submit Design</button>
+    </form>
+  </div>
+</div>
+
+<script nonce="{{ nonce }}">
+  // Open modal
+  document.getElementById('openUploadModalBtn').addEventListener('click', function() {
+    document.getElementById('uploadModal').classList.add('active');
+  });
+
+  // Close modal when clicking outside
+  document.getElementById('uploadModal').addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('active');
+  });
+</script>
+{% endblock %}
