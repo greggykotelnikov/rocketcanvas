@@ -38,14 +38,15 @@
 
     <!-- Result -->
     {% if result %}
-      <div class="hitbox-result {% if result.found %}found{% else %}not-found{% endif %}">
+      <div class="hitbox-result {% if result.found %}found{% else %}not-found{% endif %}" id="searchResult" data-hitbox="{{ result.hitbox if result.found else '' }}">
         {% if result.found %}
           <div class="result-inner">
+            <span class="system-status"><span id="statusText"></span></span>
             <span class="result-car">{{ result.car }}</span>
             <span class="result-arrow">→</span>
             <span class="result-hitbox hitbox-badge hitbox-{{ result.hitbox | lower }}">{{ result.hitbox }}</span>
           </div>
-          <p class="result-desc">{{ hitbox_descriptions[result.hitbox] if hitbox_descriptions is defined else '' }}</p>
+          <p class="result-desc">Focused in Holographic Visualizer below.</p>
         {% else %}
           <div class="result-inner">
             <span class="result-car">{{ result.car }}</span>
@@ -55,6 +56,80 @@
         {% endif %}
       </div>
     {% endif %}
+  </div>
+
+  <!-- Holographic Hitbox Visualizer HUD -->
+  <div class="visualizer-section">
+    <div class="visualizer-tabs-container">
+      <div class="visualizer-tabs">
+        <button class="viz-tab-btn active" data-hitbox="Octane">Octane</button>
+        <button class="viz-tab-btn" data-hitbox="Dominus">Dominus</button>
+        <button class="viz-tab-btn" data-hitbox="Breakout">Breakout</button>
+        <button class="viz-tab-btn" data-hitbox="Hybrid">Hybrid</button>
+        <button class="viz-tab-btn" data-hitbox="Plank">Plank</button>
+        <button class="viz-tab-btn" data-hitbox="Merc">Merc</button>
+      </div>
+    </div>
+
+    <div class="visualizer-main card-glass">
+      <!-- Canvas Column -->
+      <div class="visualizer-canvas-col">
+        <div class="canvas-wrapper">
+          <canvas id="hologram-canvas"></canvas>
+          <div class="canvas-glitch-overlay" id="canvasGlitch"></div>
+          <div class="canvas-telemetry">
+            <span id="statusText" style="display:none;"></span>
+            <span id="fpsCounter" style="display:none;"></span>
+          </div>
+        </div>
+        <div class="canvas-controls">
+          <button id="spinBtn" class="control-btn active" title="Toggle Auto-Spin">🔄 Spin</button>
+          <button id="resetBtn" class="control-btn" title="Reset Camera View">⌂ Reset</button>
+          <button id="modeBtn" class="control-btn" title="Toggle Perspective/Ortho">📐 Perspective</button>
+        </div>
+      </div>
+
+      <!-- HUD Stats Column -->
+      <div class="visualizer-hud-col">
+        <div class="hud-header">
+          <h2 id="hud-hitbox-title" class="grad-text">OCTANE CLASS</h2>
+          <span id="hud-car-count" class="hud-badge">50 CARS</span>
+        </div>
+        <p id="hud-hitbox-desc" class="hud-desc"></p>
+        
+        <div class="telemetry-grid">
+          <div class="telemetry-item">
+            <span class="label">LENGTH</span>
+            <span id="telemetry-length" class="value"></span>
+          </div>
+          <div class="telemetry-item">
+            <span class="label">WIDTH</span>
+            <span id="telemetry-width" class="value"></span>
+          </div>
+          <div class="telemetry-item">
+            <span class="label">HEIGHT</span>
+            <span id="telemetry-height" class="value"></span>
+          </div>
+          <div class="telemetry-item">
+            <span class="label">VOLUME</span>
+            <span id="telemetry-volume" class="value"></span>
+          </div>
+          <div class="telemetry-item">
+            <span class="label">PIVOT OFFSET</span>
+            <span id="telemetry-pivot" class="value"></span>
+          </div>
+          <div class="telemetry-item">
+            <span class="label">CLEARANCE</span>
+            <span id="telemetry-clearance" class="value"></span>
+          </div>
+        </div>
+
+        <div class="hud-strengths">
+          <div class="section-title">Tactical Profile</div>
+          <ul id="hud-strengths-list" class="strengths-list"></ul>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Full Table -->
@@ -70,14 +145,17 @@
         'Merc': '#dc2626'
       } %}
       {% for hitbox_class, cars in grouped.items() | sort %}
-        <div class="hitbox-card">
-          <div class="hitbox-card-header hitbox-{{ hitbox_class | lower }}">
+        <div class="hitbox-card" id="card-{{ hitbox_class | lower }}">
+          <div class="hitbox-card-header hitbox-{{ hitbox_class | lower }} card-header-click" data-hitbox="{{ hitbox_class }}" style="cursor: pointer;">
             <span class="hitbox-class-name">{{ hitbox_class }}</span>
             <span class="hitbox-count">{{ cars | length }} cars</span>
           </div>
           <ul class="hitbox-car-list">
             {% for car in cars | sort %}
-              <li class="hitbox-car-item">{{ car }}</li>
+              <li class="hitbox-car-item car-item-click" data-hitbox="{{ hitbox_class }}">
+                <span>{{ car }}</span>
+                <span class="car-link-visualize">Inspect</span>
+              </li>
             {% endfor %}
           </ul>
         </div>
@@ -178,7 +256,7 @@
 
   .hitbox-result.found {
     background: var(--accent-glow2);
-    border: 1px solid var(--border2);
+    border: 1px solid var(--border);
   }
 
   .hitbox-result.not-found {
@@ -222,6 +300,320 @@
   .hitbox-plank    { background: #d97706; }
   .hitbox-merc     { background: #dc2626; }
 
+  /* ── HOLOGRAPHIC VISUALIZER HUD ───────────────────────────────────── */
+  .visualizer-section {
+    margin-bottom: 3.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .visualizer-tabs-container {
+    display: flex;
+    justify-content: center;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.5rem;
+  }
+
+  .visualizer-tabs {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+    scrollbar-width: none;
+  }
+  .visualizer-tabs::-webkit-scrollbar { display: none; }
+
+  .viz-tab-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: var(--ui);
+    font-weight: 700;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 0.5rem 1.25rem;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: all var(--t);
+    white-space: nowrap;
+  }
+
+  .viz-tab-btn:hover {
+    color: var(--text);
+    border-color: var(--border2);
+  }
+
+  .viz-tab-btn.active {
+    background: var(--active-bg, var(--accent-glow));
+    border-color: var(--active-color, var(--accent));
+    color: var(--active-color, var(--text));
+    box-shadow: 0 0 15px var(--active-glow, var(--accent-glow));
+  }
+
+  .visualizer-main {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 2rem;
+    min-height: 410px;
+    padding: 1.5rem;
+  }
+
+  .visualizer-canvas-col {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    position: relative;
+  }
+
+  .canvas-wrapper {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4/3;
+    background: radial-gradient(circle at center, rgba(16, 12, 42, 0.45) 0%, rgba(3, 3, 8, 0.88) 100%);
+    border: 1px solid var(--border);
+    border-radius: var(--radius2);
+    overflow: hidden;
+    box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.8);
+  }
+  [data-theme="light"] .canvas-wrapper {
+    background: radial-gradient(circle at center, rgba(230, 224, 252, 0.75) 0%, rgba(255, 255, 255, 0.95) 100%);
+    box-shadow: inset 0 0 30px rgba(124, 58, 237, 0.08);
+  }
+
+  #hologram-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    cursor: grab;
+  }
+
+  #hologram-canvas:active {
+    cursor: grabbing;
+  }
+
+  .canvas-wrapper::before {
+    content: " ";
+    display: block;
+    position: absolute;
+    top: 0; left: 0; bottom: 0; right: 0;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.15) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+    z-index: 10;
+    background-size: 100% 4px, 6px 100%;
+    pointer-events: none;
+  }
+
+  .canvas-glitch-overlay {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(255, 255, 255, 0.0);
+    z-index: 11;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.05s ease;
+  }
+
+  .canvas-glitch-overlay.glitching {
+    animation: staticFlicker 0.12s infinite;
+    opacity: 1;
+  }
+
+  @keyframes staticFlicker {
+    0% { background: rgba(168, 85, 247, 0.12); }
+    30% { background: rgba(34, 211, 238, 0.09); }
+    60% { background: rgba(244, 63, 94, 0.14); }
+    100% { background: rgba(168, 85, 247, 0.06); }
+  }
+
+  .canvas-telemetry {
+    position: absolute;
+    top: 0.75rem;
+    left: 0.75rem;
+    right: 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    color: var(--muted);
+    z-index: 12;
+    pointer-events: none;
+    text-shadow: 0 0 5px rgba(0,0,0,0.5);
+  }
+  [data-theme="light"] .canvas-telemetry {
+    text-shadow: none;
+  }
+
+  .system-status {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+
+  .system-status::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    background: var(--win);
+    border-radius: 50%;
+    display: inline-block;
+    box-shadow: 0 0 8px var(--win);
+    animation: pulseGlow 1.5s infinite;
+  }
+
+  @keyframes pulseGlow {
+    0% { opacity: 0.5; }
+    50% { opacity: 1; }
+    100% { opacity: 0.5; }
+  }
+
+  .canvas-controls {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+  }
+
+  .control-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    font-family: var(--ui);
+    font-weight: 600;
+    font-size: 0.78rem;
+    padding: 0.4rem 1rem;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all var(--t);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .control-btn:hover {
+    background: var(--surface3);
+    color: var(--text);
+    border-color: var(--border2);
+  }
+
+  .control-btn.active {
+    background: var(--accent-glow2);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* Telemetry HUD Column */
+  .visualizer-hud-col {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .hud-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 0.5rem;
+  }
+
+  #hud-hitbox-title {
+    font-size: 1.4rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .hud-badge {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    font-weight: 700;
+    background: var(--surface2);
+    color: var(--text2);
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+
+  .hud-desc {
+    font-size: 0.88rem;
+    line-height: 1.5;
+    color: var(--text2);
+    font-family: var(--mono);
+  }
+
+  .telemetry-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+
+  .telemetry-item {
+    background: rgba(3, 3, 8, 0.3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.6rem 0.8rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    position: relative;
+    overflow: hidden;
+  }
+  [data-theme="light"] .telemetry-item {
+    background: var(--surface2);
+  }
+
+  .telemetry-item::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 2.5px;
+    background: var(--active-color, var(--accent));
+  }
+
+  .telemetry-item .label {
+    font-family: var(--ui);
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .telemetry-item .value {
+    font-family: var(--mono);
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .hud-strengths {
+    margin-top: 0.25rem;
+  }
+
+  .strengths-list {
+    list-style: none;
+    padding: 0; margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+
+  .strengths-list li {
+    font-size: 0.82rem;
+    color: var(--text2);
+    position: relative;
+    padding-left: 1.25rem;
+    line-height: 1.45;
+  }
+
+  .strengths-list li::before {
+    content: "⚡";
+    position: absolute;
+    left: 0;
+    color: var(--active-color, var(--accent));
+    font-size: 0.75rem;
+  }
+
   /* Table section */
   .table-title {
     font-size: 1.1rem;
@@ -261,6 +653,11 @@
     align-items: center;
     padding: 0.75rem 1rem;
     color: #fff;
+    transition: filter var(--t);
+  }
+
+  .hitbox-card-header:hover {
+    filter: brightness(1.1);
   }
 
   .hitbox-card-header.hitbox-octane   { background: #7c3aed; }
@@ -297,13 +694,16 @@
   .hitbox-car-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 
   .hitbox-car-item {
-    padding: 0.4rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.45rem 1rem;
     color: var(--text2);
     font-size: 0.88rem;
     font-family: var(--mono);
     border-bottom: 1px solid var(--border);
     transition: background 0.15s, color 0.15s;
-    cursor: default;
+    cursor: pointer;
   }
 
   .hitbox-car-item:last-child { border-bottom: none; }
@@ -311,6 +711,27 @@
   .hitbox-car-item:hover {
     background: var(--accent-glow2);
     color: var(--text);
+  }
+
+  .car-link-visualize {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    background: var(--border);
+    color: var(--muted);
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+    opacity: 0;
+    transform: translateX(4px);
+    transition: all 0.2s ease;
+  }
+
+  .hitbox-car-item:hover .car-link-visualize {
+    opacity: 1;
+    transform: translateX(0);
+    color: var(--text);
+    background: var(--accent);
   }
 
   /* Result desc */
@@ -326,9 +747,663 @@
     to   { opacity: 1; transform: translateY(0); }
   }
 
+  @media (max-width: 900px) {
+    .visualizer-main {
+      grid-template-columns: 1fr;
+      min-height: auto;
+    }
+  }
+
   @media (max-width: 600px) {
     .search-row { flex-direction: column; }
     .hitbox-grid { grid-template-columns: 1fr; }
   }
 </style>
+
+<!-- Holographic 3D Wireframe Visualizer JavaScript Engine -->
+<script nonce="{{ nonce }}">
+  // ── HITBOX PROPERTIES DATABASE ─────────────────────────────────────
+  const HITBOX_DATA = {
+    Octane: {
+      title: "Octane Class",
+      color: "#9066ff",
+      glow: "rgba(144, 102, 255, 0.25)",
+      glowLight: "rgba(144, 102, 255, 0.06)",
+      length: 118.007,
+      width: 84.199,
+      height: 36.161,
+      pivot: 13.876,
+      clearance: "14.50 cm (Standard)",
+      desc: "Balanced dimensions offering unparalleled consistency. The tallest visual block profile, making it a master at 50-50 blocks, aerial redirection, and ball control stability.",
+      strengths: [
+        "Maximum kickoff height makes 50-50 blocks highly reliable.",
+        "Generates highly predictable bounce-dribble sweeps.",
+        "Balanced visual representation fits mechanical playstyles perfectly."
+      ]
+    },
+    Dominus: {
+      title: "Dominus Class",
+      color: "#db2777",
+      glow: "rgba(219, 39, 119, 0.25)",
+      glowLight: "rgba(219, 39, 119, 0.06)",
+      length: 127.930,
+      width: 83.280,
+      height: 31.300,
+      pivot: 9.000,
+      clearance: "11.20 cm (Low)",
+      desc: "Modelled like a long paddle. Highly favored by mechanical freestyle dribblers due to a flat, massive plane surface that produces massive torque on front-flip flicks.",
+      strengths: [
+        "Unbelievable power generation on frontflip and backflip flicks.",
+        "Long flat plane simplifies dynamic mid-air ceiling setups.",
+        "Low nose clearance slips underneath incoming defensive blocks."
+      ]
+    },
+    Breakout: {
+      title: "Breakout Class",
+      color: "#0891b2",
+      glow: "rgba(8, 145, 178, 0.25)",
+      glowLight: "rgba(8, 145, 178, 0.06)",
+      length: 131.492,
+      width: 82.187,
+      height: 30.300,
+      pivot: 12.500,
+      clearance: "10.80 cm (Ultra Low)",
+      desc: "The absolute longest and lowest profile hitbox. Ideal for players focusing on direct horizontal interceptions, sweep defense, and complex mid-air redirect redirects.",
+      strengths: [
+        "Maximum horizontal reach to intercept critical field passes.",
+        "High-performance aerial redirects and backboard taps.",
+        "Flat silhouette creates powerful mechanical leverage."
+      ]
+    },
+    Hybrid: {
+      title: "Hybrid Class",
+      color: "#059669",
+      glow: "rgba(5, 150, 105, 0.25)",
+      glowLight: "rgba(5, 150, 105, 0.06)",
+      length: 127.019,
+      width: 82.187,
+      height: 34.160,
+      pivot: 13.876,
+      clearance: "13.20 cm (Medium)",
+      desc: "A compromise balancing the tallness of the Octane with the extreme length of the Dominus. Extremely versatile for all-round support and midfield players.",
+      strengths: [
+        "Best transition profile for multi-role players.",
+        "Good visual clearance alignment while retaining decent height.",
+        "Very tight turning radius metrics under high-speed drift."
+      ]
+    },
+    Plank: {
+      title: "Plank Class",
+      color: "#d97706",
+      glow: "rgba(217, 119, 6, 0.25)",
+      glowLight: "rgba(217, 119, 6, 0.06)",
+      length: 128.820,
+      width: 84.670,
+      height: 29.390,
+      pivot: 12.150,
+      clearance: "10.20 cm (Lowest)",
+      desc: "The widest flat footprint in the game (based on the legendary Batmobile). Excellent for sweeping goalkeeper saves, extreme height flicks, and aggressive block slide tackles.",
+      strengths: [
+        "Extremely wide base sweeps up large goalie defense areas.",
+        "Generates extreme high-trajectory launch flicks.",
+        "Whip-like rotation generates immense flip power."
+      ]
+    },
+    Merc: {
+      title: "Merc Class",
+      color: "#dc2626",
+      glow: "rgba(220, 38, 38, 0.25)",
+      glowLight: "rgba(220, 38, 38, 0.06)",
+      length: 120.507,
+      width: 76.790,
+      height: 41.560,
+      pivot: 12.000,
+      clearance: "16.80 cm (Highest)",
+      desc: "The tallest class in Rocket League, representing a physical brick wall. Built for heavy kickoffs, 50-50 demolition blocks, and complete horizontal-vertical space shielding.",
+      strengths: [
+        "Total kickoff shielding - near impossible to cleanly lob.",
+        "Huge vertical wall block absorbs high-speed clearance passes.",
+        "Extreme visual presence helps track defensive alignments."
+      ]
+    }
+  };
+
+  // ── VISUALIZER ENGINE STATE ────────────────────────────────────────
+  let activeHitbox = "Octane";
+  let canvas = document.getElementById('hologram-canvas');
+  let ctx = canvas.getContext('2d');
+  
+  let yaw = 0.75;
+  let pitch = -0.4;
+  let autoSpin = true;
+  let isPerspective = true;
+  
+  let isDragging = false;
+  let previousMouse = { x: 0, y: 0 };
+  let particles = [];
+  let isGlitching = false;
+  let carCounts = {};
+  
+  let lastFrameTime = performance.now();
+  let frameCount = 0;
+  let fps = 60;
+  let fpsUpdateTimer = 0;
+
+  // ── RESIZE CANVAS ──────────────────────────────────────────────────
+  function resizeCanvas() {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
+  }
+
+  window.addEventListener('resize', resizeCanvas);
+  
+  // ── MOUSE/TOUCH INTERACTION LISTENERS ──────────────────────────────
+  canvas.addEventListener('mousedown', (e) => {
+    isDragging = true;
+    autoSpin = false;
+    document.getElementById('spinBtn').classList.remove('active');
+    previousMouse = { x: e.clientX, y: e.clientY };
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (!isDragging) return;
+    const dx = e.clientX - previousMouse.x;
+    const dy = e.clientY - previousMouse.y;
+    
+    yaw += dx * 0.008;
+    pitch = Math.max(-1.4, Math.min(1.4, pitch + dy * 0.008));
+    
+    previousMouse = { x: e.clientX, y: e.clientY };
+  });
+
+  window.addEventListener('mouseup', () => isDragging = false);
+  window.addEventListener('mouseleave', () => isDragging = false);
+
+  canvas.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 1) {
+      isDragging = true;
+      autoSpin = false;
+      document.getElementById('spinBtn').classList.remove('active');
+      previousMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+  }, { passive: true });
+
+  canvas.addEventListener('touchmove', (e) => {
+    if (!isDragging || e.touches.length !== 1) return;
+    const dx = e.touches[0].clientX - previousMouse.x;
+    const dy = e.touches[0].clientY - previousMouse.y;
+    
+    yaw += dx * 0.008;
+    pitch = Math.max(-1.4, Math.min(1.4, pitch + dy * 0.008));
+    
+    previousMouse = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  }, { passive: true });
+
+  canvas.addEventListener('touchend', () => isDragging = false);
+
+  // ── TELEMETRY HUD LOADER ───────────────────────────────────────────
+  function loadTelemetry() {
+    const data = HITBOX_DATA[activeHitbox];
+    if (!data) return;
+
+    // Set interactive styles based on active color
+    const root = document.documentElement;
+    root.style.setProperty('--active-color', data.color);
+    root.style.setProperty('--active-bg', data.glowLight);
+    root.style.setProperty('--active-glow', data.glow);
+
+    // Update active tab styling
+    document.querySelectorAll('.viz-tab-btn').forEach(btn => {
+      if (btn.getAttribute('data-hitbox') === activeHitbox) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+
+    // Load HUD fields
+    document.getElementById('hud-hitbox-title').textContent = data.title;
+    document.getElementById('hud-hitbox-desc').textContent = data.desc;
+    
+    document.getElementById('telemetry-length').textContent = `${data.length.toFixed(2)} cm`;
+    document.getElementById('telemetry-width').textContent = `${data.width.toFixed(2)} cm`;
+    document.getElementById('telemetry-height').textContent = `${data.height.toFixed(2)} cm`;
+    
+    const vol = data.length * data.width * data.height;
+    document.getElementById('telemetry-volume').textContent = `${Math.round(vol).toLocaleString()} cm³`;
+    
+    document.getElementById('telemetry-pivot').textContent = `${data.pivot.toFixed(2)} cm`;
+    document.getElementById('telemetry-clearance').textContent = data.clearance;
+
+    // Load strengths
+    const list = document.getElementById('hud-strengths-list');
+    list.innerHTML = "";
+    data.strengths.forEach(str => {
+      const li = document.createElement('li');
+      li.textContent = str;
+      list.appendChild(li);
+    });
+
+    // Update count badge from parsed grid data
+    const count = carCounts[activeHitbox] || 0;
+    document.getElementById('hud-car-count').textContent = `${count} ${count === 1 ? 'CAR' : 'CARS'}`;
+
+    // Glow highlight for matching grid card
+    document.querySelectorAll('.hitbox-card').forEach(card => {
+      card.style.borderColor = "";
+      card.style.boxShadow = "";
+    });
+    const activeGridCard = document.getElementById(`card-${activeHitbox.toLowerCase()}`);
+    if (activeGridCard) {
+      activeGridCard.style.borderColor = data.color;
+      activeGridCard.style.boxShadow = `0 4px 20px ${data.glowLight}`;
+    }
+  }
+
+  // ── TRIGGER TRANSLATIONAL GLITCH ──────────────────────────────────
+  function triggerGlitch() {
+    isGlitching = true;
+    const overlay = document.getElementById('canvasGlitch');
+    overlay.classList.add('glitching');
+    
+    const statusEl = document.getElementById('statusText');
+    if (statusEl) statusEl.textContent = "SCANNING...";
+    document.getElementById('statusText').style.color = "var(--accent)";
+
+    setTimeout(() => {
+      isGlitching = false;
+      overlay.classList.remove('glitching');
+      document.getElementById('statusText').textContent = "ACTIVE";
+      document.getElementById('statusText').style.color = "var(--win)";
+    }, 200);
+  }
+
+  // ── DYNAMIC ENTRY FUNCTION FOR VIEWER ──────────────────────────────
+  window.visualizeClass = function(className) {
+    if (!HITBOX_DATA[className]) return;
+    if (activeHitbox === className) return;
+    activeHitbox = className;
+    triggerGlitch();
+    loadTelemetry();
+    
+    // Smooth scroll visualizer into view if triggered from car grid lists
+    const container = document.querySelector('.visualizer-section');
+    if (container) {
+      const rect = container.getBoundingClientRect();
+      if (rect.top < 0 || rect.bottom > window.innerHeight) {
+        container.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  };
+
+  // ── 3D MATHEMATICS AND PROJECTION ──────────────────────────────────
+  function project(x, y, z) {
+    const rect = canvas.getBoundingClientRect();
+    const w = rect.width;
+    const h = rect.height;
+
+    // 1. Yaw rotation (Y-axis - left/right)
+    let cosY = Math.cos(yaw);
+    let sinY = Math.sin(yaw);
+    let x1 = x * cosY - z * sinY;
+    let z1 = x * sinY + z * cosY;
+    let y1 = y;
+
+    // 2. Pitch rotation (X-axis - tilt up/down)
+    let cosP = Math.cos(pitch);
+    let sinP = Math.sin(pitch);
+    let x2 = x1;
+    let y2 = y1 * cosP - z1 * sinP;
+    let z2 = y1 * sinP + z1 * cosP;
+
+    // Center coordinates
+    const cx = w / 2;
+    const cy = h / 2 + 10;
+
+    // Dynamically calculate scale based on viewport size
+    let scaleFactor = Math.min(w, h) / 250 * 1.5;
+
+    let sx, sy;
+    if (!isPerspective) {
+      // Orthographic
+      sx = cx + x2 * scaleFactor;
+      sy = cy - y2 * scaleFactor;
+    } else {
+      // Perspective projection
+      const distance = 420;
+      const fov = 350;
+      const perspective = fov / (distance + z2);
+      sx = cx + x2 * scaleFactor * perspective * 1.15;
+      sy = cy - y2 * scaleFactor * perspective * 1.15;
+    }
+
+    return { x: sx, y: sy, depth: z2 };
+  }
+
+  // ── PARTICLE SIMULATION ────────────────────────────────────────────
+  function updateParticles() {
+    const data = HITBOX_DATA[activeHitbox];
+    if (particles.length < 25 && Math.random() < 0.12) {
+      particles.push({
+        x: (Math.random() - 0.5) * 150,
+        y: -data.height / 2 - 15,
+        z: (Math.random() - 0.5) * 150,
+        vy: Math.random() * 0.4 + 0.15,
+        alpha: Math.random() * 0.5 + 0.4,
+        size: Math.random() * 1.5 + 0.5
+      });
+    }
+
+    for (let i = particles.length - 1; i >= 0; i--) {
+      let p = particles[i];
+      p.y += p.vy; // float upward
+      p.alpha -= 0.003;
+      if (p.alpha <= 0 || p.y > 100) {
+        particles.splice(i, 1);
+      }
+    }
+  }
+
+  // ── GRAPHICS DRAW PARTICLES ────────────────────────────────────────
+  function drawParticles(activeColor) {
+    ctx.save();
+    ctx.fillStyle = activeColor;
+    ctx.shadowBlur = 4;
+    ctx.shadowColor = activeColor;
+    
+    particles.forEach(p => {
+      const pt = project(p.x, p.y, p.z);
+      ctx.globalAlpha = p.alpha;
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.restore();
+  }
+
+  // ── GRAPHICS RENDER LOOP ───────────────────────────────────────────
+  function drawDimensionLines(proj, activeColor) {
+    ctx.save();
+    ctx.font = "bold 9px 'JetBrains Mono', monospace";
+    ctx.lineWidth = 1;
+    ctx.shadowBlur = 0;
+    
+    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+    ctx.fillStyle = isLight ? "#111" : "#fff";
+
+    // Helper callout drawer
+    function drawCallout(start, dx, dy, txt) {
+      ctx.strokeStyle = activeColor;
+      ctx.beginPath();
+      ctx.globalAlpha = 0.4;
+      ctx.moveTo(start.x, start.y);
+      ctx.lineTo(start.x + dx, start.y + dy);
+      ctx.lineTo(start.x + dx + (dx > 0 ? 10 : -10), start.y + dy);
+      ctx.stroke();
+
+      ctx.globalAlpha = 0.9;
+      ctx.textAlign = dx > 0 ? "left" : "right";
+      ctx.fillText(txt, start.x + dx + (dx > 0 ? 14 : -14), start.y + dy + 3);
+    }
+
+    // 1. Length Callout: Midpoint of bottom side edge [1, 2]
+    const midL = {
+      x: (proj[1].x + proj[2].x) / 2,
+      y: (proj[1].y + proj[2].y) / 2
+    };
+    drawCallout(midL, 35, -20, `L: ${HITBOX_DATA[activeHitbox].length.toFixed(1)} cm`);
+
+    // 2. Width Callout: Midpoint of bottom back edge [0, 1]
+    const midW = {
+      x: (proj[0].x + proj[1].x) / 2,
+      y: (proj[0].y + proj[1].y) / 2
+    };
+    drawCallout(midW, -35, -20, `W: ${HITBOX_DATA[activeHitbox].width.toFixed(1)} cm`);
+
+    // 3. Height Callout: Midpoint of vertical height edge [1, 5]
+    const midH = {
+      x: (proj[1].x + proj[5].x) / 2,
+      y: (proj[1].y + proj[5].y) / 2
+    };
+    drawCallout(midH, 35, 15, `H: ${HITBOX_DATA[activeHitbox].height.toFixed(1)} cm`);
+
+    ctx.restore();
+  }
+
+  function drawScene() {
+    const rect = canvas.getBoundingClientRect();
+    ctx.clearRect(0, 0, rect.width, rect.height);
+
+    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+    const activeColor = HITBOX_DATA[activeHitbox].color;
+    
+    // Ambient floating particles
+    updateParticles();
+    drawParticles(activeColor);
+
+    // Hitbox proportions
+    const l = HITBOX_DATA[activeHitbox].length;
+    const w = HITBOX_DATA[activeHitbox].width;
+    const h = HITBOX_DATA[activeHitbox].height;
+    const p = HITBOX_DATA[activeHitbox].pivot;
+    
+    const halfL = l / 2;
+    const halfW = w / 2;
+    const halfH = h / 2;
+    const zOff = -p;
+
+    // Define 8 wireframe vertices
+    const rawVerts = [
+      { x: -halfW, y: -halfH, z: -halfL + zOff }, // 0: Bottom Back Left
+      { x:  halfW, y: -halfH, z: -halfL + zOff }, // 1: Bottom Back Right
+      { x:  halfW, y: -halfH, z:  halfL + zOff }, // 2: Bottom Front Right
+      { x: -halfW, y: -halfH, z:  halfL + zOff }, // 3: Bottom Front Left
+      { x: -halfW, y:  halfH, z: -halfL + zOff }, // 4: Top Back Left
+      { x:  halfW, y:  halfH, z: -halfL + zOff }, // 5: Top Back Right
+      { x:  halfW, y:  halfH, z:  halfL + zOff }, // 6: Top Front Right
+      { x: -halfW, y:  halfH, z:  halfL + zOff }  // 7: Top Front Left
+    ];
+
+    // Project coordinates
+    const proj = rawVerts.map(v => project(v.x, v.y, v.z));
+
+    // A. Concentric circular telemetry grids on floor
+    ctx.save();
+    ctx.strokeStyle = activeColor;
+    const rings = [65, 110, 150];
+    rings.forEach(radius => {
+      ctx.beginPath();
+      ctx.globalAlpha = isLight ? 0.08 : 0.12;
+      const segs = 32;
+      for (let i = 0; i <= segs; i++) {
+        const theta = (i / segs) * Math.PI * 2;
+        const gx = Math.cos(theta) * radius;
+        const gz = Math.sin(theta) * radius + zOff;
+        const pt = project(gx, -halfH - 15, gz);
+        if (i === 0) ctx.moveTo(pt.x, pt.y);
+        else ctx.lineTo(pt.x, pt.y);
+      }
+      ctx.stroke();
+    });
+    ctx.restore();
+
+    // B. Draw wireframe Box faces (Semi-solid cyber look)
+    const faces = [
+      [0, 1, 5, 4], // back
+      [1, 2, 6, 5], // right
+      [2, 3, 7, 6], // front
+      [3, 0, 4, 7], // left
+      [4, 5, 6, 7], // top
+      [0, 1, 2, 3]  // bottom
+    ];
+
+    // Simple face depth sorting to render semi-transparency accurately
+    const sortedFaces = faces.map((face, idx) => {
+      const avgD = (proj[face[0]].depth + proj[face[1]].depth + proj[proj[face[2]] ? proj[face[2]].depth : proj[face[0]].depth] + proj[face[3]].depth) / 4;
+      return { idx, depth: avgD };
+    }).sort((a, b) => b.depth - a.depth);
+
+    sortedFaces.forEach(fData => {
+      const face = faces[fData.idx];
+      ctx.beginPath();
+      ctx.moveTo(proj[face[0]].x, proj[face[0]].y);
+      ctx.lineTo(proj[face[1]].x, proj[face[1]].y);
+      ctx.lineTo(proj[face[2]].x, proj[face[2]].y);
+      ctx.lineTo(proj[face[3]].x, proj[face[3]].y);
+      ctx.closePath();
+      
+      ctx.save();
+      ctx.globalAlpha = isLight ? 0.02 : 0.035;
+      ctx.fillStyle = activeColor;
+      ctx.fill();
+      
+      ctx.globalAlpha = isLight ? 0.12 : 0.25;
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = activeColor;
+      ctx.stroke();
+      ctx.restore();
+    });
+
+    // C. Draw glowing main grid edges
+    const edges = [
+      [0, 1], [1, 2], [2, 3], [3, 0], // bottom
+      [4, 5], [5, 6], [6, 7], [7, 4], // top
+      [0, 4], [1, 5], [2, 6], [3, 7]  // vertical pillars
+    ];
+
+    ctx.save();
+    ctx.beginPath();
+    edges.forEach(([u, v]) => {
+      ctx.moveTo(proj[u].x, proj[u].y);
+      ctx.lineTo(proj[v].x, proj[v].y);
+    });
+    ctx.strokeStyle = activeColor;
+    ctx.lineWidth = 2.2;
+    ctx.globalAlpha = 0.8;
+    ctx.shadowBlur = isLight ? 2 : 12;
+    ctx.shadowColor = activeColor;
+    ctx.stroke();
+    ctx.restore();
+
+    // D. Static Glitch Noise Effect (flashing horizontal lines)
+    if (isGlitching) {
+      ctx.save();
+      ctx.strokeStyle = activeColor;
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = 0.3;
+      for (let i = 0; i < rect.height; i += Math.random() * 25 + 5) {
+        ctx.beginPath();
+        ctx.moveTo(0, i);
+        ctx.lineTo(rect.width, i + (Math.random() - 0.5) * 8);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    // E. Engineering Dimension arrow callouts
+    drawDimensionLines(proj, activeColor);
+  }
+
+  function loop() {
+    // FPS tracking
+    const now = performance.now();
+    frameCount++;
+    if (now - lastFrameTime >= 1000) {
+      fps = Math.round((frameCount * 1000) / (now - lastFrameTime));
+      frameCount = 0;
+      lastFrameTime = now;
+      document.getElementById('fpsCounter').textContent = `${fps} FPS`;
+    }
+
+    // Auto yaw-spin
+    if (autoSpin) {
+      yaw += 0.0065;
+    }
+
+    drawScene();
+    requestAnimationFrame(loop);
+  }
+
+  // ── INIT & INTERFACE BINDINGS ──────────────────────────────────────
+  function init() {
+    // 1. Scrape car counts from grid elements to represent real data
+    document.querySelectorAll('.hitbox-card').forEach(card => {
+      const cls = card.querySelector('.hitbox-class-name').textContent.trim();
+      const cntStr = card.querySelector('.hitbox-count').textContent.trim();
+      const cnt = parseInt(cntStr) || 0;
+      carCounts[cls] = cnt;
+    });
+
+    // 2. Set up initial canvas size
+    resizeCanvas();
+
+    // 3. Bind Visualizer Tabs clicks
+    document.querySelectorAll('.viz-tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const hitboxClass = btn.getAttribute('data-hitbox');
+        visualizeClass(hitboxClass);
+      });
+    });
+
+    // 4. Bind Card Header clicks programmatically
+    document.querySelectorAll('.card-header-click').forEach(header => {
+      header.addEventListener('click', () => {
+        const cls = header.getAttribute('data-hitbox');
+        visualizeClass(cls);
+      });
+    });
+
+    // 5. Bind Car Item clicks programmatically
+    document.querySelectorAll('.car-item-click').forEach(item => {
+      item.addEventListener('click', () => {
+        const cls = item.getAttribute('data-hitbox');
+        visualizeClass(cls);
+      });
+    });
+
+    // 6. Bind Control buttons clicks
+    document.getElementById('spinBtn').addEventListener('click', (e) => {
+      autoSpin = !autoSpin;
+      e.currentTarget.classList.toggle('active', autoSpin);
+    });
+
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      yaw = 0.75;
+      pitch = -0.4;
+      autoSpin = false;
+      document.getElementById('spinBtn').classList.remove('active');
+    });
+
+    document.getElementById('modeBtn').addEventListener('click', (e) => {
+      isPerspective = !isPerspective;
+      e.currentTarget.classList.toggle('active', !isPerspective);
+      e.currentTarget.textContent = isPerspective ? "📐 Perspective" : "📐 Ortho";
+      triggerGlitch();
+    });
+
+    // 7. Initialize telemetry load
+    loadTelemetry();
+
+    // 8. Connect auto-load if search parameters was triggered
+    const searchRes = document.getElementById('searchResult');
+    if (searchRes) {
+      const targetHitbox = searchRes.getAttribute('data-hitbox');
+      if (targetHitbox && HITBOX_DATA[targetHitbox]) {
+        // Delay slightly for glorious visual arrival entry animation
+        setTimeout(() => {
+          visualizeClass(targetHitbox);
+        }, 300);
+      }
+    }
+
+    // 9. Start render loop
+    requestAnimationFrame(loop);
+  }
+
+  // Fire engine after DOM load
+  document.addEventListener('DOMContentLoaded', init);
+</script>
 {% endblock %}

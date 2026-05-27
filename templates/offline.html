@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Offline — RocketCanvas</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #030308; --surface: #1a1535; --border: #3d3875;
+      --accent: #b06eff; --accent2: #7c3aed; --accent3: #d09fff;
+      --accent-glow: rgba(176,110,255,0.22);
+      --text: #ffffff; --muted: #94a3b8;
+      --ui: 'Inter', sans-serif; --mono: 'JetBrains Mono', monospace;
+      --radius2: 12px; --t: 0.2s ease;
+    }
+    [data-theme="light"] {
+      --bg: #eeeaf8; --surface: #ffffff; --border: #d8d0f5;
+      --accent: #7c3aed; --accent2: #6d28d9; --accent3: #9333ea;
+      --accent-glow: rgba(124,58,237,0.14);
+      --text: #000000; --muted: #475569;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg); color: var(--text); font-family: var(--ui);
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      transition: background var(--t), color var(--t);
+    }
+    .offline-card {
+      text-align: center; padding: 3rem 2.5rem;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius2); max-width: 420px; width: 90%;
+      animation: fadeIn 0.5s ease both;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .offline-icon {
+      font-size: 3.5rem; margin-bottom: 1.25rem;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(0.95); }
+    }
+    .offline-title {
+      font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;
+      background: linear-gradient(135deg, var(--accent3), var(--accent), var(--accent2));
+      -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .offline-msg {
+      font-size: 0.88rem; color: var(--muted); font-family: var(--mono);
+      line-height: 1.7; margin-bottom: 1.75rem;
+    }
+    .btn-retry {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      padding: 0.7rem 2rem; font-family: var(--ui); font-weight: 700;
+      font-size: 0.88rem; letter-spacing: 0.08em; text-transform: uppercase;
+      border: none; cursor: pointer; border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff; box-shadow: 0 4px 20px rgba(168,85,247,0.3);
+      transition: all var(--t);
+    }
+    .btn-retry:hover {
+      box-shadow: 0 6px 28px rgba(168,85,247,0.5);
+      transform: translateY(-2px); filter: brightness(1.1);
+    }
+    .btn-retry:active { transform: translateY(0); }
+  </style>
+</head>
+<body>
+  <div class="offline-card">
+    <div class="offline-icon">📡</div>
+    <h1 class="offline-title">You're Offline</h1>
+    <p class="offline-msg">
+      It looks like you've lost your connection.<br/>
+      Check your network and try again.
+    </p>
+    <button class="btn-retry" onclick="window.location.reload()">↻ Retry</button>
+  </div>
+  <script>
+    // Apply stored theme
+    (function() {
+      const stored = localStorage.getItem('rc-theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', stored);
+    })();
+  </script>
+</body>
+</html>

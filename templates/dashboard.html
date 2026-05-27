@@ -223,6 +223,7 @@
 
   <!-- Chart.js scripts -->
   <script nonce="{{ nonce }}">
+    rcChartsReady(function() {
     const replays = {{ replays | tojson }};
     const player  = {{ player  | tojson }};
 
@@ -234,12 +235,14 @@
 
     const baseScales = {
       x: {
-        ticks: { color: TICK_COLOR, font: { family: UI_FONT, size: 10, weight: 500 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 8 },
-        grid: { color: 'rgba(148, 163, 184, 0.12)', drawBorder: false }
+        ticks: { color: TICK_COLOR, font: { family: UI_FONT, size: 10 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 8 },
+        grid: { color: 'rgba(148, 163, 184, 0.12)' },
+        border: { display: false }
       },
       y: {
-        ticks: { color: TICK_COLOR, font: { family: UI_FONT, size: 10, weight: 500 } },
-        grid: { color: 'rgba(148, 163, 184, 0.16)', drawBorder: false }
+        ticks: { color: TICK_COLOR, font: { family: UI_FONT, size: 10 } },
+        grid: { color: 'rgba(148, 163, 184, 0.16)' },
+        border: { display: false }
       }
     };
 
@@ -247,7 +250,7 @@
       responsive: true,
       maintainAspectRatio: false,
       interaction: { mode: 'index', intersect: false },
-      animation: { duration: 500, easing: 'easeOutQuart' },
+      animation: { duration: 500, easing: 'easeOutQuad' },
       plugins: {
         legend: { display: false },
         tooltip: {
@@ -410,6 +413,7 @@
         chart.options.scales.y.ticks.color = refreshedTick;
         chart.update();
       });
+    });
     });
   </script>
 

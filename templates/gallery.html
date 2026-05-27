@@ -77,37 +77,121 @@
 
   /* Gallery Grid */
   .gallery-grid {
-    column-count: 3;
-    column-gap: 1.5rem;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
   }
-  @media(max-width: 900px) { .gallery-grid { column-count: 2; } }
-  @media(max-width: 600px) { .gallery-grid { column-count: 1; } }
+  @media(max-width: 900px) { .gallery-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media(max-width: 600px) { .gallery-grid { grid-template-columns: 1fr; } }
   
+    /* Purple Trading Card Styles */
   .design-card {
-    break-inside: avoid;
-    margin-bottom: 1.5rem;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius2);
+    background: linear-gradient(145deg, #1f0b3e, #0e0520);
+    border: 3px solid #7c3aed;
+    border-radius: 16px;
     overflow: hidden;
-    transition: border-color var(--t), transform var(--t), box-shadow var(--t);
+    position: relative;
+    box-shadow: 0 10px 30px rgba(124, 58, 237, 0.4), inset 0 0 20px rgba(176, 110, 255, 0.2);
+    transform-style: preserve-3d;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
   }
-  .design-card:hover {
-    border-color: var(--accent);
-    transform: translateY(-4px);
-    box-shadow: 0 12px 32px rgba(168,85,247,0.15);
+  
+  .design-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 50%);
+    pointer-events: none;
+    z-index: 2;
   }
+
+  .design-card::after {
+    content: '★ LEGENDARY';
+    position: absolute;
+    top: 10px; right: -30px;
+    background: #b06eff;
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 800;
+    padding: 0.2rem 2rem;
+    transform: rotate(45deg);
+    z-index: 3;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+  }
+
+  .design-img-container {
+    padding: 10px;
+    background: #000;
+    border-bottom: 2px solid #7c3aed;
+  }
+
   .design-img {
     width: 100%;
+    aspect-ratio: 16 / 10;
     display: block;
     object-fit: cover;
-    border-bottom: 1px solid var(--border);
+    border-radius: 8px;
+    border: 1px solid #3d3875;
   }
-  .design-info { padding: 1rem; }
-  .design-title { font-weight: 700; font-size: 1.1rem; margin-bottom: 0.25rem; }
-  .design-meta { font-size: 0.8rem; color: var(--muted); display: flex; justify-content: space-between;}
-  .design-author { color: var(--accent3); font-weight: 600; }
+
+  .design-info { 
+    padding: 1rem; 
+    text-align: center;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+  }
   
+  .design-title { 
+    font-weight: 800; 
+    font-size: 1.25rem; 
+    margin-bottom: 0.5rem; 
+    text-transform: uppercase;
+    color: #fff;
+    text-shadow: 0 0 10px rgba(176,110,255,0.8);
+    transform: translateZ(20px);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  .design-meta { 
+    font-size: 0.85rem; 
+    color: var(--muted); 
+    display: flex; 
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-top: auto;
+  }
+  
+  .design-author { 
+    color: #d09fff; 
+    font-weight: 700; 
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  
+  .card-stats {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1rem;
+    border-top: 1px solid rgba(124, 58, 237, 0.3);
+    padding-top: 0.75rem;
+  }
+  .stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: var(--mono);
+  }
+  .stat-val { font-size: 1.1rem; font-weight: 700; color: #10e88a; }
+  .stat-label { font-size: 0.6rem; color: var(--muted); text-transform: uppercase; }
+
   .empty-state {
     text-align: center; padding: 4rem 2rem;
     color: var(--muted); font-size: 1.1rem;
@@ -118,8 +202,8 @@
 
 <div class="gallery-header">
   <div>
-    <h1 class="gallery-title">Car Design Gallery</h1>
-    <p style="color: var(--muted); margin-top: 0.25rem;">Browse and share your custom Rocket League presets.</p>
+    <h1 class="gallery-title">Trading Card Gallery</h1>
+    <p style="color: var(--muted); margin-top: 0.25rem;">Browse and share your custom Rocket League presets in style.</p>
   </div>
   <button class="upload-btn" id="openUploadModalBtn">
     + Upload Design
@@ -129,13 +213,19 @@
 {% if designs %}
   <div class="gallery-grid">
     {% for design in designs %}
-      <div class="design-card">
-        <img src="{{ url_for('static', filename='uploads/designs/' ~ design.image_filename) }}" alt="{{ design.title }}" class="design-img" loading="lazy"/>
+      <div class="design-card" data-tilt data-tilt-max="15" data-tilt-speed="400" data-tilt-perspective="500" data-tilt-glare data-tilt-max-glare="0.5">
+        <div class="design-img-container">
+          <img src="{{ url_for('static', filename='uploads/designs/' ~ design.image_filename) }}" alt="{{ design.title }}" class="design-img" loading="lazy"/>
+        </div>
         <div class="design-info">
           <div class="design-title">{{ design.title }}</div>
           <div class="design-meta">
-            <span>By <span class="design-author">{{ design.user.username }}</span></span>
+            <span>Minted By <span class="design-author">{{ design.user.username }}</span></span>
             <span>{{ design.created_at.strftime('%b %d, %Y') }}</span>
+          </div>
+          <div class="card-stats">
+            <div class="stat"><span class="stat-val">99</span><span class="stat-label">Aesthetics</span></div>
+            <div class="stat"><span class="stat-val">S+</span><span class="stat-label">Tier</span></div>
           </div>
         </div>
       </div>
@@ -185,4 +275,5 @@
     if (e.target === this) this.classList.remove('active');
   });
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.1/vanilla-tilt.min.js"></script>
 {% endblock %}

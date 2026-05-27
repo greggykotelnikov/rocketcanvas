@@ -1,0 +1,26 @@
+{
+  "id": "/",
+  "name": "RocketCanvas",
+  "short_name": "RocketCanvas",
+  "description": "Rocket League stats, hitbox lookup, and player analytics",
+  "start_url": "/dashboard",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#030308",
+  "background_color": "#030308",
+  "icons": [
+    {
+      "src": "/static/images/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/images/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

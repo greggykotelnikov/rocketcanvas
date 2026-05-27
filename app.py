@@ -4,7 +4,7 @@ from collections import defaultdict
 from datetime import datetime
 from functools import lru_cache
 
-from flask import Flask, flash, request, render_template, redirect, url_for
+from flask import Flask, flash, request, render_template, redirect, url_for, send_from_directory
 from flask_login import LoginManager, login_required, current_user
 from flask_mail import Mail
 from flask_bcrypt import Bcrypt
@@ -108,7 +108,8 @@ def add_security_headers(response):
         f"style-src 'self' 'nonce-{nonce}' fonts.googleapis.com; "
         "font-src fonts.gstatic.com; "
         "img-src 'self' data:; "
-        "connect-src 'self';"
+        "connect-src 'self'; "
+        "worker-src 'self';"
     )
     response.headers.pop("Server", None)
     return response
@@ -117,7 +118,26 @@ def add_security_headers(response):
 # ── Helper ─────────────────────────────────────────────────────────────
 def allowed_image(filename: str) -> bool:
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_IMAGE_EXT
-# ── Routes ─────────────────────────────────────────────────────────────
+# ── PWA Routes ─────────────────────────────────────────────────────
+@app.route("/manifest.json")
+def manifest():
+    return send_from_directory(app.static_folder, "manifest.json",
+                               mimetype="application/manifest+json")
+
+@app.route("/sw.js")
+def service_worker():
+    response = send_from_directory(app.static_folder, "sw.js",
+                                    mimetype="application/javascript")
+    response.headers["Service-Worker-Allowed"] = "/"
+    response.headers["Cache-Control"] = "no-cache"
+    return response
+
+@app.route("/offline")
+def offline():
+    return render_template("offline.html")
+
+
+# ── Routes ─────────────────────────────────────────────────────────
 @app.route("/")
 def index():
     return redirect(url_for("login"))
@@ -475,6 +495,8 @@ def hitbox_lookup():
 @login_required
 def recommend():
     return render_template("recommend.html")
+
+
 
 
 if __name__ == "__main__":

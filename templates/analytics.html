@@ -212,9 +212,11 @@
 
   <!-- Chart.js ────────────────────────────────────────────────────── -->
   <script nonce="{{ nonce }}">
+    rcChartsReady(function() {
     Chart.defaults.maintainAspectRatio = false;
     Chart.defaults.responsive = true;
 
+    const SURFACE      = getComputedStyle(document.documentElement).getPropertyValue('--surface').trim() || '#1e1842';
     const PURPLE       = '#b06eff';
     const PURPLE_DIM   = 'rgba(176,110,255,0.1)';
     const PURPLE_BAR   = 'rgba(176,110,255,0.55)';
@@ -276,7 +278,7 @@
         datasets: [{
           data: plValues,
           backgroundColor: ['#a855f7','#7c3aed','#c084fc','#6d28d9','#ddd6fe','#4c1d95'],
-          borderColor: 'var(--surface)',
+          borderColor: SURFACE,
           borderWidth: 2,
           hoverOffset: 6
         }]
@@ -450,6 +452,7 @@
           y: { ...baseAxis.y, beginAtZero: true, ticks: { ...baseAxis.y.ticks, stepSize: 1 } }
         }
       }
+    });
     });
   </script>
 
