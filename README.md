@@ -1,6 +1,6 @@
 # 🚀 RocketCanvas
 
-> A Rocket League stat tracker, hitbox lookup tool, and player analytics dashboard — powered by [ballchasing.com](https://ballchasing.com).
+> A Rocket League stat tracker, hitbox lookup tool, and player analytics dashboard which is powered by [ballchasing.com](https://ballchasing.com).
 
 ---
 
@@ -54,7 +54,7 @@ BALLCHASING_TOKEN=your-ballchasing-api-token
 ### 4. Seed the hitbox database
 
 ```bash
-python seed_hitboxes.py
+python seed_hitboxes.py #upd: does not work since my ML model from teachable machine did not prove to be a successful solution due to the lack of angles and cases for each of the car hitboxes.
 ```
 
 ### 5. Run
