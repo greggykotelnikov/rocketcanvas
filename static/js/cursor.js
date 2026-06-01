@@ -87,8 +87,8 @@
 
     // Audio smooth volume transition
     if (audioUnlocked) {
-      targetVolume = Math.max(0.05, targetVolume - 0.005); // Fade out much slower, keep a baseline hum
-      boostAudio.volume += (targetVolume - boostAudio.volume) * 0.1;
+      targetVolume = Math.max(0, targetVolume - 0.015); // Fade out completely to 0 when not moving
+      boostAudio.volume += (targetVolume - boostAudio.volume) * 0.15;
     }
 
     // Update and draw particles

@@ -6,17 +6,13 @@
   pointer-events: none;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  justify-content: center;
+  align-items: center;
   transform: translateX(-100%);
-  transition: transform 0.65s cubic-bezier(0.85, 0, 0.15, 1);
+  transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
   overflow: hidden;
-
-  /* Cute pastel backdrop (no harsh checkerboard) */
-  background:
-    radial-gradient(circle at 18% 25%, rgba(208, 159, 255, 0.50) 0%, transparent 42%),
-    radial-gradient(circle at 82% 35%, rgba(124, 58, 237, 0.35) 0%, transparent 45%),
-    radial-gradient(circle at 55% 80%, rgba(255, 170, 221, 0.22) 0%, transparent 48%),
-    linear-gradient(180deg, #f6f0ff 0%, #efe7ff 40%, #eadfff 100%);
+  background: radial-gradient(circle at center, #140d30 0%, #030308 100%);
 }
 
 #mk-loader.active {
@@ -28,93 +24,33 @@
   transform: translateX(100%);
 }
 
-.mk-brand {
-  position: absolute;
-  top: 38%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-family: var(--ui, 'Inter', sans-serif);
-  font-size: clamp(2rem, 8vw, 4rem);
-  font-weight: 900;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: #2b1a5c;
-  opacity: 0.18;
-  white-space: nowrap;
-  user-select: none;
-}
-
-.mk-parade {
-  position: relative;
-  width: 100%;
-  height: 140px;
-  /* Candy-road */
-  background:
-    linear-gradient(180deg, rgba(43, 26, 92, 0.95) 0%, rgba(15, 10, 40, 0.98) 100%);
-  border-top: 5px solid var(--accent, #b06eff);
-  border-bottom: 5px solid var(--accent, #b06eff);
-  box-shadow: 0 -8px 40px rgba(124, 58, 237, 0.35);
-  overflow: hidden;
-  isolation: isolate;
-}
-
-.mk-parade::before {
+/* Ambient glow blob behind the GIF */
+#mk-loader::before {
   content: '';
   position: absolute;
-  inset: 0;
-  background:
-    /* lane lines */
-    repeating-linear-gradient(90deg, rgba(255,255,255,0.0) 0 44px, rgba(255,255,255,0.10) 44px 46px),
-    /* sparkles */
-    radial-gradient(circle at 15% 35%, rgba(208,159,255,0.35) 0 2px, transparent 3px),
-    radial-gradient(circle at 32% 70%, rgba(255,255,255,0.18) 0 1px, transparent 2px),
-    radial-gradient(circle at 65% 40%, rgba(255,170,221,0.20) 0 2px, transparent 3px),
-    radial-gradient(circle at 85% 75%, rgba(208,159,255,0.25) 0 2px, transparent 3px);
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, rgba(176, 110, 255, 0.25) 0%, transparent 70%);
+  filter: blur(50px);
   pointer-events: none;
-  opacity: 0.9;
   z-index: 0;
 }
 
-.mk-car {
-  position: absolute;
-  width: 86px;
-  height: auto;
-  left: -90px;
-  /* Make cars visible: white/purple sticker style */
-  filter:
-    saturate(0)
-    brightness(0)
-    invert(1)
-    drop-shadow(0 2px 0 rgba(0, 0, 0, 0.45))
-    drop-shadow(0 0 14px rgba(176, 110, 255, 0.55));
-  opacity: 0.98;
-  animation: mkRaceRight 1.2s cubic-bezier(0.25, 0.1, 0.25, 1) infinite;
-  will-change: transform;
+.mk-gif-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 90vw;
+  max-width: 620px;
   z-index: 1;
 }
 
-/* 3 “lanes” (repeat) */
-.mk-car.lane-1 { bottom: 18px; }
-.mk-car.lane-2 { bottom: 42px; opacity: 0.85; }
-.mk-car.lane-3 { bottom: 30px; opacity: 0.78; transform: translateX(0) scale(0.92); }
-
-/* Small bob to feel more “kart-y” */
-.mk-car { animation-name: mkRaceRight, mkBob; }
-@keyframes mkBob {
-  0%, 100% { margin-bottom: 0; }
-  50% { margin-bottom: 4px; }
-}
-
-@keyframes mkRaceRight {
-  0% {
-    transform: translateX(0) scaleX(1);
-  }
-  100% {
-    transform: translateX(calc(100vw + 180px)) scaleX(1);
-  }
-}
-
-/* Re-run parade when loader becomes active */
-#mk-loader.active .mk-car {
-  animation-name: mkRaceRight;
+.mk-gif {
+  width: 100%;
+  height: auto;
+  border-radius: 16px;
+  border: 2px solid rgba(176, 110, 255, 0.35);
+  box-shadow: 
+    0 15px 35px rgba(0, 0, 0, 0.5),
+    0 0 25px rgba(176, 110, 255, 0.25);
 }

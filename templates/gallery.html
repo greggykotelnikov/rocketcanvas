@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Design Gallery — RocketCanvas{% endblock %}
+{% block title %}Design Gallery: RocketCanvas{% endblock %}
 {% block content %}
 <style nonce="{{ nonce }}">
   .gallery-header {
@@ -213,9 +213,10 @@
 {% if designs %}
   <div class="gallery-grid">
     {% for design in designs %}
-      <div class="design-card" data-tilt data-tilt-max="15" data-tilt-speed="400" data-tilt-perspective="500" data-tilt-glare data-tilt-max-glare="0.5">
-        <div class="design-img-container">
+      <div class="design-card {{ design.card_template }}" data-tilt data-tilt-max="15" data-tilt-speed="400" data-tilt-perspective="500" data-tilt-glare data-tilt-max-glare="0.5">
+        <div class="design-img-container" style="position: relative;">
           <img src="{{ url_for('static', filename='uploads/designs/' ~ design.image_filename) }}" alt="{{ design.title }}" class="design-img" loading="lazy"/>
+          {% if design.overlay_title %}<div class="overlay-title">{{ design.overlay_title }}</div>{% endif %}
         </div>
         <div class="design-info">
           <div class="design-title">{{ design.title }}</div>
@@ -249,15 +250,31 @@
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
       
       <div class="field">
-        <label>Design Title</label>
-        <input type="text" name="title" class="input" placeholder="e.g. Neon Cyberpunk Fennec" required maxlength="150"/>
-      </div>
-      
-      <div class="field">
-        <label>Image</label>
-        <input type="file" name="design_image" class="input" accept="image/*" required style="padding: 0.5rem;"/>
-        <div class="hint-text">Supported: PNG, JPG, WEBP.</div>
-      </div>
+  <label>Design Title</label>
+  <input type="text" name="title" class="input" placeholder="e.g. Neon Cyberpunk Fennec" required maxlength="150"/>
+</div>
+
+<div class="field">
+  <label>Image</label>
+  <input type="file" name="design_image" class="input" accept="image/*" required style="padding: 0.5rem;"/>
+  <div class="hint-text">Supported: PNG, JPG, WEBP.</div>
+</div>
+
+<div class="field">
+  <label>Card Template</label>
+  <select name="card_template" class="input" required>
+    <option value="legendary" selected>Legendary (default)</option>
+    <option value="golden">Golden Rarity</option>
+    <option value="chroma">Chroma Sparkle</option>
+    <option value="carbon">Carbon Fiber</option>
+    <option value="holographic">Holographic</option>
+  </select>
+</div>
+
+<div class="field">
+  <label>Overlay Title (optional)</label>
+  <input type="text" name="overlay_title" class="input" placeholder="Goal Machine" maxlength="100"/>
+</div>
       
       <button type="submit" class="upload-btn" style="width: 100%; margin-top: 1rem;">Submit Design</button>
     </form>

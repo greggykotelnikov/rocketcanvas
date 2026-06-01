@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Profile — RocketCanvas{% endblock %}
+{% block title %}Profile: RocketCanvas{% endblock %}
 {% block content %}
 <style nonce="{{ nonce }}">
   /* ── PROFILE HEADER ─────────────────────────────────────────────── */
@@ -231,7 +231,7 @@
 <!-- Preset Avatars -->
 <div class="card">
   <div class="section-title">Choose an Avatar</div>
-  <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 1rem;">Select one of our stylish placeholder avatars.</p>
+  <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 1rem;">Select one of RocketCanvas' stylish placeholder avatars.</p>
   <form method="POST" action="{{ url_for('set_preset_avatar') }}" style="display: flex; gap: 1rem; flex-wrap: wrap;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
     

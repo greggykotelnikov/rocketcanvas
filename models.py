@@ -34,6 +34,9 @@ class CarDesign(db.Model):
     user_id        = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     title          = db.Column(db.String(150), nullable=False)
     image_filename = db.Column(db.String(255), nullable=False)
+    # New fields for custom card styling
+    card_template  = db.Column(db.String(50), nullable=False, default='legendary')
+    overlay_title  = db.Column(db.String(100), nullable=True)
     created_at     = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Relationship to user

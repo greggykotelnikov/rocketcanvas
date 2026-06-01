@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Analytics — RocketCanvas{% endblock %}
+{% block title %}Analytics: RocketCanvas{% endblock %}
 {% block content %}
 <style nonce="{{ nonce }}">
   /* ── HEADER ─────────────────────────────────────────────────────── */
@@ -89,7 +89,7 @@
 
 <div class="analytics-header">
   <div class="analytics-title">Analytics</div>
-  <div class="analytics-sub">deep dive into performance data — win rates, maps, activity patterns</div>
+  <div class="analytics-sub">deep dive into performance data such as win rates, maps and activity patterns</div>
   <form class="search-row" method="GET" action="{{ url_for('analytics') }}">
     <input class="input" type="text" id="analyticsSearch" name="player"
       placeholder="Enter player name…"

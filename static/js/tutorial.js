@@ -97,6 +97,7 @@ function runTour(pageKey, seenPages) {
         <div class="p5-box-bg">
           <div class="p5-text" id="p5-text"></div>
           <div class="p5-options" id="p5-options" style="display:none;"></div>
+          <div class="p5-next-indicator" id="p5-next-indicator" style="display:none;">▼</div>
         </div>
       </div>
     </div>
@@ -108,6 +109,7 @@ function runTour(pageKey, seenPages) {
   const optionsArea = document.getElementById('p5-options');
   const portrait = document.getElementById('p5-portrait');
   const highlightMask = document.getElementById('p5-highlight-mask');
+  const nextIndicator = document.getElementById('p5-next-indicator');
   // --- Voice Loading (prefer natural-sounding system voices) ---
   let femaleVoice = null;
   let maleVoice = null;
@@ -200,12 +202,59 @@ function runTour(pageKey, seenPages) {
 
   // --- Typewriter (ALWAYS speaks) ---
   let typeTimer;
+  let isTyping = false;
+  let currentFullText = "";
+  let typingCallback = null;
+  let proceedCallback = null;
+
+  // Add click to proceed/skip handler
+  const boxBg = container.querySelector('.p5-box-bg');
+  boxBg.style.cursor = 'pointer';
+  boxBg.addEventListener('click', (e) => {
+    // Ignore click if clicking on option buttons or options container
+    if (e.target.closest('.p5-options') || e.target.closest('.p5-option-btn')) {
+      return;
+    }
+    ensureAudioCtx();
+
+    if (isTyping) {
+      // Skip typewriter animation
+      clearInterval(typeTimer);
+      textArea.innerHTML = currentFullText;
+      portrait.classList.remove('talking');
+      isTyping = false;
+      
+      // Only show next indicator if options are not visible
+      if (nextIndicator && optionsArea.style.display === 'none') {
+        nextIndicator.style.display = 'block';
+      }
+      
+      if (typingCallback) {
+        const cb = typingCallback;
+        typingCallback = null;
+        cb();
+      }
+    } else {
+      // Advance dialogue
+      if (proceedCallback) {
+        const cb = proceedCallback;
+        proceedCallback = null;
+        if (nextIndicator) nextIndicator.style.display = 'none';
+        cb();
+      }
+    }
+  });
 
   function typeText(text, callback) {
     textArea.innerHTML = '';
     optionsArea.style.display = 'none';
+    if (nextIndicator) nextIndicator.style.display = 'none';
     portrait.classList.add('talking');
-    speak(text); // <-- This is the fix: every line gets spoken
+    speak(text); 
+
+    isTyping = true;
+    currentFullText = text;
+    typingCallback = callback;
 
     let i = 0;
     clearInterval(typeTimer);
@@ -216,7 +265,18 @@ function runTour(pageKey, seenPages) {
       if (i >= text.length) {
         clearInterval(typeTimer);
         portrait.classList.remove('talking');
-        if (callback) callback();
+        isTyping = false;
+        
+        // Only show next indicator if options are not visible
+        if (nextIndicator && optionsArea.style.display === 'none') {
+          nextIndicator.style.display = 'block';
+        }
+        
+        if (typingCallback) {
+          const cb = typingCallback;
+          typingCallback = null;
+          cb();
+        }
       }
     }, 30);
   }
@@ -244,6 +304,12 @@ function runTour(pageKey, seenPages) {
     container.classList.remove('active');
     highlightMask.classList.remove('active');
     bindTourReplayButton(pageKey);
+
+    // Reset state
+    proceedCallback = null;
+    typingCallback = null;
+    isTyping = false;
+    if (nextIndicator) nextIndicator.style.display = 'none';
   }
 
   // Helper: chain multiple lines then show options
@@ -254,7 +320,11 @@ function runTour(pageKey, seenPages) {
     }
     const [first, ...rest] = lines;
     typeText(first, () => {
-      setTimeout(() => chainLines(rest, optionsToShow), 800);
+      if (rest.length > 0 || optionsToShow) {
+        proceedCallback = () => chainLines(rest, optionsToShow);
+      } else {
+        proceedCallback = finishTutorial;
+      }
     });
   }
 
@@ -399,7 +469,7 @@ function runTour(pageKey, seenPages) {
         }},
         { text: "Dominus for life.", action: () => {
           typeText("Respect. Long hood, clean flicks. You get it.", () => {
-            setTimeout(finishTutorial, 2200);
+            proceedCallback = finishTutorial;
           });
         }}
       ]);

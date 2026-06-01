@@ -1,0 +1,1420 @@
+{% extends "base.html" %}
+{% block title %}Pitch Heatmap — RocketCanvas{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="{{ url_for('static', filename='css/card_templates.css') }}">
+{% endblock %}
+{% block content %}
+<style nonce="{{ nonce }}">
+  /* PAGE LAYOUT */
+  .heatmap-page-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .heatmap-page-header h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--text) 30%, var(--accent3) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 0.4rem;
+    line-height: 1.15;
+  }
+  .heatmap-page-header p {
+    font-size: 0.85rem;
+    color: var(--muted);
+    font-family: var(--ui);
+  }
+
+  .heatmap-grid-layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 1.75rem;
+    margin-bottom: 2rem;
+    align-items: start;
+  }
+
+  @media(max-width: 1024px) {
+    .heatmap-grid-layout {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* SIDEBAR STICKY */
+  .heatmap-control-sidebar {
+    position: sticky;
+    top: 72px;
+  }
+  @media(max-width: 1024px) {
+    .heatmap-control-sidebar { position: static; }
+  }
+
+  /* GLASS CARD */
+  .glass-card {
+    background: rgba(30, 24, 66, 0.5);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--border);
+    border-radius: var(--radius2);
+    padding: 1.25rem 1.25rem;
+    margin-bottom: 0.875rem;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+    transition: border-color var(--t), box-shadow var(--t);
+  }
+  .glass-card:hover {
+    border-color: var(--border2);
+    box-shadow: 0 6px 24px rgba(124, 58, 237, 0.12);
+  }
+
+  .card-title-sm {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* UPLOAD ZONE */
+  .drop-zone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1.75rem 1rem 1.5rem;
+    border: 2px dashed rgba(124, 58, 237, 0.3);
+    border-radius: var(--radius);
+    cursor: pointer;
+    background: rgba(3, 3, 8, 0.35);
+    text-align: center;
+    transition: all var(--t);
+    margin-bottom: 0.75rem;
+  }
+  .drop-zone:hover {
+    border-color: var(--accent);
+    background: rgba(124, 58, 237, 0.05);
+    box-shadow: 0 0 12px var(--accent-glow);
+  }
+  .drop-zone input[type="file"] { display: none; }
+  .drop-zone-icon {
+    font-size: 1.8rem;
+    margin-bottom: 0.5rem;
+    transition: transform var(--t);
+  }
+  .drop-zone:hover .drop-zone-icon {
+    transform: translateY(-3px);
+  }
+  .drop-zone-text {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .drop-zone-sub {
+    font-size: 0.65rem;
+    color: var(--muted);
+    margin-top: 0.25rem;
+    font-family: var(--ui);
+  }
+
+  .uploaded-file-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 0.75rem;
+    background: rgba(3, 3, 8, 0.6);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 0.85rem;
+    font-family: var(--ui);
+    font-size: 0.75rem;
+    color: var(--text2);
+    overflow: hidden;
+  }
+  .file-icon { font-size: 0.9rem; }
+  .file-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex-grow: 1;
+  }
+
+  .sidebar-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+  }
+  .btn-full {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  /* ── SELECT & EXPORTS ───────────────────────────────────────────── */
+  .sidebar-select {
+    width: 100%;
+    padding: 0.65rem 0.85rem;
+    font-family: var(--ui);
+    font-size: 0.8rem;
+    background: rgba(3, 3, 8, 0.8);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    outline: none;
+    cursor: pointer;
+    transition: all var(--t);
+  }
+  .sidebar-select:hover, .sidebar-select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 10px var(--accent-glow);
+  }
+
+  .export-buttons-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+  .btn-export-csv {
+    background: rgba(16, 232, 138, 0.08) !important;
+    border: 1px solid rgba(16, 232, 138, 0.3) !important;
+    color: #10e88a !important;
+  }
+  .btn-export-csv:hover {
+    background: rgba(16, 232, 138, 0.18) !important;
+    box-shadow: 0 0 10px rgba(16, 232, 138, 0.15);
+  }
+  .btn-export-json {
+    background: rgba(176, 110, 255, 0.08) !important;
+    border: 1px solid rgba(176, 110, 255, 0.3) !important;
+    color: #b06eff !important;
+  }
+  .btn-export-json:hover {
+    background: rgba(176, 110, 255, 0.18) !important;
+    box-shadow: 0 0 10px rgba(176, 110, 255, 0.15);
+  }
+
+  /* ── COLLAPSIBLE HELP ───────────────────────────────────────────── */
+  .format-help-sidebar {
+    background: rgba(30, 24, 66, 0.2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius2);
+    padding: 0.85rem 1rem;
+    font-family: var(--ui);
+    font-size: 0.72rem;
+    color: var(--text2);
+    cursor: pointer;
+  }
+  .format-help-sidebar summary {
+    font-weight: 700;
+    color: var(--accent);
+    outline: none;
+  }
+  .format-help-content {
+    margin-top: 0.6rem;
+    line-height: 1.6;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  /* MAP CONTAINER */
+  .map-wrapper-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius2);
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.35);
+  }
+  .map-header-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(3, 3, 8, 0.6);
+    border-bottom: 1px solid var(--border);
+    padding: 0.7rem 1.25rem;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    min-height: 48px;
+  }
+  .map-header-status {
+    font-family: var(--ui);
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 700;
+    color: var(--muted);
+  }
+  .map-container-inner {
+    position: relative;
+    width: 100%;
+  }
+  #heatmapPitch {
+    width: 100%;
+    height: 520px;
+    background: #0a0818;
+  }
+
+  /* Override Leaflet styles for dark theme */
+  .leaflet-container { background: #0a0818 !important; font-family: var(--ui) !important; }
+  .leaflet-control-zoom a {
+    background: var(--surface2) !important; color: var(--text) !important;
+    border-color: var(--border) !important;
+  }
+  .leaflet-control-zoom a:hover {
+    background: var(--accent-glow) !important;
+    border-color: var(--accent) !important;
+  }
+  .leaflet-control-attribution { display: none !important; }
+
+  /* ── LEGEND ──────────────────────────────────────────────────────── */
+  .heatmap-legend {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    font-family: var(--ui);
+    font-size: 0.68rem;
+    color: var(--text2);
+    flex-wrap: wrap;
+  }
+  .legend-swatch {
+    width: 10px; height: 10px; border-radius: 50%;
+    display: inline-block; margin-right: 0.25rem; vertical-align: middle;
+    border: 1px solid rgba(255,255,255,0.15);
+  }
+  .legend-item { display: flex; align-items: center; }
+
+  /* ── STATS ROW ──────────────────────────────────────────────────── */
+  .stats-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem; margin-bottom: 1.5rem;
+  }
+  .stat-tile {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius2); padding: 1.2rem 1.25rem;
+    position: relative; overflow: hidden;
+    transition: border-color var(--t), box-shadow var(--t), transform var(--t);
+    cursor: default;
+  }
+  .stat-tile::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, var(--accent-glow2) 0%, transparent 60%);
+    opacity: 0; transition: opacity var(--t);
+  }
+  .stat-tile:hover {
+    border-color: var(--border2); transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  }
+  .stat-tile:hover::before { opacity: 1; }
+  .st-label {
+    font-size: 0.68rem; font-weight: 700; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 0.5rem;
+  }
+  .st-val {
+    font-size: 1.5rem; font-weight: 700; font-family: var(--ui); line-height: 1;
+  }
+  .st-val.green  { color: var(--win); }
+  .st-val.red    { color: var(--loss); }
+  .st-val.purple { color: var(--accent); }
+  .st-sub {
+    font-size: 0.7rem; color: var(--muted); font-family: var(--ui);
+    margin-top: 0.3rem;
+  }
+
+  /* ── CHARTS ──────────────────────────────────────────────────────── */
+  .charts-row {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 1.25rem; margin-bottom: 1.5rem;
+  }
+  .chart-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius2);
+    padding: 1.25rem 1.25rem 0.75rem 1.25rem;
+    transition: border-color var(--t);
+    box-shadow: 0 4px 20px rgba(124, 58, 237, 0.07);
+  }
+  .chart-card:hover { border-color: var(--border2); }
+  .chart-card-title {
+    font-size: 0.72rem; font-weight: 700; letter-spacing: 0.12em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 1.1rem;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .chart-wrap { position: relative; height: 200px; }
+
+  /* ── LOADING & EMPTY STATES ─────────────────────────────────────── */
+  .loading-state-card {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    font-family: var(--ui);
+    color: var(--text);
+    margin-bottom: 1.5rem;
+    background: rgba(124, 58, 237, 0.06);
+    padding: 1.25rem 1.5rem;
+    border: 1px dashed var(--accent);
+    border-radius: var(--radius2);
+    box-shadow: 0 4px 15px rgba(124, 58, 237, 0.1);
+  }
+  .rc-loader-ring {
+    width: 24px;
+    height: 24px;
+    border: 3px solid rgba(176, 110, 255, 0.2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: rc-spin 0.8s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes rc-spin {
+    to { transform: rotate(360deg); }
+  }
+  .loading-bold {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--accent3);
+    margin-bottom: 0.15rem;
+  }
+  .loading-muted {
+    font-size: 0.72rem;
+    color: var(--muted);
+    font-family: var(--ui);
+  }
+
+  .empty-state-panel {
+    text-align: center;
+    padding: 5rem 2rem;
+    background: rgba(30, 24, 66, 0.12);
+    border: 1px dashed rgba(124, 58, 237, 0.25);
+    border-radius: var(--radius2);
+    font-family: var(--ui);
+    color: var(--muted);
+    margin-bottom: 0;
+  }
+  .empty-state-icon {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 1.25rem;
+    opacity: 0.4;
+    border-radius: 50%;
+    background: var(--accent-glow2);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .empty-state-icon svg {
+    width: 22px;
+    height: 22px;
+    stroke: var(--accent3);
+    fill: none;
+    stroke-width: 1.5;
+  }
+  .empty-state-panel h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text2);
+    margin-bottom: 0.5rem;
+  }
+  .empty-state-panel p {
+    font-size: 0.8rem;
+    max-width: 420px;
+    margin: 0 auto;
+    line-height: 1.65;
+  }
+
+  /* BOOST PAD MARKERS */
+  .boost-pad-large {
+    width: 12px; height: 12px; border-radius: 50%;
+    background: radial-gradient(circle, #fbbf24, #f59e0b);
+    border: 1.5px solid rgba(255,255,255,0.3);
+    box-shadow: 0 0 8px rgba(251,191,36,0.6);
+  }
+  .boost-pad-small {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: radial-gradient(circle, #94a3b8, #64748b);
+    border: 1px solid rgba(255,255,255,0.2);
+    box-shadow: 0 0 4px rgba(148,163,184,0.4);
+  }
+
+  @media(max-width: 720px) {
+    .charts-row { grid-template-columns: 1fr; }
+    .stats-strip { grid-template-columns: repeat(2, 1fr); }
+    #heatmapPitch { height: 380px; }
+  }
+</style>
+
+<div class="heatmap-page-header">
+  <h1>Pitch Heatmap</h1>
+  <p>Upload a <code>.replay</code>, <code>.csv</code>, or <code>.json</code> file to visualize player positions and zone analytics on the pitch.</p>
+</div>
+
+<input type="hidden" id="csrfToken" value="{{ csrf_token() }}">
+
+<div class="heatmap-grid-layout">
+  <!-- Left Column: Control Panel -->
+  <div class="heatmap-control-sidebar">
+    <!-- File Source Glass Card -->
+    <div class="glass-card">
+      <div class="card-title-sm">Data Source</div>
+      
+      <label class="drop-zone" id="dropZoneEl">
+        <input type="file" id="replayFileInput" accept=".json,.csv,.replay">
+        <div class="drop-zone-icon">↑</div>
+        <div class="drop-zone-text">Upload Positional File</div>
+        <div class="drop-zone-sub">Supports .replay, .json, .csv</div>
+      </label>
+
+      <div class="uploaded-file-info">
+        <span class="file-name" id="fileName">No file selected</span>
+      </div>
+
+      <div class="sidebar-buttons">
+        <button class="btn btn-primary btn-sm btn-full" id="loadDemoBtn" type="button">Load Demo Data</button>
+        <button class="btn btn-ghost btn-sm btn-full" id="clearBtn" type="button" style="border: 1px solid var(--border);">Clear</button>
+      </div>
+    </div>
+
+    <!-- Active Player Selector (Shown on load) -->
+    <div class="glass-card" id="playerSelectWrap" style="display: none;">
+      <div class="card-title-sm">Active Player</div>
+      <select id="playerSelect" class="sidebar-select"></select>
+    </div>
+
+    <!-- Exports Panel (Shown on load) -->
+    <div class="glass-card" id="exportWrap" style="display: none;">
+      <div class="card-title-sm">Export Dataset</div>
+      <div class="export-buttons-grid">
+        <button class="btn btn-sm btn-export-csv" id="downloadCsvBtn" type="button">Export CSV</button>
+        <button class="btn btn-sm btn-export-json" id="downloadJsonBtn" type="button">Export JSON</button>
+      </div>
+    </div>
+
+    <!-- Supported formats collapsible box -->
+    <details class="format-help-sidebar">
+      <summary>View Supported Formats</summary>
+      <div class="format-help-content">
+        <p><strong>JSON:</strong> Array of <code>[x, y]</code> coordinates (RL units: x ∈ [-4096, 4096], y ∈ [-5120, 5120]).</p>
+        <p><strong>CSV:</strong> Two columns (x, y) with or without headers.</p>
+        <p><strong>REPLAY:</strong> Raw binary Rocket League <code>.replay</code> file parsed locally via <code>rrrocket</code>!</p>
+      </div>
+    </details>
+  </div>
+
+  <!-- Right Column: Visualization Display -->
+  <div class="heatmap-main-content">
+    
+    <!-- Loading overlay state card -->
+    <div id="loadingOverlay" class="loading-state-card" style="display: none;">
+      <div class="rc-loader-ring"></div>
+      <div>
+        <div class="loading-bold">Parsing .replay with rrrocket</div>
+        <div class="loading-muted">Decompiling network frames and tracking car coordinates...</div>
+      </div>
+    </div>
+
+    <!-- Empty state panel -->
+    <div id="emptyState" class="empty-state-panel">
+      <div class="empty-state-icon">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
+      </div>
+      <h3>No Positional Data Loaded</h3>
+      <p>Upload a Rocket League <code>.replay</code> file, a positional <code>.csv</code> or <code>.json</code> coordinate file, or load the demo dataset to see the heatmap and analytics.</p>
+    </div>
+
+    <!-- Map Board -->
+    <div class="map-wrapper-card">
+      <div class="map-header-bar">
+        <div class="map-header-status">Interactive 2D Pitch View</div>
+        
+        <!-- Legend (shown dynamically) -->
+        <div class="heatmap-legend" id="heatmapLegend" style="display:none;">
+          <div class="legend-item"><span class="legend-swatch" style="background:#10e88a;"></span> Attack</div>
+          <div class="legend-item"><span class="legend-swatch" style="background:#b06eff;"></span> Midfield</div>
+          <div class="legend-item"><span class="legend-swatch" style="background:#ff4d6a;"></span> Defense</div>
+          <div class="legend-item"><span class="legend-swatch" style="background:radial-gradient(circle, #fbbf24, #f59e0b);"></span> Big Boost</div>
+          <div class="legend-item"><span class="legend-swatch" style="background:radial-gradient(circle, #94a3b8, #64748b);"></span> Small Boost</div>
+        </div>
+      </div>
+
+      <div class="map-container-inner">
+        <div id="heatmapPitch"></div>
+      </div>
+    </div>
+
+    <!-- Stats (shown after data load) -->
+    <div id="heatmapStats" style="display:none; margin-top: 1.5rem;">
+      <div class="stats-strip">
+        <div class="stat-tile">
+          <div class="st-label">Total Positions</div>
+          <div class="st-val purple" id="statTotal">0</div>
+        </div>
+        <div class="stat-tile">
+          <div class="st-label">Attack Zone</div>
+          <div class="st-val green" id="statAttack">0%</div>
+          <div class="st-sub" id="statAttackSub"></div>
+        </div>
+        <div class="stat-tile">
+          <div class="st-label">Midfield</div>
+          <div class="st-val purple" id="statMid">0%</div>
+          <div class="st-sub" id="statMidSub"></div>
+        </div>
+        <div class="stat-tile">
+          <div class="st-label">Defense Zone</div>
+          <div class="st-val red" id="statDefense">0%</div>
+          <div class="st-sub" id="statDefSub"></div>
+        </div>
+        <div class="stat-tile">
+          <div class="st-label">Avg X Position</div>
+          <div class="st-val" id="statAvgX">0</div>
+          <div class="st-sub">width bias</div>
+        </div>
+        <div class="stat-tile">
+          <div class="st-label">Avg Y Position</div>
+          <div class="st-val" id="statAvgY">0</div>
+          <div class="st-sub">length bias</div>
+        </div>
+      </div>
+
+      <!-- Charts -->
+      <div class="charts-row">
+        <div class="chart-card">
+          <div class="chart-card-title">Zone Distribution</div>
+          <div class="chart-wrap"><canvas id="zoneChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-title">X-Axis Histogram</div>
+          <div class="chart-wrap"><canvas id="xHistChart"></canvas></div>
+        </div>
+      </div>
+      <div class="charts-row">
+        <div class="chart-card">
+          <div class="chart-card-title">Y-Axis Histogram</div>
+          <div class="chart-wrap"><canvas id="yHistChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-title">Position Density Over Time</div>
+          <div class="chart-wrap"><canvas id="densityChart"></canvas></div>
+        </div>
+      </div>
+    </div> <!-- /heatmapStats -->
+  </div> <!-- /heatmap-main-content -->
+</div> <!-- /heatmap-grid-layout -->
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" nonce="{{ nonce }}"></script>
+<script nonce="{{ nonce }}">
+(function() {
+  'use strict';
+
+  // ── RL Pitch dimensions (units) ──────────────────────────────────
+  const PITCH = {
+    xMin: -4096, xMax: 4096,
+    yMin: -5120, yMax: 5120,
+    width: 8192, height: 10240
+  };
+
+  // ── Boost pad locations (RL coordinates) ────────────────────────
+  const LARGE_BOOSTS = [
+    [-3072, -4096], [3072, -4096], [-3584, 0], [3584, 0], [-3072, 4096], [3072, 4096]
+  ];
+  const SMALL_BOOSTS = [
+    [0, -4096], [-1536, -2560], [1536, -2560], [-256, -3840], [256, -3840],
+    [-768, -2560], [768, -2560], [-3584, -2560], [3584, -2560],
+    [-1792, 0], [1792, 0], [0, 0],
+    [-1536, 2560], [1536, 2560], [-256, 3840], [256, 3840],
+    [-768, 2560], [768, 2560], [-3584, 2560], [3584, 2560],
+    [0, 4096]
+  ];
+
+  // ── Map setup ─────────────────────────────────────────────────────
+  // Use simple CRS (no geo-projection), mapping RL coords to pixels
+  const map = L.map('heatmapPitch', {
+    crs: L.CRS.Simple,
+    minZoom: -1,
+    maxZoom: 4,
+    zoomSnap: 0.25,
+    attributionControl: false
+  });
+
+  // Scale: 1 RL unit = 0.01 pixels for the image coordinate system
+  const scale = 0.05;
+  const bounds = [
+    [PITCH.yMin * scale, PITCH.xMin * scale],
+    [PITCH.yMax * scale, PITCH.xMax * scale]
+  ];
+  map.fitBounds(bounds);
+  map.setMaxBounds([
+    [(PITCH.yMin - 500) * scale, (PITCH.xMin - 500) * scale],
+    [(PITCH.yMax + 500) * scale, (PITCH.xMax + 500) * scale]
+  ]);
+
+  // ── Draw pitch lines on a canvas overlay ─────────────────────────
+  function drawPitch() {
+    const pitchCanvas = document.createElement('canvas');
+    pitchCanvas.width = PITCH.width;
+    pitchCanvas.height = PITCH.height;
+    const ctx = pitchCanvas.getContext('2d');
+
+    // Background
+    ctx.fillStyle = '#0a0818';
+    ctx.fillRect(0, 0, PITCH.width, PITCH.height);
+
+    // Field grass (dark purple-tinted)
+    ctx.fillStyle = 'rgba(124, 58, 237, 0.04)';
+    ctx.fillRect(0, 0, PITCH.width, PITCH.height);
+
+    // Grid lines
+    ctx.strokeStyle = 'rgba(124, 58, 237, 0.08)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x <= PITCH.width; x += 512) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, PITCH.height); ctx.stroke();
+    }
+    for (let y = 0; y <= PITCH.height; y += 512) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(PITCH.width, y); ctx.stroke();
+    }
+
+    // Convert RL coord to canvas pixel
+    function toCanvasX(rlX) { return (rlX - PITCH.xMin); }
+    function toCanvasY(rlY) { return PITCH.height - (rlY - PITCH.yMin); }
+
+    // Outer boundary
+    ctx.strokeStyle = 'rgba(176, 110, 255, 0.5)';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(4, 4, PITCH.width - 8, PITCH.height - 8);
+
+    // Center line
+    ctx.strokeStyle = 'rgba(176, 110, 255, 0.35)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, toCanvasY(0));
+    ctx.lineTo(PITCH.width, toCanvasY(0));
+    ctx.stroke();
+
+    // Center circle
+    ctx.beginPath();
+    ctx.arc(toCanvasX(0), toCanvasY(0), 1024, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Zone labels
+    ctx.font = 'bold 280px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(16, 232, 138, 0.07)';
+    ctx.fillText('ATTACK', toCanvasX(0), toCanvasY(3200));
+    ctx.fillStyle = 'rgba(176, 110, 255, 0.07)';
+    ctx.fillText('MID', toCanvasX(0), toCanvasY(-200));
+    ctx.fillStyle = 'rgba(255, 77, 106, 0.07)';
+    ctx.fillText('DEFENSE', toCanvasX(0), toCanvasY(-3600));
+
+    // Goal areas
+    ctx.strokeStyle = 'rgba(16, 232, 138, 0.3)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(toCanvasX(-893), toCanvasY(5120), 1786, 640);
+
+    ctx.strokeStyle = 'rgba(255, 77, 106, 0.3)';
+    ctx.strokeRect(toCanvasX(-893), toCanvasY(-5120 + 640), 1786, 640);
+
+    // Create image overlay from canvas
+    const imgUrl = pitchCanvas.toDataURL();
+    L.imageOverlay(imgUrl, bounds).addTo(map);
+  }
+
+  drawPitch();
+
+  // ── Add boost pad markers ────────────────────────────────────────
+  function addBoostPads() {
+    LARGE_BOOSTS.forEach(([x, y]) => {
+      const icon = L.divIcon({ className: 'boost-pad-large', iconSize: [12, 12] });
+      L.marker([y * scale, x * scale], { icon, interactive: false }).addTo(map);
+    });
+    SMALL_BOOSTS.forEach(([x, y]) => {
+      const icon = L.divIcon({ className: 'boost-pad-small', iconSize: [7, 7] });
+      L.marker([y * scale, x * scale], { icon, interactive: false }).addTo(map);
+    });
+  }
+  addBoostPads();
+
+  // ── Heatmap data layer ────────────────────────────────────────────
+  let heatLayer = null;
+  let pointMarkers = [];
+
+  function clearHeatmap() {
+    if (heatLayer) { map.removeLayer(heatLayer); heatLayer = null; }
+    pointMarkers.forEach(m => map.removeLayer(m));
+    pointMarkers = [];
+    document.getElementById('heatmapStats').style.display = 'none';
+    document.getElementById('emptyState').style.display = '';
+    document.getElementById('heatmapLegend').style.display = 'none';
+    document.getElementById('fileName').textContent = 'No file selected';
+    document.getElementById('playerSelectWrap').style.display = 'none';
+    document.getElementById('exportWrap').style.display = 'none';
+    document.getElementById('playerSelect').innerHTML = '';
+    window.activePositions = null;
+    window.activePlayerName = null;
+    // Destroy any existing charts
+    ['zoneChart', 'xHistChart', 'yHistChart', 'densityChart'].forEach(id => {
+      const canvas = document.getElementById(id);
+      const existing = Chart.getChart(canvas);
+      if (existing) existing.destroy();
+    });
+  }
+
+  function renderHeatmap(positions) {
+    clearHeatmap();
+    if (!positions || positions.length === 0) return;
+
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('heatmapStats').style.display = '';
+    document.getElementById('heatmapLegend').style.display = 'flex';
+
+    // Clamp positions to pitch bounds
+    const clamped = positions.map(([x, y]) => [
+      Math.max(PITCH.xMin, Math.min(PITCH.xMax, x)),
+      Math.max(PITCH.yMin, Math.min(PITCH.yMax, y))
+    ]);
+
+    // Create a density grid for the heatmap overlay
+    const gridRes = 64;
+    const cellW = PITCH.width / gridRes;
+    const cellH = PITCH.height / gridRes;
+    const grid = Array.from({ length: gridRes }, () => new Float32Array(gridRes));
+
+    clamped.forEach(([x, y]) => {
+      const gx = Math.floor((x - PITCH.xMin) / cellW);
+      const gy = Math.floor((y - PITCH.yMin) / cellH);
+      const cx = Math.min(gridRes - 1, Math.max(0, gx));
+      const cy = Math.min(gridRes - 1, Math.max(0, gy));
+      grid[cy][cx] += 1;
+    });
+
+    // Apply Gaussian blur for smoother heatmap
+    const blurred = gaussianBlur(grid, gridRes, 2);
+
+    // Find max value
+    let maxVal = 0;
+    for (let r = 0; r < gridRes; r++) {
+      for (let c = 0; c < gridRes; c++) {
+        if (blurred[r][c] > maxVal) maxVal = blurred[r][c];
+      }
+    }
+
+    // Render heatmap to canvas
+    const heatCanvas = document.createElement('canvas');
+    heatCanvas.width = gridRes;
+    heatCanvas.height = gridRes;
+    const ctx = heatCanvas.getContext('2d');
+    const imgData = ctx.createImageData(gridRes, gridRes);
+
+    for (let row = 0; row < gridRes; row++) {
+      for (let col = 0; col < gridRes; col++) {
+        const val = maxVal > 0 ? blurred[row][col] / maxVal : 0;
+        const color = heatColor(val);
+        // Flip Y for canvas (row 0 = top = max Y)
+        const canvasRow = gridRes - 1 - row;
+        const idx = (canvasRow * gridRes + col) * 4;
+        imgData.data[idx]     = color[0];
+        imgData.data[idx + 1] = color[1];
+        imgData.data[idx + 2] = color[2];
+        imgData.data[idx + 3] = Math.floor(color[3] * 255);
+      }
+    }
+    ctx.putImageData(imgData, 0, 0);
+
+    const heatUrl = heatCanvas.toDataURL();
+    heatLayer = L.imageOverlay(heatUrl, bounds, { opacity: 0.7 }).addTo(map);
+
+    // Add a subset of individual point markers for detail
+    const maxMarkers = Math.min(clamped.length, 400);
+    const step = Math.max(1, Math.floor(clamped.length / maxMarkers));
+    for (let i = 0; i < clamped.length; i += step) {
+      const [x, y] = clamped[i];
+      const zone = getZone(y);
+      const color = zone === 'attack' ? '#10e88a' : zone === 'defense' ? '#ff4d6a' : '#b06eff';
+      const marker = L.circleMarker([y * scale, x * scale], {
+        radius: 2.5,
+        fillColor: color,
+        fillOpacity: 0.6,
+        stroke: false,
+        interactive: false
+      }).addTo(map);
+      pointMarkers.push(marker);
+    }
+
+    // Compute & display stats
+    computeStats(clamped);
+    renderCharts(clamped);
+  }
+
+  // ── Gaussian blur ─────────────────────────────────────────────────
+  function gaussianBlur(grid, size, passes) {
+    let current = grid.map(row => Float32Array.from(row));
+    const kernel = [0.06, 0.24, 0.40, 0.24, 0.06];
+    for (let p = 0; p < passes; p++) {
+      // Horizontal pass
+      let temp = Array.from({ length: size }, () => new Float32Array(size));
+      for (let r = 0; r < size; r++) {
+        for (let c = 0; c < size; c++) {
+          let sum = 0;
+          for (let k = -2; k <= 2; k++) {
+            const cc = Math.min(size - 1, Math.max(0, c + k));
+            sum += current[r][cc] * kernel[k + 2];
+          }
+          temp[r][c] = sum;
+        }
+      }
+      // Vertical pass
+      current = Array.from({ length: size }, () => new Float32Array(size));
+      for (let r = 0; r < size; r++) {
+        for (let c = 0; c < size; c++) {
+          let sum = 0;
+          for (let k = -2; k <= 2; k++) {
+            const rr = Math.min(size - 1, Math.max(0, r + k));
+            sum += temp[rr][c] * kernel[k + 2];
+          }
+          current[r][c] = sum;
+        }
+      }
+    }
+    return current;
+  }
+
+  // ── Heatmap color (purple→magenta→yellow gradient) ────────────
+  function heatColor(t) {
+    if (t <= 0) return [0, 0, 0, 0];
+    // Clamp
+    t = Math.min(1, t);
+    // Cold (purple) → Warm (orange/yellow)
+    let r, g, b;
+    if (t < 0.25) {
+      const s = t / 0.25;
+      r = Math.floor(30 + s * 94);   // 30 → 124
+      g = Math.floor(8 + s * 22);    // 8 → 30
+      b = Math.floor(60 + s * 177);  // 60 → 237
+    } else if (t < 0.5) {
+      const s = (t - 0.25) / 0.25;
+      r = Math.floor(124 + s * 52);  // 124 → 176
+      g = Math.floor(30 + s * 50);   // 30 → 80
+      b = Math.floor(237 + s * 18);  // 237 → 255
+    } else if (t < 0.75) {
+      const s = (t - 0.5) / 0.25;
+      r = Math.floor(176 + s * 79);  // 176 → 255
+      g = Math.floor(80 + s * 77);   // 80 → 157
+      b = Math.floor(255 - s * 155); // 255 → 100
+    } else {
+      const s = (t - 0.75) / 0.25;
+      r = 255;
+      g = Math.floor(157 + s * 98);  // 157 → 255
+      b = Math.floor(100 - s * 60);  // 100 → 40
+    }
+    const alpha = Math.min(0.85, 0.15 + t * 0.7);
+    return [r, g, b, alpha];
+  }
+
+  // ── Zone classification ───────────────────────────────────────────
+  function getZone(y) {
+    if (y > 1700) return 'attack';
+    if (y < -1700) return 'defense';
+    return 'midfield';
+  }
+
+  // ── Stats computation ─────────────────────────────────────────────
+  function computeStats(positions) {
+    const total = positions.length;
+    let attack = 0, mid = 0, defense = 0;
+    let sumX = 0, sumY = 0;
+
+    positions.forEach(([x, y]) => {
+      sumX += x; sumY += y;
+      const zone = getZone(y);
+      if (zone === 'attack') attack++;
+      else if (zone === 'defense') defense++;
+      else mid++;
+    });
+
+    const pctA = ((attack / total) * 100).toFixed(1);
+    const pctM = ((mid / total) * 100).toFixed(1);
+    const pctD = ((defense / total) * 100).toFixed(1);
+
+    document.getElementById('statTotal').textContent = total.toLocaleString();
+    document.getElementById('statAttack').textContent = pctA + '%';
+    document.getElementById('statAttackSub').textContent = attack + ' positions';
+    document.getElementById('statMid').textContent = pctM + '%';
+    document.getElementById('statMidSub').textContent = mid + ' positions';
+    document.getElementById('statDefense').textContent = pctD + '%';
+    document.getElementById('statDefSub').textContent = defense + ' positions';
+    document.getElementById('statAvgX').textContent = Math.round(sumX / total);
+    document.getElementById('statAvgY').textContent = Math.round(sumY / total);
+  }
+
+  // ── Chart.js rendering ────────────────────────────────────────────
+  function renderCharts(positions) {
+    const PURPLE      = '#a855f7';
+    const TICK_COLOR  = getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() || '#4e566e';
+    const UI_FONT     = 'Inter, sans-serif';
+
+    const baseScales = {
+      x: {
+        ticks: { color: TICK_COLOR, font: { family: UI_FONT, size: 10 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 8 },
+        grid: { color: 'rgba(148, 163, 184, 0.12)' },
+        border: { display: false }
+      },
+      y: {
+        ticks: { color: TICK_COLOR, font: { family: UI_FONT, size: 10 } },
+        grid: { color: 'rgba(148, 163, 184, 0.16)' },
+        border: { display: false }
+      }
+    };
+
+    const commonOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      animation: { duration: 500, easing: 'easeOutQuad' },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(11, 12, 24, 0.95)',
+          borderColor: 'rgba(176, 110, 255, 0.4)',
+          borderWidth: 1,
+          titleFont: { family: UI_FONT, weight: 700, size: 11 },
+          bodyFont: { family: UI_FONT, weight: 500, size: 11 },
+          padding: 10,
+          displayColors: false
+        }
+      }
+    };
+
+    // Zone distribution (doughnut)
+    const zones = { attack: 0, midfield: 0, defense: 0 };
+    positions.forEach(([x, y]) => { zones[getZone(y)]++; });
+
+    new Chart(document.getElementById('zoneChart'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Attack', 'Midfield', 'Defense'],
+        datasets: [{
+          data: [zones.attack, zones.midfield, zones.defense],
+          backgroundColor: [
+            'rgba(16, 232, 138, 0.8)',
+            'rgba(176, 110, 255, 0.8)',
+            'rgba(255, 77, 106, 0.8)'
+          ],
+          borderColor: [
+            'rgba(16, 232, 138, 1)',
+            'rgba(176, 110, 255, 1)',
+            'rgba(255, 77, 106, 1)'
+          ],
+          borderWidth: 2,
+          hoverOffset: 8
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '60%',
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              color: TICK_COLOR,
+              font: { family: UI_FONT, size: 11, weight: 600 },
+              padding: 12,
+              usePointStyle: true,
+              pointStyleWidth: 10
+            }
+          },
+          tooltip: commonOptions.plugins.tooltip
+        }
+      }
+    });
+
+    // X-axis histogram
+    const xBins = 20;
+    const xBinSize = PITCH.width / xBins;
+    const xCounts = new Array(xBins).fill(0);
+    const xLabels = [];
+    positions.forEach(([x]) => {
+      const bin = Math.min(xBins - 1, Math.max(0, Math.floor((x - PITCH.xMin) / xBinSize)));
+      xCounts[bin]++;
+    });
+    for (let i = 0; i < xBins; i++) {
+      const center = PITCH.xMin + (i + 0.5) * xBinSize;
+      xLabels.push(Math.round(center));
+    }
+
+    new Chart(document.getElementById('xHistChart'), {
+      type: 'bar',
+      data: {
+        labels: xLabels,
+        datasets: [{
+          data: xCounts,
+          backgroundColor: 'rgba(168,85,247,0.4)',
+          borderColor: 'rgba(192,132,252,0.9)',
+          borderWidth: 1.2,
+          borderRadius: 4,
+          borderSkipped: false
+        }]
+      },
+      options: {
+        ...commonOptions,
+        scales: {
+          x: { ...baseScales.x, title: { display: true, text: 'X Position (RL units)', color: TICK_COLOR, font: { family: UI_FONT, size: 10 } } },
+          y: { ...baseScales.y, beginAtZero: true }
+        }
+      }
+    });
+
+    // Y-axis histogram
+    const yBins = 20;
+    const yBinSize = PITCH.height / yBins;
+    const yCounts = new Array(yBins).fill(0);
+    const yLabels = [];
+    positions.forEach(([, y]) => {
+      const bin = Math.min(yBins - 1, Math.max(0, Math.floor((y - PITCH.yMin) / yBinSize)));
+      yCounts[bin]++;
+    });
+    for (let i = 0; i < yBins; i++) {
+      const center = PITCH.yMin + (i + 0.5) * yBinSize;
+      yLabels.push(Math.round(center));
+    }
+
+    new Chart(document.getElementById('yHistChart'), {
+      type: 'bar',
+      data: {
+        labels: yLabels,
+        datasets: [{
+          data: yCounts,
+          backgroundColor: (ctx) => {
+            const idx = ctx.dataIndex;
+            const center = PITCH.yMin + (idx + 0.5) * yBinSize;
+            if (center > 1700) return 'rgba(16, 232, 138, 0.5)';
+            if (center < -1700) return 'rgba(255, 77, 106, 0.5)';
+            return 'rgba(176, 110, 255, 0.5)';
+          },
+          borderColor: (ctx) => {
+            const idx = ctx.dataIndex;
+            const center = PITCH.yMin + (idx + 0.5) * yBinSize;
+            if (center > 1700) return '#10e88a';
+            if (center < -1700) return '#ff4d6a';
+            return '#b06eff';
+          },
+          borderWidth: 1.2,
+          borderRadius: 4,
+          borderSkipped: false
+        }]
+      },
+      options: {
+        ...commonOptions,
+        scales: {
+          x: { ...baseScales.x, title: { display: true, text: 'Y Position (RL units)', color: TICK_COLOR, font: { family: UI_FONT, size: 10 } } },
+          y: { ...baseScales.y, beginAtZero: true }
+        }
+      }
+    });
+
+    // Density over time (rolling window showing zone changes)
+    const windowSize = Math.max(1, Math.floor(positions.length / 50));
+    const densityLabels = [];
+    const attackDensity = [], midDensity = [], defenseDensity = [];
+
+    for (let i = windowSize; i <= positions.length; i += windowSize) {
+      const window = positions.slice(Math.max(0, i - windowSize * 3), i);
+      let a = 0, m = 0, d = 0;
+      window.forEach(([, y]) => {
+        const z = getZone(y);
+        if (z === 'attack') a++;
+        else if (z === 'defense') d++;
+        else m++;
+      });
+      const wLen = window.length;
+      densityLabels.push(`${i}`);
+      attackDensity.push(parseFloat(((a / wLen) * 100).toFixed(1)));
+      midDensity.push(parseFloat(((m / wLen) * 100).toFixed(1)));
+      defenseDensity.push(parseFloat(((d / wLen) * 100).toFixed(1)));
+    }
+
+    new Chart(document.getElementById('densityChart'), {
+      type: 'line',
+      data: {
+        labels: densityLabels,
+        datasets: [
+          {
+            label: 'Attack',
+            data: attackDensity,
+            borderColor: '#10e88a',
+            backgroundColor: 'rgba(16, 232, 138, 0.1)',
+            fill: true,
+            tension: 0.35,
+            pointRadius: 0,
+            borderWidth: 2
+          },
+          {
+            label: 'Midfield',
+            data: midDensity,
+            borderColor: '#b06eff',
+            backgroundColor: 'rgba(176, 110, 255, 0.1)',
+            fill: true,
+            tension: 0.35,
+            pointRadius: 0,
+            borderWidth: 2
+          },
+          {
+            label: 'Defense',
+            data: defenseDensity,
+            borderColor: '#ff4d6a',
+            backgroundColor: 'rgba(255, 77, 106, 0.1)',
+            fill: true,
+            tension: 0.35,
+            pointRadius: 0,
+            borderWidth: 2
+          }
+        ]
+      },
+      options: {
+        ...commonOptions,
+        plugins: {
+          ...commonOptions.plugins,
+          legend: {
+            display: true,
+            position: 'bottom',
+            labels: {
+              color: TICK_COLOR,
+              font: { family: UI_FONT, size: 10, weight: 600 },
+              padding: 10,
+              usePointStyle: true,
+              pointStyleWidth: 8
+            }
+          }
+        },
+        scales: {
+          x: baseScales.x,
+          y: { ...baseScales.y, min: 0, max: 100, ticks: { ...baseScales.y.ticks, callback: v => v + '%' } }
+        }
+      }
+    });
+  }
+
+  // ── Demo data generator ───────────────────────────────────────────
+  function generateDemoData(count = 2000) {
+    const positions = [];
+    // Simulate a player who favors midfield but makes runs to attack
+    for (let i = 0; i < count; i++) {
+      const phase = (i / count) * Math.PI * 6; // simulate game phases
+      const baseX = Math.sin(phase * 1.3) * 2000 + (Math.random() - 0.5) * 2000;
+      const baseY = Math.sin(phase) * 3000 + (Math.random() - 0.5) * 2500;
+      // Bias slightly toward own half (realistic for non-GC players)
+      const biasY = baseY - 300;
+      positions.push([
+        Math.max(PITCH.xMin, Math.min(PITCH.xMax, baseX)),
+        Math.max(PITCH.yMin, Math.min(PITCH.yMax, biasY))
+      ]);
+    }
+    // Add some boost-pad-path activity
+    const boostRuns = 200;
+    for (let i = 0; i < boostRuns; i++) {
+      const pad = LARGE_BOOSTS[Math.floor(Math.random() * LARGE_BOOSTS.length)];
+      positions.push([
+        pad[0] + (Math.random() - 0.5) * 600,
+        pad[1] + (Math.random() - 0.5) * 600
+      ]);
+    }
+    return positions;
+  }
+
+  let activeReplayPlayers = null;
+
+  // ── Event bindings ────────────────────────────────────────────────
+  document.getElementById('replayFileInput').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    document.getElementById('fileName').textContent = file.name;
+
+    // Handle binary .replay files via backend parser
+    if (file.name.endsWith('.replay')) {
+      // Show loading overlay, hide stats and empty state
+      document.getElementById('loadingOverlay').style.display = 'flex';
+      document.getElementById('emptyState').style.display = 'none';
+      document.getElementById('heatmapStats').style.display = 'none';
+      document.getElementById('playerSelectWrap').style.display = 'none';
+      document.getElementById('exportWrap').style.display = 'none';
+
+      const formData = new FormData();
+      formData.append('replay_file', file);
+
+      const csrfToken = document.getElementById('csrfToken').value;
+
+      fetch('/parse-replay', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-CSRFToken': csrfToken
+        }
+      })
+      .then(response => {
+        if (!response.ok) {
+          return response.json().then(err => { throw new Error(err.error || 'Server error'); });
+        }
+        return response.json();
+      })
+      .then(data => {
+        document.getElementById('loadingOverlay').style.display = 'none';
+        if (data.success && data.players && Object.keys(data.players).length > 0) {
+          activeReplayPlayers = data.players;
+          
+          // Populate player select
+          const select = document.getElementById('playerSelect');
+          select.innerHTML = '';
+          
+          Object.keys(activeReplayPlayers).forEach(playerName => {
+            const opt = document.createElement('option');
+            opt.value = playerName;
+            opt.textContent = `${playerName} (${activeReplayPlayers[playerName].length} pts)`;
+            select.appendChild(opt);
+          });
+          
+          document.getElementById('playerSelectWrap').style.display = 'flex';
+          document.getElementById('exportWrap').style.display = 'flex';
+          
+          // Trigger first player render
+          const firstPlayer = Object.keys(activeReplayPlayers)[0];
+          window.activePlayerName = firstPlayer;
+          window.activePositions = activeReplayPlayers[firstPlayer];
+          renderHeatmap(window.activePositions);
+        } else {
+          throw new Error('No positions found in replay.');
+        }
+      })
+      .catch(error => {
+        document.getElementById('loadingOverlay').style.display = 'none';
+        document.getElementById('emptyState').style.display = '';
+        alert('Error parsing replay file: ' + error.message);
+      });
+      return;
+    }
+
+    // Handle standard JSON / CSV files on client side
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+      const text = evt.target.result;
+      let positions = null;
+
+      if (file.name.endsWith('.json')) {
+        positions = parseJSON(text);
+      } else if (file.name.endsWith('.csv')) {
+        positions = parseCSV(text);
+      } else {
+        positions = parseJSON(text) || parseCSV(text);
+      }
+
+      if (positions && positions.length > 0) {
+        document.getElementById('playerSelectWrap').style.display = 'none';
+        document.getElementById('exportWrap').style.display = 'flex';
+        window.activePlayerName = file.name.replace(/\.[^/.]+$/, ""); // Strip extension
+        window.activePositions = positions;
+        renderHeatmap(positions);
+      } else {
+        alert('Could not parse position data. Please check the file format.');
+      }
+    };
+    reader.readAsText(file);
+  });
+
+  // Handle player dropdown selection change
+  document.getElementById('playerSelect').addEventListener('change', function(e) {
+    const playerName = e.target.value;
+    if (activeReplayPlayers && activeReplayPlayers[playerName]) {
+      window.activePlayerName = playerName;
+      window.activePositions = activeReplayPlayers[playerName];
+      renderHeatmap(window.activePositions);
+    }
+  });
+
+  // Export functions
+  document.getElementById('downloadCsvBtn').addEventListener('click', function() {
+    if (!window.activePositions || window.activePositions.length === 0) return;
+    
+    let csvContent = 'x,y\n';
+    window.activePositions.forEach(([x, y]) => {
+      csvContent += `${x},${y}\n`;
+    });
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    
+    const filename = `${window.activePlayerName || 'player'}_positions.csv`;
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  });
+
+  document.getElementById('downloadJsonBtn').addEventListener('click', function() {
+    if (!window.activePositions || window.activePositions.length === 0) return;
+    
+    const jsonContent = JSON.stringify(window.activePositions, null, 2);
+    const blob = new Blob([jsonContent], { type: 'application/json;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    
+    const filename = `${window.activePlayerName || 'player'}_positions.json`;
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  });
+
+  // ── File parsing ──────────────────────────────────────────────────
+  function parseJSON(text) {
+    try {
+      const data = JSON.parse(text);
+      if (Array.isArray(data) && data.length > 0) {
+        // Array of [x, y]
+        if (Array.isArray(data[0])) {
+          return data.filter(p => Array.isArray(p) && p.length >= 2 && !isNaN(p[0]) && !isNaN(p[1]))
+                     .map(p => [Number(p[0]), Number(p[1])]);
+        }
+        // Array of {x, y}
+        if (typeof data[0] === 'object' && 'x' in data[0] && 'y' in data[0]) {
+          return data.filter(p => !isNaN(p.x) && !isNaN(p.y))
+                     .map(p => [Number(p.x), Number(p.y)]);
+        }
+      }
+    } catch(e) {}
+    return null;
+  }
+
+  function parseCSV(text) {
+    const lines = text.trim().split('\n').map(l => l.trim()).filter(l => l);
+    if (lines.length < 2) return null;
+
+    // Check if first line is header
+    const first = lines[0].split(',');
+    const startIdx = (isNaN(Number(first[0])) || isNaN(Number(first[1]))) ? 1 : 0;
+
+    const positions = [];
+    for (let i = startIdx; i < lines.length; i++) {
+      const parts = lines[i].split(',');
+      if (parts.length >= 2) {
+        const x = Number(parts[0]);
+        const y = Number(parts[1]);
+        if (!isNaN(x) && !isNaN(y)) {
+          positions.push([x, y]);
+        }
+      }
+    }
+    return positions.length > 0 ? positions : null;
+  }
+
+})();
+</script>
+{% endblock %}

@@ -79,6 +79,13 @@ with app.app_context():
                 conn.commit()
             except Exception:
                 pass  # Column already exists
+        # CarDesign new columns
+        for col, defn in [("card_template", "VARCHAR(50) DEFAULT 'legendary'"), ("overlay_title", "VARCHAR(100)")]:
+            try:
+                conn.execute(text(f"ALTER TABLE car_design ADD COLUMN {col} {defn}"))
+                conn.commit()
+            except Exception:
+                pass  # Column already exists
 
 
 # ── Security headers ───────────────────────────────────────────────────
@@ -104,10 +111,10 @@ def add_security_headers(response):
     response.headers["Permissions-Policy"]         = "geolocation=(), microphone=(), camera=()"
     response.headers["Content-Security-Policy"]   = (
         "default-src 'self'; "
-        f"script-src 'self' 'nonce-{nonce}' cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
-        f"style-src 'self' 'nonce-{nonce}' fonts.googleapis.com; "
+        f"script-src 'self' 'nonce-{nonce}' cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; "
+        f"style-src 'self' 'nonce-{nonce}' fonts.googleapis.com https://unpkg.com; "
         "font-src fonts.gstatic.com; "
-        "img-src 'self' data:; "
+        "img-src 'self' data: https://unpkg.com https://*.tile.openstreetmap.org; "
         "connect-src 'self'; "
         "worker-src 'self';"
     )
@@ -227,7 +234,8 @@ def gallery():
 def upload_design():
     title = request.form.get("title", "").strip()
     file = request.files.get("design_image")
-    
+    card_template = request.form.get("card_template", "legendary")
+    overlay_title = request.form.get("overlay_title", "").strip()
     if not title:
         flash("Title is required.", "error")
         return redirect(url_for("gallery"))
@@ -253,7 +261,7 @@ def upload_design():
         flash("Could not process image.", "error")
         return redirect(url_for("gallery"))
         
-    new_design = CarDesign(user_id=current_user.id, title=title, image_filename=filename)
+    new_design = CarDesign(user_id=current_user.id, title=title, image_filename=filename, card_template=card_template, overlay_title=overlay_title)
     db.session.add(new_design)
     db.session.commit()
     flash("Design uploaded successfully!", "success")
@@ -490,6 +498,50 @@ def hitbox_lookup():
         car_name=car_name,
         grouped=grouped
     )
+
+@app.route("/heatmap")
+@login_required
+def heatmap():
+    return render_template("heatmap.html")
+
+
+@app.route("/parse-replay", methods=["POST"])
+@login_required
+def parse_replay():
+    from flask import jsonify
+    from replay_parser import parse_replay_positions
+    import tempfile
+    
+    file = request.files.get("replay_file")
+    if not file or file.filename == "":
+        return jsonify({"success": False, "error": "No file uploaded."}), 400
+        
+    if not file.filename.endswith(".replay"):
+        return jsonify({"success": False, "error": "Invalid file type. Must be a .replay file."}), 400
+
+    # Save to a temporary file
+    try:
+        with tempfile.NamedTemporaryFile(suffix=".replay", delete=False) as tmp:
+            file.save(tmp.name)
+            temp_path = tmp.name
+        
+        # Parse coordinates
+        player_heatmaps = parse_replay_positions(temp_path)
+        
+        # Clean up
+        try:
+            os.remove(temp_path)
+        except Exception:
+            pass
+            
+        if not player_heatmaps:
+            return jsonify({"success": False, "error": "Could not extract positions from replay."}), 400
+            
+        return jsonify({"success": True, "players": player_heatmaps})
+        
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
 
 @app.route("/recommend")
 @login_required

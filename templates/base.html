@@ -3,16 +3,18 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <meta name="description" content="RocketCanvas — Rocket League stats, hitbox lookup, and player analytics"/>
+  <meta name="description" content="RocketCanvas: an app for Rocket League stats, hitbox lookup and player analytics"/>
   <meta name="theme-color" content="#030308"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <link rel="manifest" href="/manifest.json"/>
   <link rel="apple-touch-icon" href="/static/images/icon-192.png"/>
+  <link rel="preload" as="image" type="image/gif" href="{{ url_for('static', filename='images/loading_screen_animation_cars_moving.gif') }}"/>
   <title>{% block title %}RocketCanvas{% endblock %}</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/loader.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/p5-dialogue.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/card_templates.css') }}">
   <script src="{{ url_for('static', filename='js/chart.min.js') }}" nonce="{{ nonce }}"></script>
   <script src="{{ url_for('static', filename='js/rc-charts.js') }}" nonce="{{ nonce }}"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js" nonce="{{ nonce }}"></script>
@@ -82,11 +84,12 @@
     }
 
     /* ── NAV ────────────────────────────────────────────────────────── */
-    nav {
-      background: rgba(26, 21, 53, 0.92);
+    nav { background: rgba(26, 21, 53, 0.92);
       border-bottom: 1px solid var(--border);
-      padding: 0 1.75rem;
-      height: 58px;
+      padding: 0 env(safe-area-inset-right) 0 env(safe-area-inset-left);
+      padding-left: 1.25rem;
+      padding-right: 1.25rem;
+      height: 52px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -94,7 +97,8 @@
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       gap: 1rem;
-    }
+      max-width: 100vw;
+      overflow-x: hidden; }
     [data-theme="light"] nav { background: rgba(255,255,255,0.88); }
 
     .nav-logo {
@@ -114,7 +118,7 @@
     .nav-logo:hover .nav-logo-icon { box-shadow: 0 0 24px var(--accent); }
 
     .nav-center { display: flex; gap: 0.1rem; align-items: center; flex: 1; justify-content: center; }
-    .nav-right   { display: flex; gap: 0.5rem; align-items: center; flex-shrink: 0; }
+    .nav-right   { display: flex; gap: 0.4rem; align-items: center; flex-shrink: 1; min-width:0; overflow:hidden; }
 
     .nav-center a {
       color: var(--muted); font-size: 0.82rem; font-weight: 600;
@@ -177,17 +181,10 @@
     .hint-text { font-size: 0.75rem; margin-top: 0.5rem; }
     .hidden { display: none !important; }
 
-    .nav-user-wrap { display: flex; align-items: center; gap: 0.6rem; }
-    .nav-avatar {
-      width: 28px; height: 28px; border-radius: 50%;
-      border: 1.5px solid var(--accent);
-      overflow: hidden; flex-shrink: 0; background: var(--surface2);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 0.75rem; font-weight: 700; color: var(--accent);
-      text-transform: uppercase;
-    }
+
     .nav-avatar img { width: 100%; height: 100%; object-fit: cover; }
-    .nav-user { font-family: var(--mono); font-size: 0.75rem; color: var(--muted); }
+    .nav-user-wrap { display: flex; align-items: center; gap: 0.6rem; min-width:0; overflow:hidden; }
+    .nav-user { font-family: var(--mono); font-size: 0.75rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
     /* ── FLASH MESSAGES ─────────────────────────────────────────────── */
     .flash {
@@ -537,6 +534,7 @@
     <a href="{{ url_for('dashboard') }}"    {% if request.endpoint == 'dashboard'    %}class="active"{% endif %}>Dashboard</a>
     <a href="{{ url_for('gallery') }}"      {% if request.endpoint == 'gallery'      %}class="active"{% endif %}>Gallery</a>
     <a href="{{ url_for('analytics') }}"    {% if request.endpoint == 'analytics'    %}class="active"{% endif %}>Analytics</a>
+    <a href="{{ url_for('heatmap') }}"    {% if request.endpoint == 'heatmap'    %}class="active"{% endif %}>Heatmap</a>
     <a href="{{ url_for('hitbox_lookup') }}" {% if request.endpoint == 'hitbox_lookup' %}class="active"{% endif %}>Hitbox</a>
     <a href="{{ url_for('recommend') }}"    {% if request.endpoint == 'recommend'    %}class="active"{% endif %}>Recommend</a>
     <a href="{{ url_for('logout') }}">Logout</a>
@@ -557,13 +555,13 @@
     <button type="button" class="nav-tour-btn" id="navTourBtn" title="Replay page guide">Guide</button>
     <button class="theme-toggle" id="themeToggle" title="Toggle theme" type="button">🌙</button>
     <div class="nav-user-wrap">
-      <div class="nav-avatar" id="navAvatar">
+      <a href="{{ url_for('profile') }}" class="nav-avatar" id="navAvatar">
         {% if current_user.avatar_url %}
           <img src="{{ url_for('static', filename='uploads/avatars/' + current_user.avatar_url) }}" alt="avatar"/>
         {% else %}
           {{ current_user.username[0] }}
         {% endif %}
-      </div>
+      </a>
       <span class="nav-user">{{ current_user.username }}</span>
     </div>
   </div>

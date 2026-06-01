@@ -36,3 +36,13 @@ def get_replay_detail(replay_id):
     r = requests.get(f"{BASE_URL}/replays/{replay_id}", headers=HEADERS)
     r.raise_for_status()
     return r.json()
+
+def download_replay(replay_id):
+    """
+    Downloads the binary .replay file from Ballchasing API.
+    Returns the binary content (bytes).
+    Note: Requires a Patreon-linked API key with download permissions.
+    """
+    r = requests.get(f"{BASE_URL}/replays/{replay_id}/file", headers=HEADERS)
+    r.raise_for_status()
+    return r.content
