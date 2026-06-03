@@ -4,8 +4,11 @@
 <style nonce="{{ nonce }}">
   /* ── PROFILE HEADER ─────────────────────────────────────────────── */
   .profile-hero {
-    background: var(--surface);
-    border: 1px solid var(--border);
+    background: rgba(18, 13, 43, 0.65);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(176, 110, 255, 0.15);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.02);
     border-radius: var(--radius2);
     padding: 2rem;
     display: flex;
@@ -48,8 +51,10 @@
 
   .profile-info { flex: 1; min-width: 0; }
   .profile-username {
-    font-size: 1.9rem; font-weight: 700; letter-spacing: 0.04em; line-height: 1.1;
+    font-size: 2.5rem; font-weight: 800; letter-spacing: 0.05em; line-height: 1.1;
     margin-bottom: 0.15rem; word-break: break-all;
+    text-shadow: 0 4px 20px rgba(176, 110, 255, 0.4);
+    color: var(--text);
   }
   .profile-rank {
     font-size: 0.8rem; font-weight: 700; letter-spacing: 0.12em;

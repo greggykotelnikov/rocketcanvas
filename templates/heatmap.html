@@ -638,7 +638,8 @@
     minZoom: -1,
     maxZoom: 4,
     zoomSnap: 0.25,
-    attributionControl: false
+    attributionControl: false,
+    preferCanvas: true
   });
 
   // Scale: 1 RL unit = 0.01 pixels for the image coordinate system
@@ -828,7 +829,7 @@
     heatLayer = L.imageOverlay(heatUrl, bounds, { opacity: 0.7 }).addTo(map);
 
     // Add a subset of individual point markers for detail
-    const maxMarkers = Math.min(clamped.length, 400);
+    const maxMarkers = Math.min(clamped.length, 200);
     const step = Math.max(1, Math.floor(clamped.length / maxMarkers));
     for (let i = 0; i < clamped.length; i += step) {
       const [x, y] = clamped[i];
