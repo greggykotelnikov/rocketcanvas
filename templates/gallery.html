@@ -3,14 +3,21 @@
 {% block content %}
 <style nonce="{{ nonce }}">
   .gallery-header {
+    margin-bottom: 2.5rem;
+    text-align: center;
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
     align-items: center;
-    margin-bottom: 2rem;
   }
   .gallery-title {
-    font-size: 2rem;
-    font-weight: 700;
+    font-size: 2.5rem; font-weight: 800; letter-spacing: 0.1em;
+    text-transform: uppercase; margin-bottom: 0.5rem;
+    color: var(--text);
+    text-shadow: 0 4px 20px rgba(176, 110, 255, 0.4);
+  }
+  .gallery-sub { 
+    font-family: var(--ui); font-size: 1rem; color: var(--muted); 
+    margin-bottom: 1.5rem; font-weight: 500;
   }
   .upload-btn {
     background: linear-gradient(135deg, var(--accent), var(--accent2));
@@ -84,47 +91,30 @@
   @media(max-width: 900px) { .gallery-grid { grid-template-columns: repeat(2, 1fr); } }
   @media(max-width: 600px) { .gallery-grid { grid-template-columns: 1fr; } }
   
-    /* Purple Trading Card Styles */
+    /* Simplistic and Modern Design Card Styles */
   .design-card {
-    background: linear-gradient(145deg, #1f0b3e, #0e0520);
-    border: 3px solid #7c3aed;
-    border-radius: 16px;
+    background: rgba(18, 13, 43, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
     overflow: hidden;
     position: relative;
-    box-shadow: 0 10px 30px rgba(124, 58, 237, 0.4), inset 0 0 20px rgba(176, 110, 255, 0.2);
-    transform-style: preserve-3d;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
     display: flex;
     flex-direction: column;
     height: 100%;
+    transition: transform var(--t), border-color var(--t), box-shadow var(--t);
   }
   
-  .design-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 50%);
-    pointer-events: none;
-    z-index: 2;
-  }
-
-  .design-card::after {
-    content: '★ LEGENDARY';
-    position: absolute;
-    top: 10px; right: -30px;
-    background: #b06eff;
-    color: #fff;
-    font-size: 0.7rem;
-    font-weight: 800;
-    padding: 0.2rem 2rem;
-    transform: rotate(45deg);
-    z-index: 3;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+  .design-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(176, 110, 255, 0.35);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
   }
 
   .design-img-container {
-    padding: 10px;
-    background: #000;
-    border-bottom: 2px solid #7c3aed;
+    position: relative;
+    overflow: hidden;
+    width: 100%;
   }
 
   .design-img {
@@ -132,27 +122,27 @@
     aspect-ratio: 16 / 10;
     display: block;
     object-fit: cover;
-    border-radius: 8px;
-    border: 1px solid #3d3875;
+    border-radius: 12px 12px 0 0;
+    transition: transform var(--t);
+  }
+
+  .design-card:hover .design-img {
+    transform: scale(1.03);
   }
 
   .design-info { 
-    padding: 1rem; 
-    text-align: center;
-    position: relative;
+    padding: 1.25rem; 
+    text-align: left;
     display: flex;
     flex-direction: column;
     flex-grow: 1;
   }
   
   .design-title { 
-    font-weight: 800; 
-    font-size: 1.25rem; 
-    margin-bottom: 0.5rem; 
-    text-transform: uppercase;
+    font-weight: 700; 
+    font-size: 1.1rem; 
+    margin-bottom: 0.35rem; 
     color: #fff;
-    text-shadow: 0 0 10px rgba(176,110,255,0.8);
-    transform: translateZ(20px);
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
@@ -160,37 +150,53 @@
   }
   
   .design-meta { 
-    font-size: 0.85rem; 
+    font-size: 0.78rem; 
     color: var(--muted); 
     display: flex; 
     flex-direction: column;
-    gap: 0.25rem;
-    margin-top: auto;
+    gap: 0.2rem;
+    margin-top: 0.5rem;
   }
   
   .design-author { 
-    color: #d09fff; 
-    font-weight: 700; 
+    color: var(--accent3); 
+    font-weight: 600; 
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
   
   .card-stats {
     display: flex;
-    justify-content: center;
-    gap: 1rem;
+    justify-content: flex-start;
+    gap: 1.5rem;
     margin-top: 1rem;
-    border-top: 1px solid rgba(124, 58, 237, 0.3);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
     padding-top: 0.75rem;
   }
   .stat {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: flex-start;
     font-family: var(--mono);
   }
-  .stat-val { font-size: 1.1rem; font-weight: 700; color: #10e88a; }
+  .stat-val { font-size: 1.05rem; font-weight: 700; color: var(--win); }
   .stat-label { font-size: 0.6rem; color: var(--muted); text-transform: uppercase; }
+
+  /* Rarity Corner Badge */
+  .rarity-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    padding: 0.25rem 0.55rem;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border-radius: 4px;
+    z-index: 5;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+    font-family: var(--ui);
+  }
 
   .empty-state {
     text-align: center; padding: 4rem 2rem;
@@ -201,10 +207,8 @@
 </style>
 
 <div class="gallery-header">
-  <div>
-    <h1 class="gallery-title">Trading Card Gallery</h1>
-    <p style="color: var(--muted); margin-top: 0.25rem;">Browse and share your custom Rocket League presets in style.</p>
-  </div>
+  <h1 class="gallery-title">Trading Card Gallery</h1>
+  <p class="gallery-sub">browse and share your custom rocket league presets in style</p>
   <button class="upload-btn" id="openUploadModalBtn">
     + Upload Design
   </button>
@@ -213,9 +217,10 @@
 {% if designs %}
   <div class="gallery-grid">
     {% for design in designs %}
-      <div class="design-card {{ design.card_template }}" data-tilt data-tilt-max="15" data-tilt-speed="400" data-tilt-perspective="500" data-tilt-glare data-tilt-max-glare="0.5">
-        <div class="design-img-container" style="position: relative;">
+      <div class="design-card {{ design.card_template }}">
+        <div class="design-img-container">
           <img src="{{ url_for('static', filename='uploads/designs/' ~ design.image_filename) }}" alt="{{ design.title }}" class="design-img" loading="lazy"/>
+          <div class="rarity-badge rarity-{{ design.card_template }}">{{ design.card_template }}</div>
           {% if design.overlay_title %}<div class="overlay-title">{{ design.overlay_title }}</div>{% endif %}
         </div>
         <div class="design-info">
@@ -291,6 +296,4 @@
   document.getElementById('uploadModal').addEventListener('click', function(e) {
     if (e.target === this) this.classList.remove('active');
   });
-</script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.1/vanilla-tilt.min.js"></script>
 {% endblock %}

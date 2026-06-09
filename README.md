@@ -54,7 +54,7 @@ BALLCHASING_TOKEN=your-ballchasing-api-token
 ### 4. Seed the hitbox database
 
 ```bash
-python seed_hitboxes.py #upd: does not work since my ML model from teachable machine did not prove to be a successful solution due to the lack of angles and cases for each of the car hitboxes.
+python seed_hitboxes.py  # Note: ML hitbox model removed due to inaccuracy; data now sourced from official records.
 ```
 
 ### 5. Run
@@ -125,3 +125,7 @@ rocketcanvas/
 ## License
 
 MIT
+
+---
+© 2026 RocketCanvas. All rights reserved.
+

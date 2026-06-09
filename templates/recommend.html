@@ -2,9 +2,20 @@
 {% block title %}Car Recommendation: RocketCanvas{% endblock %}
 {% block content %}
 <style nonce="{{ nonce }}">
-  .recommend-header { margin-bottom: 2rem; }
-  .recommend-title { font-size: 1.6rem; font-weight: 700; margin-bottom: 0.25rem; }
-  .recommend-sub { font-family: var(--mono); font-size: 0.8rem; color: var(--muted); margin-bottom: 1.25rem; }
+  .recommend-header {
+    margin-bottom: 2.5rem;
+    text-align: center;
+  }
+  .recommend-title {
+    font-size: 2.5rem; font-weight: 800; letter-spacing: 0.1em;
+    text-transform: uppercase; margin-bottom: 0.5rem;
+    color: var(--text);
+    text-shadow: 0 4px 20px rgba(176, 110, 255, 0.4);
+  }
+  .recommend-sub {
+    font-family: var(--ui); font-size: 1rem; color: var(--muted); 
+    margin-bottom: 1.5rem; font-weight: 500;
+  }
   
   .rec-card {
     background: var(--surface); border: 1px solid var(--border);
@@ -36,7 +47,7 @@
 
 <div class="recommend-header">
   <div class="recommend-title">Car Matchmaker</div>
-  <div class="recommend-sub">Find the optimal hitbox and car for your current skill level</div>
+  <div class="recommend-sub">find the optimal hitbox and car for your current skill level</div>
 </div>
 
 {% if current_user.rank %}

@@ -302,7 +302,21 @@
 
 {% block content %}
 <!-- Override page wrapper for full bleed -->
-<style nonce="{{ nonce }}"> .page { max-width: none; padding: 0; margin: 0; } .site-footer { display: none; } .page > .flash { display: none; } </style>
+<style nonce="{{ nonce }}">
+  .page {
+    max-width: none;
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  .site-footer { display: none; }
+  .page > .flash { display: none; }
+</style>
 
 <div class="scanlines"></div>
 

@@ -3,10 +3,21 @@
 {% block content %}
 <style nonce="{{ nonce }}">
   /* ── HEADER ─────────────────────────────────────────────────────── */
-  .analytics-header { margin-bottom: 2rem; }
-  .analytics-title { font-size: 1.6rem; font-weight: 700; margin-bottom: 0.25rem; }
-  .analytics-sub { font-family: var(--mono); font-size: 0.8rem; color: var(--muted); margin-bottom: 1.25rem; }
-  .search-row { display: flex; gap: 0.75rem; }
+  .analytics-header {
+    margin-bottom: 2.5rem;
+    text-align: center;
+  }
+  .analytics-title {
+    font-size: 2.5rem; font-weight: 800; letter-spacing: 0.1em;
+    text-transform: uppercase; margin-bottom: 0.5rem;
+    color: var(--text);
+    text-shadow: 0 4px 20px rgba(176, 110, 255, 0.4);
+  }
+  .analytics-sub { 
+    font-family: var(--ui); font-size: 1rem; color: var(--muted); 
+    margin-bottom: 1.5rem; font-weight: 500;
+  }
+  .search-row { display: flex; gap: 0.75rem; max-width: 600px; margin: 0 auto; }
   .search-row .input { flex: 1; }
 
   /* ── TOP STATS ───────────────────────────────────────────────────── */
@@ -92,7 +103,7 @@
   <div class="analytics-sub">deep dive into performance data such as win rates, maps and activity patterns</div>
   <form class="search-row" method="GET" action="{{ url_for('analytics') }}">
     <input class="input" type="text" id="analyticsSearch" name="player"
-      placeholder="Enter player name…"
+      placeholder="Search player name…"
       value="{{ player or '' }}" autofocus/>
     <button class="btn btn-primary" type="submit">Analyse</button>
   </form>

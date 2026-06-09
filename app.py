@@ -228,6 +228,43 @@ def gallery():
     designs = CarDesign.query.order_by(CarDesign.created_at.desc()).all()
     return render_template("gallery.html", designs=designs)
 
+@app.route("/garage")
+@login_required
+def garage():
+    base_dir = os.path.join(app.root_path, "static", "images", "car-constructor")
+    
+    def get_files(subdir):
+        path = os.path.join(base_dir, subdir)
+        if not os.path.exists(path):
+            return []
+        return sorted([f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))])
+    
+    def get_nested_files(subdir):
+        path = os.path.join(base_dir, subdir)
+        if not os.path.exists(path):
+            return {}
+        result = {}
+        for d in os.listdir(path):
+            d_path = os.path.join(path, d)
+            if os.path.isdir(d_path):
+                result[d] = sorted([f for f in os.listdir(d_path) if os.path.isfile(os.path.join(d_path, f))])
+        return result
+
+    bodies = get_files("1 Bodies")
+    chassis = get_nested_files("2 Chassis")
+    additions = get_files("3 Additions")
+    patches = get_files("4 Patches")
+    effects = get_files("5 Effects")
+
+    return render_template(
+        "garage.html",
+        bodies=bodies,
+        chassis=chassis,
+        additions=additions,
+        patches=patches,
+        effects=effects
+    )
+
 
 @app.route("/gallery/upload", methods=["POST"])
 @login_required

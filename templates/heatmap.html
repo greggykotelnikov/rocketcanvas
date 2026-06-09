@@ -8,23 +8,19 @@
 <style nonce="{{ nonce }}">
   /* PAGE LAYOUT */
   .heatmap-page-header {
-    margin-bottom: 2rem;
-    padding-bottom: 1.5rem;
-    border-bottom: 1px solid var(--border);
+    margin-bottom: 2.5rem;
+    text-align: center;
   }
   .heatmap-page-header h1 {
-    font-size: 2rem;
-    font-weight: 800;
-    background: linear-gradient(135deg, var(--text) 30%, var(--accent3) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    margin-bottom: 0.4rem;
+    font-size: 2.5rem; font-weight: 800; letter-spacing: 0.1em;
+    text-transform: uppercase; margin-bottom: 0.5rem;
+    color: var(--text);
+    text-shadow: 0 4px 20px rgba(176, 110, 255, 0.4);
     line-height: 1.15;
   }
   .heatmap-page-header p {
-    font-size: 0.85rem;
-    color: var(--muted);
-    font-family: var(--ui);
+    font-family: var(--ui); font-size: 1rem; color: var(--muted); 
+    margin-bottom: 1.5rem; font-weight: 500;
   }
 
   .heatmap-grid-layout {
@@ -451,7 +447,7 @@
 
 <div class="heatmap-page-header">
   <h1>Pitch Heatmap</h1>
-  <p>Upload a <code>.replay</code>, <code>.csv</code>, or <code>.json</code> file to visualize player positions and zone analytics on the pitch.</p>
+  <p>upload a <code>.replay</code>, <code>.csv</code>, or <code>.json</code> file to visualize player positions and zone analytics on the pitch</p>
 </div>
 
 <input type="hidden" id="csrfToken" value="{{ csrf_token() }}">

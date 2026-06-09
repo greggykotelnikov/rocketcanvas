@@ -9,10 +9,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <link rel="manifest" href="/manifest.json"/>
   <link rel="apple-touch-icon" href="/static/images/icon-192.png"/>
-  <link rel="preload" as="image" type="image/gif" href="{{ url_for('static', filename='images/loading_screen_animation_cars_moving.gif') }}"/>
   <title>{% block title %}RocketCanvas{% endblock %}</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/loader.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/p5-dialogue.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/card_templates.css') }}">
   <script src="{{ url_for('static', filename='js/chart.min.js') }}" nonce="{{ nonce }}"></script>
@@ -26,6 +24,9 @@
   --bg:          #010103;
   --surface:     #0c091f;
   --surface2:    #120d2b;
+  /* Title and subtitle colors */
+  --title-color: #fff;
+  --subtitle-color: #bbb;
   --surface3:    #18123a;
   --border:      #2c2459;
   --border2:     #423685;
@@ -47,34 +48,22 @@
   --t:           0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
-    /* ── LIGHT MODE ─────────────────────────────────────────────────── */
-    [data-theme="light"] {
-      --bg:          #eeeaf8;
-      --surface:     #ffffff;
-      --surface2:    #f4f1ff;
-      --surface3:    #ebe6fc;
-      --border:      #d8d0f5;
-      --border2:     #baaff0;
-      --accent:      #7c3aed;
-      --accent2:     #6d28d9;
-      --accent3:     #9333ea;
-      --accent-glow: rgba(124, 58, 237, 0.14);
-      --accent-glow2:rgba(124, 58, 237, 0.06);
-      --win:         #059669;
-      --loss:        #dc2626;
-      --text:        #000000;
-      --text2:       #334155;
-      --muted:       #475569;
-    }
+
 
     /* ── BASE ───────────────────────────────────────────────────────── */
     html { scroll-behavior: smooth; }
     body {
       background: var(--bg);
+      background-image: url('/static/images/purple_sky.png');
+      background-repeat: no-repeat;
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      image-rendering: pixelated;
       color: var(--text);
       font-family: var(--ui);
       min-height: 100vh;
-      transition: background var(--t), color var(--t);
+      transition: background-color var(--t), color var(--t);
     }
 
     /* ── PAGE ENTRY ANIMATION ───────────────────────────────────────── */
@@ -85,7 +74,8 @@
     }
 
     /* ── NAV ────────────────────────────────────────────────────────── */
-    nav { background: rgba(26, 21, 53, 0.92);
+    nav {
+      background: rgba(26, 21, 53, 0.92);
       border-bottom: 1px solid var(--border);
       padding: 0 env(safe-area-inset-right) 0 env(safe-area-inset-left);
       padding-left: 1.25rem;
@@ -98,13 +88,14 @@
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       gap: 1rem;
-      max-width: 100vw;
-      overflow-x: hidden; }
-    [data-theme="light"] nav { background: rgba(255,255,255,0.88); }
+      flex-wrap: wrap;
+      overflow-x: auto;
+    }
+    
 
     .nav-logo {
       font-size: 1.2rem; font-weight: 700; letter-spacing: 0.14em;
-      text-transform: uppercase; color: var(--accent); text-decoration: none;
+      text-transform: uppercase; color: var(--title-color); text-decoration: none;
       display: flex; align-items: center; gap: 0.45rem; flex-shrink: 0;
       transition: color var(--t);
     }
@@ -118,15 +109,26 @@
     }
     .nav-logo:hover .nav-logo-icon { box-shadow: 0 0 24px var(--accent); }
 
-    .nav-center { display: flex; gap: 0.1rem; align-items: center; flex: 1; justify-content: center; }
-    .nav-right   { display: flex; gap: 0.4rem; align-items: center; flex-shrink: 1; min-width:0; overflow:hidden; }
+    .nav-center {
+      display: flex;
+      gap: 0.15rem;
+      align-items: center;
+      flex: 1;
+      justify-content: center;
+      min-width: 0;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .nav-center::-webkit-scrollbar { display: none; }
+    .nav-right   { display: flex; gap: 0.6rem; align-items: center; flex-shrink: 0; }
 
     .nav-center a {
-      color: var(--muted); font-size: 0.82rem; font-weight: 600;
-      letter-spacing: 0.06em; text-decoration: none; text-transform: uppercase;
-      padding: 0.4rem 0.85rem; border-radius: var(--radius);
+      color: var(--muted); font-size: 0.8rem; font-weight: 600;
+      letter-spacing: 0.04em; text-decoration: none; text-transform: uppercase;
+      padding: 0.35rem 0.7rem; border-radius: var(--radius);
       transition: color var(--t), background var(--t);
       position: relative;
+      white-space: nowrap;
     }
     .nav-center a:hover { color: var(--text); background: var(--surface2); }
     .nav-center a.active {
@@ -161,7 +163,7 @@
       background: var(--accent-glow2); box-shadow: 0 0 16px var(--accent-glow);
     }
 
-    @media (max-width: 900px) {
+    @media (max-width: 1280px) {
       nav { flex-wrap: wrap; height: auto; padding: 0.75rem 1rem; gap: 0.5rem; }
       .nav-logo { flex: 1; font-size: 1rem; }
       .nav-right { flex-shrink: 0; }
@@ -182,7 +184,31 @@
     .hint-text { font-size: 0.75rem; margin-top: 0.5rem; }
     .hidden { display: none !important; }
 
-
+    .nav-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    /* Alignment utilities */
+    .align-left { text-align: left; }
+    .align-center { text-align: center; }  align-items: center;
+      justify-content: center;
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--accent);
+      text-decoration: none;
+      overflow: hidden;
+      flex-shrink: 0;
+      transition: all var(--t);
+    }
+    .nav-avatar:hover {
+      border-color: var(--accent);
+      box-shadow: 0 0 12px var(--accent-glow);
+    }
     .nav-avatar img { width: 100%; height: 100%; object-fit: cover; }
     .nav-user-wrap { display: flex; align-items: center; gap: 0.6rem; min-width:0; overflow:hidden; }
     .nav-user { font-family: var(--mono); font-size: 0.75rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -191,7 +217,7 @@
     .flash {
       padding: 0.7rem 1.25rem; font-size: 0.85rem; font-family: var(--mono);
       border-left: 3px solid; margin-bottom: 1rem;
-      border-radius: 0 var(--radius) var(--radius) 0;
+      border-radius: var(--radius);
       animation: slideIn 0.3s ease both;
     }
     @keyframes slideIn {
@@ -205,71 +231,86 @@
     .btn {
       display: inline-flex; align-items: center; gap: 0.4rem;
       padding: 0.6rem 1.5rem;
-      font-family: var(--ui); font-weight: 700; font-size: 0.88rem;
-      letter-spacing: 0.08em; text-transform: uppercase;
-      border: none; cursor: pointer; text-decoration: none;
+      font-family: var(--mono); font-weight: normal; font-size: 0.55rem;
+      text-transform: uppercase;
+      border: 3px solid #000; cursor: pointer; text-decoration: none;
       border-radius: var(--radius);
+      box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.6);
       transition: all var(--t); white-space: nowrap;
     }
     .btn-primary {
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      background: var(--accent2);
       color: #fff;
-      box-shadow: 0 4px 20px rgba(168,85,247,0.3);
+      border-color: var(--accent);
     }
     .btn-primary:hover {
-      box-shadow: 0 6px 28px rgba(168,85,247,0.5);
-      transform: translateY(-2px);
-      filter: brightness(1.1);
+      box-shadow: 2px 2px 0px #000;
+      transform: translate(2px, 2px);
+      background: var(--accent);
     }
-    .btn-primary:active { transform: translateY(0); }
+    .btn-primary:active {
+      box-shadow: 0px 0px 0px #000;
+      transform: translate(4px, 4px);
+    }
     .btn-ghost {
       background: transparent; color: var(--accent);
-      border: 1px solid var(--accent);
+      border: 3px solid var(--accent);
     }
-    .btn-ghost:hover { background: var(--accent-glow); transform: translateY(-1px); }
-    .btn-sm { padding: 0.4rem 1rem; font-size: 0.78rem; }
+    .btn-ghost:hover {
+      background: var(--accent-glow);
+      box-shadow: 2px 2px 0px #000;
+      transform: translate(2px, 2px);
+    }
+    .btn-sm { padding: 0.4rem 1rem; font-size: 0.5rem; }
 
     /* ── INPUTS ─────────────────────────────────────────────────────── */
     .input {
-      width: 100%; background: var(--surface2); border: 1px solid var(--border);
-      color: var(--text); font-family: var(--mono); font-size: 0.9rem;
+      width: 100%; background: var(--surface2); border: 3px solid var(--border);
+      color: var(--text); font-family: var(--ui); font-size: 1.1rem;
       padding: 0.7rem 1rem; outline: none;
       transition: border-color var(--t), box-shadow var(--t);
       border-radius: var(--radius);
+      box-shadow: inset 3px 3px 0px rgba(0,0,0,0.3);
     }
-    .input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+    .input:focus { border-color: var(--accent); box-shadow: inset 3px 3px 0px rgba(0,0,0,0.3), 3px 3px 0px var(--accent-glow2); }
     .input::placeholder { color: var(--muted); }
     textarea.input { resize: vertical; min-height: 80px; }
     select.input { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%234e566e'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.9rem center; padding-right: 2rem; }
 
     label {
-      display: block; font-size: 0.76rem; font-weight: 600; letter-spacing: 0.1em;
+      display: block; font-size: 1.05rem; font-weight: normal;
       text-transform: uppercase; color: var(--muted); margin-bottom: 0.4rem;
     }
     .field { margin-bottom: 1.1rem; }
 
     /* ── CARDS ──────────────────────────────────────────────────────── */
     .card {
-      background: linear-gradient(145deg, var(--surface2) 0%, var(--surface) 55%, var(--surface3) 100%);
-      border: 1px solid var(--border);
+      background: var(--surface);
+      border: 4px solid var(--border);
       border-radius: var(--radius2); padding: 1.5rem; margin-bottom: 1.5rem;
-      transition: border-color var(--t), box-shadow var(--t);
-      box-shadow: 0 4px 24px rgba(124, 58, 237, 0.08);
+      transition: border-color var(--t), box-shadow var(--t), transform var(--t);
+      box-shadow: 6px 6px 0px rgba(0,0,0,0.6);
     }
-    .card:hover { border-color: var(--border2); box-shadow: 0 8px 32px rgba(124, 58, 237, 0.14); }
+    .card:hover {
+      border-color: var(--border2);
+      box-shadow: 10px 10px 0px rgba(176, 110, 255, 0.15);
+      transform: translate(-2px, -2px);
+    }
 
     .stat-tile, .kpi, .chart-card, .streak-card, .table-wrap, .quick-link {
       background: rgba(18, 13, 43, 0.65);
-      border: 1px solid rgba(176, 110, 255, 0.15);
+      border: 3px solid rgba(176, 110, 255, 0.15);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+      box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.5);
+      border-radius: var(--radius);
       transition: all var(--t);
     }
     
     .stat-tile:hover, .chart-card:hover, .table-wrap:hover {
       border-color: rgba(176, 110, 255, 0.35);
-      box-shadow: 0 8px 32px rgba(176, 110, 255, 0.15), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+      box-shadow: 6px 6px 0px rgba(176, 110, 255, 0.15);
+      transform: translate(-1px, -1px);
     }
 
     .chart-wrap {
@@ -318,7 +359,26 @@
     .badge-accent { color: var(--accent); border: 1px solid var(--accent); background: var(--accent-glow2); }
 
     /* ── PAGE WRAPPER ───────────────────────────────────────────────── */
-    .page { max-width: 80%; margin: 0 auto; padding: 2rem; }
+    .page {
+      max-width: 80%;
+      margin: 2rem auto;
+      padding: 2.5rem;
+      background: rgba(12, 9, 31, 0.75);
+      border: 1px solid rgba(176, 110, 255, 0.15);
+      border-radius: 16px;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      transition: background-color var(--t), border-color var(--t);
+    }
+
+    @media (max-width: 768px) {
+      .page {
+        max-width: 95%;
+        padding: 1.5rem;
+        margin: 1rem auto;
+      }
+    }
 
     /* ── GRADIENT TEXT ──────────────────────────────────────────────── */
     .grad-text {
@@ -338,7 +398,9 @@
     /* ── FOOTER ─────────────────────────────────────────────────────── */
     .site-footer {
       border-top: 1px solid var(--border);
-      background: var(--surface);
+      background: rgba(12, 9, 31, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       padding: 3rem 2rem 2rem;
       margin-top: 4rem;
     }
@@ -515,7 +577,7 @@
       background: var(--accent3);
     }
     
-    @media (max-width: 900px) {
+    @media (max-width: 1280px) {
       .bgm-player {
         margin-right: 0;
         padding: 0.2rem 0.35rem;
@@ -544,6 +606,7 @@
     <a href="{{ url_for('profile') }}"      {% if request.endpoint == 'profile'      %}class="active"{% endif %}>Profile</a>
     <a href="{{ url_for('dashboard') }}"    {% if request.endpoint == 'dashboard'    %}class="active"{% endif %}>Dashboard</a>
     <a href="{{ url_for('gallery') }}"      {% if request.endpoint == 'gallery'      %}class="active"{% endif %}>Gallery</a>
+    <a href="{{ url_for('garage') }}"       {% if request.endpoint == 'garage'       %}class="active"{% endif %}>Garage</a>
     <a href="{{ url_for('analytics') }}"    {% if request.endpoint == 'analytics'    %}class="active"{% endif %}>Analytics</a>
     <a href="{{ url_for('heatmap') }}"    {% if request.endpoint == 'heatmap'    %}class="active"{% endif %}>Heatmap</a>
     <a href="{{ url_for('hitbox_lookup') }}" {% if request.endpoint == 'hitbox_lookup' %}class="active"{% endif %}>Hitbox</a>
@@ -555,16 +618,16 @@
     <!-- Sleek P5 BGM widget -->
     <div class="bgm-player">
       <button class="bgm-ctrl" id="bgmPrevBtn" title="Previous Track">⏮</button>
-      <button class="bgm-play" id="bgmPlayBtn" title="Play/Pause BGM">▶</button>
+      <button class="bgm-play" id="bgmPlayBtn" title="Play/Pause">▶</button>
       <button class="bgm-ctrl" id="bgmNextBtn" title="Next Track">⏭</button>
       <div class="bgm-info" id="bgmTrackTicker">
-        <span id="bgmTrackName">RLCS Overtime Theme</span>
+        <span id="bgmTrackName">Loading...</span>
       </div>
-      <input type="range" class="bgm-slider" id="bgmVolSlider" min="0" max="1" step="0.05" value="0.5" title="Volume">
+      <input type="range" class="bgm-slider" id="bgmVolSlider" min="0" max="1" step="0.05" title="Volume"/>
     </div>
     
-    <button type="button" class="nav-tour-btn" id="navTourBtn" title="Replay page guide">Guide</button>
-    <button class="theme-toggle" id="themeToggle" title="Toggle theme" type="button">🌙</button>
+    
+    
     <div class="nav-user-wrap">
       <a href="{{ url_for('profile') }}" class="nav-avatar" id="navAvatar">
         {% if current_user.avatar_url %}
@@ -598,7 +661,7 @@
         RocketCanvas
       </a>
       <p class="footer-desc">
-        A Rocket League stat tracker, hitbox lookup tool, and player analytics dashboard, which is powered by the ballchasing.com API. Track win rates, map performance, goal differentials, streaks, and more.
+        A Rocket League stat tracker, interactive 3D hitbox visualizer, 2D garage builder, and player analytics dashboard powered by the ballchasing.com API.
       </p>
       <div class="footer-pills">
         <span class="footer-pill">Flask</span>
@@ -606,7 +669,9 @@
         <span class="footer-pill">SQLite</span>
         <span class="footer-pill">2FA</span>
         <span class="footer-pill">Ballchasing API</span>
-        <span class="footer-pill">ML Hitbox</span>
+        <span class="footer-pill">3D WebGL</span>
+        <span class="footer-pill">2D Garage</span>
+        <span class="footer-pill">Licensed BGM</span>
       </div>
     </div>
 
@@ -694,7 +759,6 @@
 </script>
 <script src="{{ url_for('static', filename='js/cursor.js') }}"></script>
 <script src="{{ url_for('static', filename='js/effects.js') }}"></script>
-<script src="{{ url_for('static', filename='js/loader.js') }}"></script>
 <script src="{{ url_for('static', filename='js/sfx.js') }}"></script>
 <script src="{{ url_for('static', filename='js/tutorial.js') }}"></script>
 <script>

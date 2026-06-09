@@ -1,0 +1,351 @@
+{% extends "base.html" %}
+{% block title %}Garage - RocketCanvas{% endblock %}
+
+{% block head %}
+<style nonce="{{ nonce }}">
+  .garage-container {
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .garage-preview {
+    flex: 1;
+    min-width: 300px;
+    min-height: 400px;
+    background: var(--surface2);
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .garage-preview img {
+    position: absolute;
+    width: 256px;
+    height: auto;
+    image-rendering: pixelated;
+    display: none;
+  }
+
+  .garage-preview img.active {
+    display: block;
+  }
+
+  /* Layer stacking and transformations via CSS variables */
+  #car-chassis {
+    z-index: 1;
+    transform: translate(var(--chassis-x, 0px), var(--chassis-y, 0px)) scale(var(--chassis-s, 1));
+  }
+  #car-body {
+    z-index: 2;
+    transform: translate(var(--body-x, 0px), var(--body-y, 0px)) scale(var(--body-s, 1));
+  }
+  #car-addition {
+    z-index: 3;
+    transform: translate(var(--addition-x, 0px), var(--addition-y, 0px)) scale(var(--addition-s, 1));
+  }
+  #car-patch {
+    z-index: 4;
+    transform: translate(var(--patch-x, 0px), var(--patch-y, 0px)) scale(var(--patch-s, 1));
+  }
+  #car-effect {
+    z-index: 5;
+    transform: translate(var(--effect-x, 0px), var(--effect-y, 0px)) scale(var(--effect-s, 1));
+  }
+
+  .garage-placeholder {
+    color: var(--muted);
+    font-family: var(--mono);
+    z-index: 0;
+  }
+
+  .garage-placeholder.hidden {
+    display: none;
+  }
+
+  .garage-controls {
+    flex: 1;
+    min-width: 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    background: var(--surface);
+    padding: 1.5rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+  }
+
+  .garage-description {
+    color: var(--muted);
+    font-family: var(--mono);
+    margin-bottom: 2rem;
+  }
+
+  .adjust-slider {
+    width: 100%;
+    height: 4px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: var(--border);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+    transition: background var(--t);
+  }
+  .adjust-slider:hover {
+    background: var(--border2);
+  }
+  .adjust-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    transition: transform var(--t);
+  }
+  .adjust-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.3);
+    background: var(--accent3);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="section-title">Garage</div>
+  <p class="garage-description">Build your custom 2D car using the asset pack.</p>
+  
+  <div class="garage-container">
+    <!-- Car Preview Canvas -->
+    <div class="garage-preview">
+      <!-- Absolute positioned sprites to build the car -->
+      <img id="car-chassis" src="" />
+      <img id="car-body" src="" />
+      <img id="car-addition" src="" />
+      <img id="car-patch" src="" />
+      <img id="car-effect" src="" />
+      <p id="car-placeholder" class="garage-placeholder">Select parts to start building</p>
+    </div>
+
+    <!-- Controls -->
+    <div class="garage-controls">
+      
+      <div class="field">
+        <label>Chassis</label>
+        <select class="input" id="chassis-select">
+          <option value="">None</option>
+          {% for category, files in chassis.items() %}
+            <optgroup label="{{ category }}">
+              {% for file in files %}
+                <option value="{{ category }}/{{ file }}">{{ category }} - {{ file }}</option>
+              {% endfor %}
+            </optgroup>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Body</label>
+        <select class="input" id="body-select">
+          <option value="">None</option>
+          {% for file in bodies %}
+            <option value="{{ file }}">{{ file }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Additions</label>
+        <select class="input" id="additions-select">
+          <option value="">None</option>
+          {% for file in additions %}
+            <option value="{{ file }}">{{ file }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Patches</label>
+        <select class="input" id="patches-select">
+          <option value="">None</option>
+          {% for file in patches %}
+            <option value="{{ file }}">{{ file }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      
+      <div class="field">
+        <label>Effects</label>
+        <select class="input" id="effects-select">
+          <option value="">None</option>
+          {% for file in effects %}
+            <option value="{{ file }}">{{ file }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Placement Tuning Sliders -->
+      <div style="border-top: 1px solid var(--border); padding-top: 1.5rem; margin-top: 0.5rem; display: flex; flex-direction: column; gap: 1.25rem;">
+        <label style="font-size: 0.85rem; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700;">Tuning & Placement</label>
+        
+        <div class="field" style="margin-bottom: 0;">
+          <label>Select Layer to Adjust</label>
+          <select class="input" id="adjust-layer-select">
+            <option value="chassis">Chassis</option>
+            <option value="body" selected>Body</option>
+            <option value="addition">Addition</option>
+            <option value="patch">Patch</option>
+            <option value="effect">Effect</option>
+          </select>
+        </div>
+
+        <div class="field" style="margin-bottom: 0;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem;">
+            <label style="margin-bottom: 0;">Horizontal Offset (X)</label>
+            <span id="x-val" style="font-size: 0.75rem; font-family: var(--mono); color: var(--muted);">0px</span>
+          </div>
+          <input type="range" class="adjust-slider" id="offset-x-slider" min="-150" max="150" value="0">
+        </div>
+
+        <div class="field" style="margin-bottom: 0;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem;">
+            <label style="margin-bottom: 0;">Vertical Offset (Y)</label>
+            <span id="y-val" style="font-size: 0.75rem; font-family: var(--mono); color: var(--muted);">0px</span>
+          </div>
+          <input type="range" class="adjust-slider" id="offset-y-slider" min="-150" max="150" value="0">
+        </div>
+
+        <div class="field" style="margin-bottom: 0;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem;">
+            <label style="margin-bottom: 0;">Scale</label>
+            <span id="scale-val" style="font-size: 0.75rem; font-family: var(--mono); color: var(--muted);">100%</span>
+          </div>
+          <input type="range" class="adjust-slider" id="scale-slider" min="30" max="300" value="100">
+        </div>
+
+        <button type="button" class="btn btn-ghost btn-sm" id="reset-placement-btn" style="justify-content: center;">Reset Layer</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script nonce="{{ nonce }}">
+(function() {
+  const basePath = "{{ url_for('static', filename='images/car-constructor/') }}";
+  
+  function updateCar() {
+    const chassis = document.getElementById('chassis-select').value;
+    const body = document.getElementById('body-select').value;
+    const addition = document.getElementById('additions-select').value;
+    const patch = document.getElementById('patches-select').value;
+    const effect = document.getElementById('effects-select').value;
+    
+    const updatePart = (id, partType, value) => {
+      const el = document.getElementById(id);
+      if (value) {
+        el.src = basePath + partType + '/' + value;
+        el.classList.add('active');
+      } else {
+        el.classList.remove('active');
+        el.src = '';
+      }
+    };
+
+    updatePart('car-chassis', '2 Chassis', chassis);
+    updatePart('car-body', '1 Bodies', body);
+    updatePart('car-addition', '3 Additions', addition);
+    updatePart('car-patch', '4 Patches', patch);
+    updatePart('car-effect', '5 Effects', effect);
+    
+    const hasAny = chassis || body || addition || patch || effect;
+    document.getElementById('car-placeholder').classList.toggle('hidden', hasAny);
+  }
+
+  // Bind dropdown listeners programmatically to respect CSP
+  document.getElementById('chassis-select').addEventListener('change', updateCar);
+  document.getElementById('body-select').addEventListener('change', updateCar);
+  document.getElementById('additions-select').addEventListener('change', updateCar);
+  document.getElementById('patches-select').addEventListener('change', updateCar);
+  document.getElementById('effects-select').addEventListener('change', updateCar);
+
+  // Position Tuning Sliders Logic
+  const layerData = {
+    chassis: { x: 0, y: 0, s: 100 },
+    body: { x: 0, y: 0, s: 100 },
+    addition: { x: 0, y: 0, s: 100 },
+    patch: { x: 0, y: 0, s: 100 },
+    effect: { x: 0, y: 0, s: 100 }
+  };
+
+  const layerSelect = document.getElementById('adjust-layer-select');
+  const sliderX = document.getElementById('offset-x-slider');
+  const sliderY = document.getElementById('offset-y-slider');
+  const sliderScale = document.getElementById('scale-slider');
+  const valX = document.getElementById('x-val');
+  const valY = document.getElementById('y-val');
+  const valScale = document.getElementById('scale-val');
+  const previewContainer = document.querySelector('.garage-preview');
+
+  function syncSliders() {
+    const layer = layerSelect.value;
+    const data = layerData[layer];
+    
+    sliderX.value = data.x;
+    sliderY.value = data.y;
+    sliderScale.value = data.s;
+    
+    valX.textContent = data.x + 'px';
+    valY.textContent = data.y + 'px';
+    valScale.textContent = data.s + '%';
+  }
+
+  function applyPlacement(layer) {
+    const data = layerData[layer];
+    previewContainer.style.setProperty('--' + layer + '-x', data.x + 'px');
+    previewContainer.style.setProperty('--' + layer + '-y', data.y + 'px');
+    previewContainer.style.setProperty('--' + layer + '-s', (data.s / 100));
+  }
+
+  layerSelect.addEventListener('change', syncSliders);
+
+  sliderX.addEventListener('input', (e) => {
+    const layer = layerSelect.value;
+    layerData[layer].x = parseInt(e.target.value);
+    valX.textContent = e.target.value + 'px';
+    applyPlacement(layer);
+  });
+
+  sliderY.addEventListener('input', (e) => {
+    const layer = layerSelect.value;
+    layerData[layer].y = parseInt(e.target.value);
+    valY.textContent = e.target.value + 'px';
+    applyPlacement(layer);
+  });
+
+  sliderScale.addEventListener('input', (e) => {
+    const layer = layerSelect.value;
+    layerData[layer].s = parseInt(e.target.value);
+    valScale.textContent = e.target.value + '%';
+    applyPlacement(layer);
+  });
+
+  document.getElementById('reset-placement-btn').addEventListener('click', () => {
+    const layer = layerSelect.value;
+    layerData[layer] = { x: 0, y: 0, s: 100 };
+    syncSliders();
+    applyPlacement(layer);
+  });
+
+  // Initialize page state
+  updateCar();
+  syncSliders();
+})();
+</script>
+{% endblock %}

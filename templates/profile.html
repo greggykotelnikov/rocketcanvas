@@ -151,11 +151,6 @@
         <span class="rank-badge" style="color: {{ r_col }}; border-color: {{ r_col }}; background: {{ r_col }}1a;">{{ current_user.rank }}</span>
       {% endif %}
     </div>
-    {% if current_user.rank %}
-      <div class="profile-rank" style="color: {{ r_col }}; margin-bottom: 0.5rem;">
-        {{ current_user.rank }}
-      </div>
-    {% endif %}
     {% if current_user.bio %}
       <div class="profile-bio">{{ current_user.bio }}</div>
     {% endif %}
