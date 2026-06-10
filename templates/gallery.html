@@ -248,7 +248,7 @@
 
 <!-- Upload Modal -->
 <div class="modal-overlay" id="uploadModal">
-  <div class="modal">
+  <div class="modal-content">
     <button class="modal-close" onclick="document.getElementById('uploadModal').classList.remove('active')">&times;</button>
     <h2 class="modal-title">Upload Design</h2>
     <form method="POST" action="{{ url_for('upload_design') }}" enctype="multipart/form-data">
@@ -296,4 +296,5 @@
   document.getElementById('uploadModal').addEventListener('click', function(e) {
     if (e.target === this) this.classList.remove('active');
   });
+</script>
 {% endblock %}

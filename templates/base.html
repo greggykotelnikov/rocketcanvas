@@ -111,21 +111,26 @@
 
     .nav-center {
       display: flex;
-      gap: 0.15rem;
+      gap: clamp(0.05rem, 0.15vw, 0.2rem);
       align-items: center;
       flex: 1;
-      justify-content: center;
+      justify-content: flex-start;
       min-width: 0;
       overflow-x: auto;
       scrollbar-width: none;
     }
     .nav-center::-webkit-scrollbar { display: none; }
+    .nav-center a:first-child { margin-left: auto; }
+    .nav-center a:last-child { margin-right: auto; }
     .nav-right   { display: flex; gap: 0.6rem; align-items: center; flex-shrink: 0; }
 
     .nav-center a {
-      color: var(--muted); font-size: 0.8rem; font-weight: 600;
+      color: var(--muted);
+      font-size: clamp(0.7rem, 0.8vw, 0.8rem);
+      font-weight: 600;
       letter-spacing: 0.04em; text-decoration: none; text-transform: uppercase;
-      padding: 0.35rem 0.7rem; border-radius: var(--radius);
+      padding: 0.35rem clamp(0.3rem, 0.55vw, 0.7rem);
+      border-radius: var(--radius);
       transition: color var(--t), background var(--t);
       position: relative;
       white-space: nowrap;
@@ -141,14 +146,7 @@
       width: 60%; height: 2px; background: var(--accent); border-radius: 2px;
     }
 
-    /* Theme toggle */
-    .theme-toggle {
-      background: var(--surface2); border: 1px solid var(--border);
-      color: var(--muted); cursor: pointer; width: 34px; height: 34px;
-      border-radius: 50%; display: flex; align-items: center; justify-content: center;
-      font-size: 0.95rem; transition: all var(--t); flex-shrink: 0; line-height: 1;
-    }
-    .theme-toggle:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-glow2); }
+
 
     .nav-tour-btn {
       background: transparent; border: 1px solid var(--border2);
@@ -408,7 +406,7 @@
       max-width: 1100px;
       margin: 0 auto;
       display: grid;
-      grid-template-columns: 2fr 1fr 1fr;
+      grid-template-columns: 2fr 1.2fr 1.2fr 1.2fr;
       gap: 2.5rem;
     }
     .footer-brand .footer-logo {
@@ -577,7 +575,7 @@
       background: var(--accent3);
     }
     
-    @media (max-width: 1280px) {
+    @media (max-width: 1440px) {
       .bgm-player {
         margin-right: 0;
         padding: 0.2rem 0.35rem;
@@ -617,16 +615,22 @@
   <div class="nav-right">
     <!-- Sleek P5 BGM widget -->
     <div class="bgm-player">
-      <button class="bgm-ctrl" id="bgmPrevBtn" title="Previous Track">⏮</button>
-      <button class="bgm-play" id="bgmPlayBtn" title="Play/Pause">▶</button>
-      <button class="bgm-ctrl" id="bgmNextBtn" title="Next Track">⏭</button>
+      <button class="bgm-ctrl" id="bgmPrevBtn" title="Previous Track">
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+      </button>
+      <button class="bgm-play" id="bgmPlayBtn" title="Play/Pause">
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      </button>
+      <button class="bgm-ctrl" id="bgmNextBtn" title="Next Track">
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M6 18l8.5-6L6 6zm9-12v12h2V6z"/></svg>
+      </button>
       <div class="bgm-info" id="bgmTrackTicker">
         <span id="bgmTrackName">Loading...</span>
       </div>
       <input type="range" class="bgm-slider" id="bgmVolSlider" min="0" max="1" step="0.05" title="Volume"/>
     </div>
     
-    
+    <button type="button" class="nav-tour-btn" id="navTourBtn" title="Replay page guide">Guide</button>
     
     <div class="nav-user-wrap">
       <a href="{{ url_for('profile') }}" class="nav-avatar" id="navAvatar">
@@ -661,77 +665,58 @@
         RocketCanvas
       </a>
       <p class="footer-desc">
-        A Rocket League stat tracker, interactive 3D hitbox visualizer, 2D garage builder, and player analytics dashboard powered by the ballchasing.com API.
+        A premium stat tracking hub, interactive 3D hitbox visualizer, and custom 2D garage editor for Rocket League.
       </p>
       <div class="footer-pills">
         <span class="footer-pill">Flask</span>
+        <span class="footer-pill">Three.js / WebGL</span>
         <span class="footer-pill">Chart.js</span>
         <span class="footer-pill">SQLite</span>
-        <span class="footer-pill">2FA</span>
         <span class="footer-pill">Ballchasing API</span>
-        <span class="footer-pill">3D WebGL</span>
-        <span class="footer-pill">2D Garage</span>
-        <span class="footer-pill">Licensed BGM</span>
       </div>
     </div>
 
-    <!-- Features -->
+    <!-- Explore -->
     <div>
-      <div class="footer-col-title">Features</div>
+      <div class="footer-col-title">Explore</div>
       <ul class="footer-links">
-        <li><a href="{{ url_for('dashboard') if current_user.is_authenticated else '#' }}"> Dashboard</a></li>
-        <li><a href="{{ url_for('analytics') if current_user.is_authenticated else '#' }}"> Analytics</a></li>
-        <li><a href="{{ url_for('hitbox_lookup') if current_user.is_authenticated else '#' }}"> Hitbox Lookup</a></li>
-        <li><a href="{{ url_for('profile') if current_user.is_authenticated else '#' }}"> Profile</a></li>
+        <li><a href="{{ url_for('dashboard') if current_user.is_authenticated else '#' }}">Dashboard</a></li>
+        <li><a href="{{ url_for('gallery') if current_user.is_authenticated else '#' }}">Preset Gallery</a></li>
+        <li><a href="{{ url_for('garage') if current_user.is_authenticated else '#' }}">2D Garage Builder</a></li>
+        <li><a href="{{ url_for('recommend') if current_user.is_authenticated else '#' }}">Recommendations</a></li>
       </ul>
     </div>
 
-    <!-- About -->
+    <!-- Analytics & Tools -->
     <div>
-      <div class="footer-col-title">About</div>
+      <div class="footer-col-title">Analytics &amp; Tools</div>
       <ul class="footer-links">
-        <li><a href="https://ballchasing.com" target="_blank" rel="noopener noreferrer">ballchasing.com ↗</a></li>
-        <li><a href="https://github.com/greggykotelnikov" target="_blank" rel="noopener noreferrer">GitHub ↗</a></li>
+        <li><a href="{{ url_for('analytics') if current_user.is_authenticated else '#' }}">Match Analytics</a></li>
+        <li><a href="{{ url_for('heatmap') if current_user.is_authenticated else '#' }}">Position Heatmaps</a></li>
+        <li><a href="{{ url_for('hitbox_lookup') if current_user.is_authenticated else '#' }}">3D Hitbox Lookup</a></li>
+        <li><a href="{{ url_for('profile') if current_user.is_authenticated else '#' }}">My Profile</a></li>
+      </ul>
+    </div>
+
+    <!-- Developer & Legal -->
+    <div>
+      <div class="footer-col-title">Developer &amp; API</div>
+      <ul class="footer-links">
+        <li><a href="https://ballchasing.com" target="_blank" rel="noopener noreferrer">Ballchasing API</a></li>
+        <li><a href="https://github.com/greggykotelnikov" target="_blank" rel="noopener noreferrer">GitHub Repo</a></li>
+        <li><a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener noreferrer">MIT License</a></li>
       </ul>
     </div>
 
   </div>
 
   <div class="footer-bottom">
-    <p class="footer-copy">&copy; 2026 <span>Greg Kotelnikov</span> RocketCanvas. All rights reserved.</p>
+    <p class="footer-copy">&copy; 2026 <span>Greg Kotelnikov</span>. Built for the Rocket League community.</p>
     <span class="footer-mit">MIT License</span>
   </div>
 </footer>
 
 <script nonce="{{ nonce }}">
-  // ── Theme management ──────────────────────────────────────────────
-  (function() {
-    const stored = localStorage.getItem('rc-theme') || 'dark';
-    document.documentElement.setAttribute('data-theme', stored);
-    updateToggleIcon();
-  })();
-
-  function updateToggleIcon() {
-    const theme = document.documentElement.getAttribute('data-theme');
-    const btn = document.getElementById('themeToggle');
-    if (btn) btn.textContent = theme === 'dark' ? '🌙' : '☀️';
-  }
-
-  function toggleTheme() {
-    const current = document.documentElement.getAttribute('data-theme');
-    const next = current === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('rc-theme', next);
-    updateToggleIcon();
-    window.dispatchEvent(new CustomEvent('rc-theme-changed', { detail: { theme: next } }));
-  }
-
-  (function bindThemeToggle() {
-    const btn = document.getElementById('themeToggle');
-    if (btn) {
-      btn.addEventListener('click', toggleTheme);
-    }
-  })();
 
   // ── Service Worker registration ──────────────────────────────────
   (function manageServiceWorker() {

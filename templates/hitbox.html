@@ -83,9 +83,9 @@
           </div>
         </div>
         <div class="canvas-controls">
-          <button id="spinBtn" class="control-btn active" title="Toggle Auto-Spin">🔄 Spin</button>
-          <button id="resetBtn" class="control-btn" title="Reset Camera View">⌂ Reset</button>
-          <button id="modeBtn" class="control-btn" title="Toggle Perspective/Ortho">📐 Perspective</button>
+          <button id="spinBtn" class="control-btn active" title="Toggle Auto-Spin"> Spin</button>
+          <button id="resetBtn" class="control-btn" title="Reset Camera View">Reset</button>
+          <button id="modeBtn" class="control-btn" title="Toggle Perspective/Ortho"> Perspective</button>
         </div>
       </div>
 
@@ -185,11 +185,11 @@
     margin-bottom: 0.5rem;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    text-shadow: 0 4px 20px rgba(176, 110, 255, 0.4);
+    text-shadow: 0 4px 20px rgba(189, 189, 189, 0.4);
   }
 
   .hitbox-sub {
-    color: var(--accent3);
+    color: var(--muted);
     font-size: 1rem;
   }
 
@@ -610,11 +610,15 @@
   }
 
   .strengths-list li::before {
-    content: "⚡";
+    content: "";
     position: absolute;
     left: 0;
-    color: var(--active-color, var(--accent));
-    font-size: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 6px;
+    height: 6px;
+    background: var(--active-color, var(--accent));
+    border-radius: 1px;
   }
 
   /* Table section */

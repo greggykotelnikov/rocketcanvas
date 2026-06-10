@@ -60,7 +60,7 @@ def parse_replay_positions(replay_path):
                 actor_id = actor["actor_id"]
                 if "PRI_TA" in obj_name or "PlayerReplicationInfo" in obj_name:
                     pri_actors[actor_id] = "Unknown"
-                elif "Car" in obj_name:
+                elif "Car_Default" in obj_name:
                     car_positions[actor_id] = []
 
         # Update actors
@@ -88,8 +88,8 @@ def parse_replay_positions(replay_path):
                         elif "Int" in attr:
                             car_to_pri[actor_id] = attr["Int"]
 
-                    # Check for RigidBody location
-                    if "RigidBody" in prop_name:
+                    # Check for RigidBody location (property name is ReplicatedRBState)
+                    if "ReplicatedRBState" in prop_name:
                         loc = attr.get("RigidBody", {}).get("location", {})
                         if "x" in loc and "y" in loc:
                             # rrrocket gives cm, usually RL maps are ~10240x8192

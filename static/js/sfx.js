@@ -626,13 +626,13 @@
     if (isPlaying) {
       bgmAudio.pause();
       isPlaying = false;
-      if (playBtn) playBtn.innerHTML = '▶';
+      if (playBtn) playBtn.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
       if (trackTicker) trackTicker.classList.remove('scrolling');
     } else {
       bgmAudio.play()
         .then(() => {
           isPlaying = true;
-          if (playBtn) playBtn.innerHTML = '⏸';
+          if (playBtn) playBtn.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
           if (trackTicker) trackTicker.classList.add('scrolling');
         })
         .catch(err => {
@@ -675,9 +675,9 @@
         })
         .catch(err => {
           console.warn("Track failed to play:", err);
-          isPlaying = false;
+           isPlaying = false;
           const playBtn = document.getElementById('bgmPlayBtn');
-          if (playBtn) playBtn.innerHTML = '▶';
+          if (playBtn) playBtn.innerHTML = '<svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
         });
     }
   }
