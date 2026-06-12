@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{% if mode == 'register' %}Register{% else %}Sign In{% endif %} — RocketCanvas{% endblock %}
+{% block title %}{% if mode == 'register' %}Register{% else %}Sign in{% endif %} | RocketCanvas{% endblock %}
 {% block head %}
   <style nonce="{{ nonce }}">
     body {
@@ -71,7 +71,7 @@
     transform: rotate(3deg);
   }
 
-  /* Right side — dark panel */
+  /* Right side: dark panel */
   .auth-panel {
     position: fixed;
     right: 0; top: 0;
@@ -353,7 +353,7 @@
   <div class="auth-inner">
     <div class="brand">
       <div class="brand-logo">RocketCanvas</div>
-      <div class="brand-sub">rocket league stat tracker</div>
+      <div class="brand-sub">Rocket League stat tracker</div>
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -363,7 +363,7 @@
     {% endwith %}
 
     <div class="tabs">
-      <a href="{{ url_for('login') }}"    class="tab {% if mode == 'login'    %}active{% endif %}">Sign In</a>
+      <a href="{{ url_for('login') }}"    class="tab {% if mode == 'login'    %}active{% endif %}">Sign in</a>
       <a href="{{ url_for('register') }}" class="tab {% if mode == 'register' %}active{% endif %}">Register</a>
     </div>
 
@@ -389,7 +389,7 @@
         {% endif %}
       </div>
       <button class="btn-submit" type="submit">
-        {% if mode == 'register' %}Create Account{% else %}Sign In{% endif %}
+        {% if mode == 'register' %}Create Account{% else %}Sign in{% endif %}
       </button>
     </form>
   </div>

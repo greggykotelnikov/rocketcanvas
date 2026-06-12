@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en-GB" data-theme="dark">
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -587,11 +587,37 @@
         display: none; /* Hide volume slider on mobile */
       }
     }
+
+    .bgm-player-guest {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 300;
+      margin-right: 0;
+    }
   </style>
   {% block head %}{% endblock %}
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo.png') }}"/>
 </head>
-<body>
+<body data-page="{{ request.endpoint or '' }}">
+
+{% macro bgm_player(extra_class='') %}
+<div class="bgm-player {{ extra_class }}" aria-label="Background music">
+  <button class="bgm-ctrl" id="bgmPrevBtn" title="Previous Track">
+    <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+  </button>
+  <button class="bgm-play" id="bgmPlayBtn" title="Play/Pause">
+    <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+  </button>
+  <button class="bgm-ctrl" id="bgmNextBtn" title="Next Track">
+    <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M6 18l8.5-6L6 6zm9-12v12h2V6z"/></svg>
+  </button>
+  <div class="bgm-info" id="bgmTrackTicker">
+    <span id="bgmTrackName">Loading...</span>
+  </div>
+  <input type="range" class="bgm-slider" id="bgmVolSlider" min="0" max="1" step="0.05" title="Volume"/>
+</div>
+{% endmacro %}
 
 {% if current_user.is_authenticated %}
 <nav>
@@ -613,23 +639,7 @@
   </div>
 
   <div class="nav-right">
-    <!-- Sleek P5 BGM widget -->
-    <div class="bgm-player">
-      <button class="bgm-ctrl" id="bgmPrevBtn" title="Previous Track">
-        <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
-      </button>
-      <button class="bgm-play" id="bgmPlayBtn" title="Play/Pause">
-        <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-      </button>
-      <button class="bgm-ctrl" id="bgmNextBtn" title="Next Track">
-        <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor"><path d="M6 18l8.5-6L6 6zm9-12v12h2V6z"/></svg>
-      </button>
-      <div class="bgm-info" id="bgmTrackTicker">
-        <span id="bgmTrackName">Loading...</span>
-      </div>
-      <input type="range" class="bgm-slider" id="bgmVolSlider" min="0" max="1" step="0.05" title="Volume"/>
-    </div>
-    
+    {{ bgm_player() }}
     <button type="button" class="nav-tour-btn" id="navTourBtn" title="Replay page guide">Guide</button>
     
     <div class="nav-user-wrap">
@@ -644,6 +654,8 @@
     </div>
   </div>
 </nav>
+{% else %}
+{{ bgm_player('bgm-player-guest') }}
 {% endif %}
 
 <div class="page">
@@ -665,7 +677,7 @@
         RocketCanvas
       </a>
       <p class="footer-desc">
-        A premium stat tracking hub, interactive 3D hitbox visualizer, and custom 2D garage editor for Rocket League.
+        A premium stat tracking hub, interactive 3D hitbox visualiser, and custom 2D garage editor for Rocket League.
       </p>
       <div class="footer-pills">
         <span class="footer-pill">Flask</span>

@@ -1,6 +1,6 @@
 # RocketCanvas
 
-A premium, feature-rich web application for Rocket League players. RocketCanvas integrates match history tracking via the Ballchasing API, a custom 2D garage constructor, a 3D WebGL hitbox visualizer, positional heatmaps parsed from raw `.replay` files, and personalized page-by-page guided tours complete with procedural sound effect synthesis.
+A premium, feature-rich web application for Rocket League players. RocketCanvas integrates match history tracking via the Ballchasing API, a custom 2D garage constructor, a 3D WebGL hitbox visualiser, positional heatmaps parsed from raw `.replay` files, and personalised page-by-page guided tours complete with procedural sound effect synthesis.
 
 ---
 
@@ -8,9 +8,9 @@ A premium, feature-rich web application for Rocket League players. RocketCanvas 
 
 * **Dashboard & Match Tracking**: Search any player to load their recent match history, win rates, and statistics directly from the Ballchasing.com API.
 * **Match Analytics**: Multi-chart trends analyzing map-specific win rates, hourly playtime distribution, playlist breakdowns, current/longest streaks, and rolling win rate margins.
-* **Holographic 3D Hitbox Visualizer**: Interactive 3D wireframe render of all six official Rocket League hitbox classes (Octane, Dominus, Breakout, Hybrid, Plank, Merc) with real-time yaw/pitch rotations, telemetry stats, and custom dimensions.
+* **Holographic 3D Hitbox Visualiser**: Interactive 3D wireframe render of all six official Rocket League hitbox classes (Octane, Dominus, Breakout, Hybrid, Plank, Merc) with real-time yaw/pitch rotations, telemetry stats, and custom dimensions.
 * **Positional Heatmaps**: Upload raw Rocket League `.replay` files to extract 2D spatial coordinate heatmaps of player movement on the pitch.
-* **2D Garage Builder**: Layer-based sprite editor to customize vehicles with bodies, chassis paint, decals, additions, and special effects.
+* **2D Garage Builder**: Layer-based sprite editor to customise vehicles with bodies, chassis paint, decals, additions, and special effects.
 * **Preset Trading Card Gallery**: Upload and mint custom vehicle presets into stylized rarity-based trading cards (Legendary, Golden, Chroma Sparkle, Carbon Fiber, Holographic).
 * **Persona-based Guided Tours**: Interactive, natural TTS-voiced walk-throughs on every page featuring custom procedural audio blip synthesis.
 * **Progressive Web App (PWA)**: Desktop/mobile installable PWA with offline caching support via a registered service worker.

@@ -18,7 +18,7 @@ def send_2fa_email(mail, user):
     db.session.add(TwoFactorCode(user_id=user.id, code=code, expires_at=expires))
     db.session.commit()
 
-    msg = Message("RocketCanvas — Your 2FA Code", recipients=[user.email])
+    msg = Message("RocketCanvas | Your 2FA Code", recipients=[user.email])
     msg.body = f"Your verification code is: {code}\n\nExpires in 10 minutes."
     msg.html = f"""
     <div style="background:#0d0f14;padding:2rem;font-family:sans-serif;color:#e2e8f0;max-width:400px;margin:auto;border:1px solid #1f2433;">

@@ -8,6 +8,9 @@ function getPageKey(pathname) {
   if (path === '/analytics') return 'analytics';
   if (path === '/hitbox' || path === '/hitbox_lookup') return 'hitbox';
   if (path === '/recommend') return 'recommend';
+  if (path === '/garage') return 'garage';
+  if (path === '/heatmap') return 'heatmap';
+  if (path === '/verify') return 'verify';
   return null;
 }
 
@@ -74,11 +77,14 @@ function runTour(pageKey, seenPages) {
   const pageCharacter = {
     login: 'octane',
     register: 'octane',
+    verify: 'octane',
     profile: 'octane',
     hitbox: 'octane',
+    garage: 'octane',
     dashboard: 'dominus',
     gallery: 'dominus',
     analytics: 'dominus',
+    heatmap: 'dominus',
     recommend: 'dominus'
   };
 
@@ -116,13 +122,13 @@ function runTour(pageKey, seenPages) {
 
   function scoreVoice(v, gender) {
     const n = v.name.toLowerCase();
-    const natural = /natural|neural|online/i.test(n) ? 4 : 0;
-    const local = v.localService ? 2 : 0;
+    const natural = /natural|neural|online|premium/i.test(n) ? 8 : 0;
+    const local = v.localService ? 1 : 3;
     if (gender === 'female') {
-      if (/jenny|aria|samantha|zira|natasha|hazel|susan|female/i.test(n)) return 10 + natural + local;
+      if (/jenny|aria|samantha|zira|natasha|hazel|susan|sonia|michelle|emma|female/i.test(n)) return 12 + natural + local;
       return natural + local;
     }
-    if (/guy|ryan|david|mark|george|james|male|christopher/i.test(n)) return 10 + natural + local;
+    if (/guy|ryan|david|mark|george|james|christopher|davis|jason|male/i.test(n)) return 12 + natural + local;
     return natural + local;
   }
 
@@ -152,11 +158,14 @@ function runTour(pageKey, seenPages) {
   }
 
   function playBlip() {
+    if (window.AudioManager?.playBlip) {
+      window.AudioManager.playBlip();
+      return;
+    }
     if (!audioCtx) return;
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     osc.type = 'square';
-    // Higher pitch for female character, lower for male
     const baseFreq = char.gender === 'female' ? 600 : 400;
     osc.frequency.setValueAtTime(baseFreq + Math.random() * 50, audioCtx.currentTime);
     gain.gain.setValueAtTime(0.04, audioCtx.currentTime);
@@ -165,6 +174,14 @@ function runTour(pageKey, seenPages) {
     gain.connect(audioCtx.destination);
     osc.start();
     osc.stop(audioCtx.currentTime + 0.05);
+  }
+
+  function duckMusic() {
+    window.AudioManager?.duckBGM?.();
+  }
+
+  function unduckMusic() {
+    window.AudioManager?.unduckBGM?.();
   }
 
   // --- TTS ---
@@ -186,7 +203,7 @@ function runTour(pageKey, seenPages) {
       utterance.voice = maleVoice;
       utterance.pitch = 0.96;
     }
-    utterance.rate = 1.05;
+    utterance.rate = char.gender === 'female' ? 1.0 : 0.98;
     utterance.volume = 1;
     
     // Prevent garbage collection
@@ -299,13 +316,17 @@ function runTour(pageKey, seenPages) {
 
   // --- Finish ---
   function finishTutorial() {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
+    unduckMusic();
+
     seenPages[pageKey] = true;
     localStorage.setItem('rc_tutorial_seen', JSON.stringify(seenPages));
     container.classList.remove('active');
     highlightMask.classList.remove('active');
     bindTourReplayButton(pageKey);
 
-    // Reset state
     proceedCallback = null;
     typingCallback = null;
     isTyping = false;
@@ -337,15 +358,15 @@ function runTour(pageKey, seenPages) {
     // --- LOGIN (Octane, male) ---
     login: () => {
       chainLines([
-        "Hey! I'm Octane — welcome to RocketCanvas.",
-        "This is your Rocket League stats hub: search players, track replays on the Dashboard, and dig into charts on Analytics.",
-        "We also have a community Gallery for car designs and a Hitbox page to look up any car's hitbox class.",
+        "Hey! I'm Octane. Welcome to RocketCanvas.",
+        "This is your Rocket League stats hub: Dashboard for match history, Analytics for deep charts, and Recommend for grind tips.",
+        "We also have a Gallery for car presets, a 2D Garage builder, Pitch Heatmaps from replays, and Hitbox lookup with a 3D visualiser.",
         "Sign in below and we'll get your profile set up."
       ], [
         { text: "Sounds awesome!", action: finishTutorial },
         { text: "What can I do here?", action: () => {
           chainLines([
-            "After login you get Dashboard stats, deep Analytics, the design Gallery, and Hitbox lookup.",
+            "After login you get Dashboard stats, Analytics, the Gallery, Garage builder, Heatmaps, Hitbox lookup, and Recommendations.",
             "Link your RL username on Profile so searches are faster. Let's go!"
           ], [
             { text: "Let's go!", action: finishTutorial }
@@ -358,7 +379,7 @@ function runTour(pageKey, seenPages) {
     register: () => {
       chainLines([
         "Yo! Ready to join RocketCanvas?",
-        "Track win rates, browse the community gallery, and look up hitbox types for any car — Octane included, obviously.",
+        "Track win rates, browse the Gallery, build cars in the Garage, map replays on Heatmaps, and look up hitbox types. Octane included, obviously.",
         "Fill in your details below and we'll send you a quick verification code."
       ], [
         { text: "Let's do it!", action: finishTutorial },
@@ -376,7 +397,7 @@ function runTour(pageKey, seenPages) {
     // --- DASHBOARD (Dominus, female) ---
     dashboard: () => {
       chainLines([
-        "Welcome to the Dashboard! This is your command center."
+        "Welcome to the Dashboard! This is your command centre."
       ], [
         { text: "What do I do here?", action: () => {
           chainLines([
@@ -427,11 +448,12 @@ function runTour(pageKey, seenPages) {
     profile: () => {
       chainLines([
         "Welcome to your Profile! Link your RL username here so Dashboard and Analytics load your stats automatically.",
-        "Quick Actions below jump you to Dashboard, Analytics, Hitbox, or a fresh player search."
+        "Quick Actions below jump you to Dashboard, Analytics, Hitbox, or a fresh player search.",
+        "Gallery, Garage, Heatmap, and Recommend live in the nav whenever you need them."
       ], [
         { text: "Show me Quick Actions", action: () => {
           chainLines([
-            "Those cards are shortcuts — tap one and we send you straight there with your name pre-filled.",
+            "Those cards are shortcuts. Tap one and we send you straight there with your name prefilled.",
             "Upload an avatar too if you want the nav bar to look clean."
           ], [{ text: "Nice!", action: finishTutorial }]);
         }},
@@ -456,13 +478,14 @@ function runTour(pageKey, seenPages) {
 
     hitbox: () => {
       chainLines([
-        "Hitbox lookup — search any car name to see which hitbox class it uses.",
-        "Octane, Dominus, Fennec, Breakout… they're all grouped so you can compare playstyles."
+        "Hitbox lookup. Search any car name to see which hitbox class it uses.",
+        "Octane, Dominus, Fennec, Breakout… they're all grouped so you can compare playstyles.",
+        "Scroll down for the Holographic Visualiser. Spin any hitbox class in 3D and read the telemetry."
       ], [
         { text: "How do I search?", action: () => {
           chainLines([
-            "Type a car in the search box — try Fennec or Dominus — and hit Search.",
-            "Scroll down for the full list sorted by hitbox type."
+            "Type a car in the search box, try Fennec or Dominus, and hit Search.",
+            "A match jumps you straight to its hitbox class in the visualiser below."
           ], [
             { text: "Got it!", action: finishTutorial }
           ]);
@@ -473,6 +496,59 @@ function runTour(pageKey, seenPages) {
           });
         }}
       ]);
+    },
+
+    garage: () => {
+      chainLines([
+        "Welcome to the Garage, your 2D car builder.",
+        "Pick parts from the catalogue tabs: Chassis, Body, Additions, Patches, and Effects.",
+        "Everything stacks live in the preview on the left."
+      ], [
+        { text: "How do layers work?", action: () => {
+          chainLines([
+            "Each tab is a layer. Chassis sits underneath, body on top, then additions, patches, and effects.",
+            "Use the Tuning sliders to nudge position and scale until the build looks clean."
+          ], [
+            { text: "Time to build!", action: finishTutorial }
+          ]);
+        }},
+        { text: "Let's build!", action: finishTutorial }
+      ]);
+    },
+
+    heatmap: () => {
+      chainLines([
+        "Pitch Heatmap. Turn replays into spatial intelligence.",
+        "Upload a .replay, .csv, or .json file and we'll plot where players spend time on the field."
+      ], [
+        { text: "What formats work?", action: () => {
+          chainLines([
+            "JSON and CSV need x/y coordinates in Rocket League units.",
+            "Raw .replay files get parsed locally. Nothing gets uploaded to a third party.",
+            "Try Load Demo Data if you want to explore before uploading your own."
+          ], [
+            { text: "Show me the pitch.", action: finishTutorial }
+          ]);
+        }},
+        { text: "I already know my rotations.", action: finishTutorial }
+      ]);
+    },
+
+    verify: () => {
+      chainLines([
+        "Almost in! Check your email for a 6-digit verification code.",
+        "Enter it below to finish creating your RocketCanvas account."
+      ], [
+        { text: "Didn't get the email?", action: () => {
+          chainLines([
+            "Give it a minute and check spam. The code expires after a short window.",
+            "If it still doesn't show up, go back and register again with the same address."
+          ], [
+            { text: "Got it!", action: finishTutorial }
+          ]);
+        }},
+        { text: "Code's ready!", action: finishTutorial }
+      ]);
     }
   };
 
@@ -482,9 +558,10 @@ function runTour(pageKey, seenPages) {
   setTimeout(() => {
     container.classList.add('active');
     highlightMask.classList.add('active');
+    duckMusic();
 
     const welcomeText = charKey === 'octane'
-      ? "Hey — I'm Octane. Want a quick tour of this page? I can talk you through it."
+      ? "Hey, I'm Octane. Want a quick tour of this page? I can talk you through it."
       : "Hi. Dominus here. Want a short walkthrough of this screen?";
       
     textArea.innerHTML = welcomeText;

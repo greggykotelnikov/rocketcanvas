@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Pitch Heatmap — RocketCanvas{% endblock %}
+{% block title %}Pitch Heatmap | RocketCanvas{% endblock %}
 {% block head %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <link rel="stylesheet" href="{{ url_for('static', filename='css/card_templates.css') }}">
@@ -447,7 +447,7 @@
 
 <div class="heatmap-page-header">
   <h1>Pitch Heatmap</h1>
-  <p>upload a <code>.replay</code>, <code>.csv</code>, or <code>.json</code> file to visualize player positions and zone analytics on the pitch</p>
+  <p>Upload a <code>.replay</code>, <code>.csv</code>, or <code>.json</code> file to visualise player positions and zone analytics on the pitch</p>
 </div>
 
 <input type="hidden" id="csrfToken" value="{{ csrf_token() }}">
@@ -502,7 +502,7 @@
     </details>
   </div>
 
-  <!-- Right Column: Visualization Display -->
+  <!-- Right Column: Visualisation Display -->
   <div class="heatmap-main-content">
     
     <!-- Loading overlay state card -->
@@ -532,7 +532,7 @@
         <div class="heatmap-legend" id="heatmapLegend" style="display:none;">
           <div class="legend-item"><span class="legend-swatch" style="background:#10e88a;"></span> Attack</div>
           <div class="legend-item"><span class="legend-swatch" style="background:#b06eff;"></span> Midfield</div>
-          <div class="legend-item"><span class="legend-swatch" style="background:#ff4d6a;"></span> Defense</div>
+          <div class="legend-item"><span class="legend-swatch" style="background:#ff4d6a;"></span> Defence</div>
           <div class="legend-item"><span class="legend-swatch" style="background:radial-gradient(circle, #fbbf24, #f59e0b);"></span> Big Boost</div>
           <div class="legend-item"><span class="legend-swatch" style="background:radial-gradient(circle, #94a3b8, #64748b);"></span> Small Boost</div>
         </div>
@@ -561,7 +561,7 @@
           <div class="st-sub" id="statMidSub"></div>
         </div>
         <div class="stat-tile">
-          <div class="st-label">Defense Zone</div>
+          <div class="st-label">Defence Zone</div>
           <div class="st-val red" id="statDefense">0%</div>
           <div class="st-sub" id="statDefSub"></div>
         </div>
@@ -705,7 +705,7 @@
     ctx.fillStyle = 'rgba(176, 110, 255, 0.07)';
     ctx.fillText('MID', toCanvasX(0), toCanvasY(-200));
     ctx.fillStyle = 'rgba(255, 77, 106, 0.07)';
-    ctx.fillText('DEFENSE', toCanvasX(0), toCanvasY(-3600));
+    ctx.fillText('DEFENCE', toCanvasX(0), toCanvasY(-3600));
 
     // Goal areas
     ctx.strokeStyle = 'rgba(16, 232, 138, 0.3)';
@@ -992,7 +992,7 @@
     new Chart(document.getElementById('zoneChart'), {
       type: 'doughnut',
       data: {
-        labels: ['Attack', 'Midfield', 'Defense'],
+        labels: ['Attack', 'Midfield', 'Defence'],
         datasets: [{
           data: [zones.attack, zones.midfield, zones.defense],
           backgroundColor: [
@@ -1160,7 +1160,7 @@
             borderWidth: 2
           },
           {
-            label: 'Defense',
+            label: 'Defence',
             data: defenseDensity,
             borderColor: '#ff4d6a',
             backgroundColor: 'rgba(255, 77, 106, 0.1)',
@@ -1198,7 +1198,7 @@
   // ── Demo data generator ───────────────────────────────────────────
   function generateDemoData(count = 2000) {
     const positions = [];
-    // Simulate a player who favors midfield but makes runs to attack
+    // Simulate a player who favours midfield but makes runs to attack
     for (let i = 0; i < count; i++) {
       const phase = (i / count) * Math.PI * 6; // simulate game phases
       const baseX = Math.sin(phase * 1.3) * 2000 + (Math.random() - 0.5) * 2000;

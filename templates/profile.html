@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Profile: RocketCanvas{% endblock %}
+{% block title %}Profile | RocketCanvas{% endblock %}
 {% block content %}
 <style nonce="{{ nonce }}">
   /* ── PROFILE HEADER ─────────────────────────────────────────────── */
@@ -194,7 +194,7 @@
       <div class="field">
         <label>Platform</label>
         <select class="input" name="platform">
-          <option value="">— None —</option>
+          <option value="">None</option>
           {% for p in ['Steam', 'Epic Games', 'PlayStation', 'Xbox', 'Nintendo'] %}
             <option value="{{ p }}" {% if current_user.platform == p %}selected{% endif %}>{{ p }}</option>
           {% endfor %}
@@ -203,7 +203,7 @@
       <div class="field">
         <label>Rank / Title</label>
         <select class="input" name="rank">
-          <option value="">— None —</option>
+          <option value="">None</option>
           {% set ranks = [
             'Bronze I','Bronze II','Bronze III',
             'Silver I','Silver II','Silver III',

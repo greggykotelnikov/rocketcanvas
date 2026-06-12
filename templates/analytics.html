@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Analytics: RocketCanvas{% endblock %}
+{% block title %}Analytics | RocketCanvas{% endblock %}
 {% block content %}
 <style nonce="{{ nonce }}">
   /* ── HEADER ─────────────────────────────────────────────────────── */
@@ -100,7 +100,7 @@
 
 <div class="analytics-header">
   <div class="analytics-title">Analytics</div>
-  <div class="analytics-sub">deep dive into performance data such as win rates, maps and activity patterns</div>
+  <div class="analytics-sub">Deep dive into performance data such as win rates, maps and activity patterns</div>
   <form class="search-row" method="GET" action="{{ url_for('analytics') }}">
     <input class="input" type="text" id="analyticsSearch" name="player"
       placeholder="Search player name…"
@@ -472,7 +472,7 @@
     <img class="empty-state-img" src="{{ url_for('static', filename='images/players.png') }}" alt="">
     <div class="empty-state-body">
       <p>No replays found for "<strong>{{ player }}</strong>"</p>
-      <p class="hint-text">Check the spelling — ballchasing.com usernames are case-sensitive.</p>
+      <p class="hint-text">Check the spelling. ballchasing.com usernames are case-sensitive.</p>
     </div>
   </div>
 {% else %}

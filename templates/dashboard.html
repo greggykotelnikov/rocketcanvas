@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Dashboard — RocketCanvas{% endblock %}
+{% block title %}Dashboard | RocketCanvas{% endblock %}
 {% block content %}
 <style nonce="{{ nonce }}">
   /* ── SEARCH ─────────────────────────────────────────────────────── */
@@ -135,7 +135,7 @@
 
 <div class="dashboard-header">
   <div class="dashboard-title">Dashboard</div>
-  <div class="dashboard-sub">search any rocket league player to load their replay stats</div>
+  <div class="dashboard-sub">Search any Rocket League player to load their replay stats</div>
   <form class="search-row" method="GET" action="{{ url_for('dashboard') }}">
     <input class="input" type="text" id="playerSearch" name="player"
       placeholder="Search player name…"
@@ -217,11 +217,11 @@
               <span class="badge badge-muted">?</span>
             {% endif %}
           </td>
-          <td>{{ r.map_name or r.map_code or '—' }}</td>
-          <td>{{ r.playlist_name or '—' }}</td>
+          <td>{{ r.map_name or r.map_code or 'n/a' }}</td>
+          <td>{{ r.playlist_name or 'n/a' }}</td>
           <td>
             <span class="score-blue">{{ r.blue.goals or 0 }}</span>
-            <span class="score-sep">–</span>
+            <span class="score-sep">-</span>
             <span class="score-orange">{{ r.orange.goals or 0 }}</span>
           </td>
           <td>{{ r.date[:10] }}</td>
@@ -433,7 +433,7 @@
     <img class="empty-state-img" src="{{ url_for('static', filename='images/img2.png') }}" alt="">
     <div class="empty-state-body">
       <p>No replays found for "<strong>{{ player }}</strong>"</p>
-      <p class="hint-text">Make sure the username is exact — ballchasing.com is case-sensitive.</p>
+      <p class="hint-text">Make sure the username is exact. ballchasing.com is case-sensitive.</p>
     </div>
   </div>
 {% else %}

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Garage - RocketCanvas{% endblock %}
+{% block title %}Garage | RocketCanvas{% endblock %}
 
 {% block head %}
 <style nonce="{{ nonce }}">
@@ -85,6 +85,108 @@
     margin-bottom: 2rem;
   }
 
+  .part-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-bottom: 1rem;
+  }
+
+  .part-tab {
+    flex: 1;
+    min-width: 4.5rem;
+    padding: 0.45rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface2);
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: all var(--t);
+  }
+
+  .part-tab:hover {
+    border-color: var(--border2);
+    color: var(--text2);
+  }
+
+  .part-tab.active {
+    border-color: var(--accent);
+    color: var(--accent3);
+    box-shadow: 0 0 10px var(--accent-glow2);
+  }
+
+  .part-panel {
+    display: none;
+    flex-direction: column;
+    gap: 1rem;
+    max-height: 320px;
+    overflow-y: auto;
+    padding-right: 0.25rem;
+  }
+
+  .part-panel.active {
+    display: flex;
+  }
+
+  .part-subgroup-label {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--muted);
+    font-family: var(--mono);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.35rem;
+  }
+
+  .part-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+    gap: 0.5rem;
+  }
+
+  .part-thumb {
+    aspect-ratio: 1;
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface2);
+    padding: 0.35rem;
+    cursor: pointer;
+    transition: all var(--t);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .part-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    image-rendering: pixelated;
+    pointer-events: none;
+  }
+
+  .part-thumb:hover {
+    border-color: var(--border2);
+    transform: translateY(-1px);
+  }
+
+  .part-thumb.selected {
+    border-color: var(--accent);
+    box-shadow: 0 0 12px var(--accent-glow2);
+  }
+
+  .part-thumb.part-none {
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
   .adjust-slider {
     width: 100%;
     height: 4px;
@@ -119,7 +221,7 @@
 {% block content %}
 <div class="card">
   <div class="section-title">Garage</div>
-  <p class="garage-description">Build your custom 2D car using the asset pack.</p>
+  <p class="garage-description">Pick parts from the visual catalogue below. Your car builds live in the preview.</p>
   
   <div class="garage-container">
     <!-- Car Preview Canvas -->
@@ -135,59 +237,72 @@
 
     <!-- Controls -->
     <div class="garage-controls">
-      
-      <div class="field">
-        <label>Chassis</label>
-        <select class="input" id="chassis-select">
-          <option value="">None</option>
+      <div class="field" style="margin-bottom: 0;">
+        <label>Parts Catalogue</label>
+        <div class="part-tabs" role="tablist">
+          <button type="button" class="part-tab active" data-panel="chassis-panel">Chassis</button>
+          <button type="button" class="part-tab" data-panel="body-panel">Body</button>
+          <button type="button" class="part-tab" data-panel="addition-panel">Additions</button>
+          <button type="button" class="part-tab" data-panel="patch-panel">Patches</button>
+          <button type="button" class="part-tab" data-panel="effect-panel">Effects</button>
+        </div>
+      </div>
+
+      <div class="part-panel active" id="chassis-panel" data-layer="chassis">
+        <div class="part-grid">
+          <button type="button" class="part-thumb part-none selected" data-layer="chassis" data-value="" aria-label="No chassis">None</button>
           {% for category, files in chassis.items() %}
-            <optgroup label="{{ category }}">
-              {% for file in files %}
-                <option value="{{ category }}/{{ file }}">{{ category }} - {{ file }}</option>
-              {% endfor %}
-            </optgroup>
+            {% for file in files %}
+            <button type="button" class="part-thumb" data-layer="chassis" data-value="{{ category }}/{{ file }}" title="{{ category }} - {{ file }}">
+              <img src="{{ url_for('static', filename='images/car-constructor/2 Chassis/' + category + '/' + file) }}" alt="{{ file }}" loading="lazy">
+            </button>
+            {% endfor %}
           {% endfor %}
-        </select>
+        </div>
       </div>
 
-      <div class="field">
-        <label>Body</label>
-        <select class="input" id="body-select">
-          <option value="">None</option>
+      <div class="part-panel" id="body-panel" data-layer="body">
+        <div class="part-grid">
+          <button type="button" class="part-thumb part-none selected" data-layer="body" data-value="" aria-label="No body">None</button>
           {% for file in bodies %}
-            <option value="{{ file }}">{{ file }}</option>
+          <button type="button" class="part-thumb" data-layer="body" data-value="{{ file }}" title="{{ file }}">
+            <img src="{{ url_for('static', filename='images/car-constructor/1 Bodies/' + file) }}" alt="{{ file }}" loading="lazy">
+          </button>
           {% endfor %}
-        </select>
+        </div>
       </div>
 
-      <div class="field">
-        <label>Additions</label>
-        <select class="input" id="additions-select">
-          <option value="">None</option>
+      <div class="part-panel" id="addition-panel" data-layer="addition">
+        <div class="part-grid">
+          <button type="button" class="part-thumb part-none selected" data-layer="addition" data-value="" aria-label="No addition">None</button>
           {% for file in additions %}
-            <option value="{{ file }}">{{ file }}</option>
+          <button type="button" class="part-thumb" data-layer="addition" data-value="{{ file }}" title="{{ file }}">
+            <img src="{{ url_for('static', filename='images/car-constructor/3 Additions/' + file) }}" alt="{{ file }}" loading="lazy">
+          </button>
           {% endfor %}
-        </select>
+        </div>
       </div>
 
-      <div class="field">
-        <label>Patches</label>
-        <select class="input" id="patches-select">
-          <option value="">None</option>
+      <div class="part-panel" id="patch-panel" data-layer="patch">
+        <div class="part-grid">
+          <button type="button" class="part-thumb part-none selected" data-layer="patch" data-value="" aria-label="No patch">None</button>
           {% for file in patches %}
-            <option value="{{ file }}">{{ file }}</option>
+          <button type="button" class="part-thumb" data-layer="patch" data-value="{{ file }}" title="{{ file }}">
+            <img src="{{ url_for('static', filename='images/car-constructor/4 Patches/' + file) }}" alt="{{ file }}" loading="lazy">
+          </button>
           {% endfor %}
-        </select>
+        </div>
       </div>
-      
-      <div class="field">
-        <label>Effects</label>
-        <select class="input" id="effects-select">
-          <option value="">None</option>
+
+      <div class="part-panel" id="effect-panel" data-layer="effect">
+        <div class="part-grid">
+          <button type="button" class="part-thumb part-none selected" data-layer="effect" data-value="" aria-label="No effect">None</button>
           {% for file in effects %}
-            <option value="{{ file }}">{{ file }}</option>
+          <button type="button" class="part-thumb" data-layer="effect" data-value="{{ file }}" title="{{ file }}">
+            <img src="{{ url_for('static', filename='images/car-constructor/5 Effects/' + file) }}" alt="{{ file }}" loading="lazy">
+          </button>
           {% endfor %}
-        </select>
+        </div>
       </div>
 
       <!-- Placement Tuning Sliders -->
@@ -239,41 +354,70 @@
 <script nonce="{{ nonce }}">
 (function() {
   const basePath = "{{ url_for('static', filename='images/car-constructor/') }}";
-  
+
+  const selectedParts = {
+    chassis: '',
+    body: '',
+    addition: '',
+    patch: '',
+    effect: ''
+  };
+
+  const layerFolders = {
+    chassis: '2 Chassis',
+    body: '1 Bodies',
+    addition: '3 Additions',
+    patch: '4 Patches',
+    effect: '5 Effects'
+  };
+
+  const layerImageIds = {
+    chassis: 'car-chassis',
+    body: 'car-body',
+    addition: 'car-addition',
+    patch: 'car-patch',
+    effect: 'car-effect'
+  };
+
   function updateCar() {
-    const chassis = document.getElementById('chassis-select').value;
-    const body = document.getElementById('body-select').value;
-    const addition = document.getElementById('additions-select').value;
-    const patch = document.getElementById('patches-select').value;
-    const effect = document.getElementById('effects-select').value;
-    
-    const updatePart = (id, partType, value) => {
-      const el = document.getElementById(id);
+    Object.keys(selectedParts).forEach((layer) => {
+      const value = selectedParts[layer];
+      const el = document.getElementById(layerImageIds[layer]);
       if (value) {
-        el.src = basePath + partType + '/' + value;
+        el.src = basePath + layerFolders[layer] + '/' + value;
         el.classList.add('active');
       } else {
         el.classList.remove('active');
         el.src = '';
       }
-    };
+    });
 
-    updatePart('car-chassis', '2 Chassis', chassis);
-    updatePart('car-body', '1 Bodies', body);
-    updatePart('car-addition', '3 Additions', addition);
-    updatePart('car-patch', '4 Patches', patch);
-    updatePart('car-effect', '5 Effects', effect);
-    
-    const hasAny = chassis || body || addition || patch || effect;
+    const hasAny = Object.values(selectedParts).some(Boolean);
     document.getElementById('car-placeholder').classList.toggle('hidden', hasAny);
   }
 
-  // Bind dropdown listeners programmatically to respect CSP
-  document.getElementById('chassis-select').addEventListener('change', updateCar);
-  document.getElementById('body-select').addEventListener('change', updateCar);
-  document.getElementById('additions-select').addEventListener('change', updateCar);
-  document.getElementById('patches-select').addEventListener('change', updateCar);
-  document.getElementById('effects-select').addEventListener('change', updateCar);
+  function selectPart(layer, value, button) {
+    selectedParts[layer] = value;
+    document.querySelectorAll('.part-thumb[data-layer="' + layer + '"]').forEach((btn) => {
+      btn.classList.toggle('selected', btn === button);
+    });
+    updateCar();
+  }
+
+  document.querySelectorAll('.part-thumb').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      selectPart(btn.dataset.layer, btn.dataset.value, btn);
+    });
+  });
+
+  document.querySelectorAll('.part-tab').forEach((tab) => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.part-tab').forEach((t) => t.classList.remove('active'));
+      document.querySelectorAll('.part-panel').forEach((p) => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById(tab.dataset.panel).classList.add('active');
+    });
+  });
 
   // Position Tuning Sliders Logic
   const layerData = {

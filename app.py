@@ -428,10 +428,10 @@ def _compute_analytics(replays, player_lower):
         worst_loss = max(worst_loss, tmp_l)
     # Current streak (from tail)
     cur_streak = 0
-    cur_type   = "—"
+    cur_type   = "n/a"
     if results:
         last = results[0]
-        cur_type = last if last in ("win", "loss") else "—"
+        cur_type = last if last in ("win", "loss") else "n/a"
         for res in results:
             if res == last and last in ("win", "loss"): cur_streak += 1
             else: break
