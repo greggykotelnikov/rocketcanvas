@@ -19,7 +19,7 @@ A premium, feature-rich web application for Rocket League players. RocketCanvas 
 
 ## Technology Stack
 
-* **Backend**: Python 3, Flask
+* **Backend**: Python 3.11 , Flask
 * **Database**: SQLite via Flask-SQLAlchemy
 * **Authentication**: Flask-Login + Flask-Bcrypt (with secure 2-Factor Authentication mail-verify codes)
 * **Frontend**: Vanilla CSS, JavaScript, HTML5 Canvas
