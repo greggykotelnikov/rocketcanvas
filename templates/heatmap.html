@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 {% block title %}Pitch Heatmap | RocketCanvas{% endblock %}
 {% block head %}
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<link rel="stylesheet" href="{{ url_for('static', filename='css/card_templates.css') }}">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H" crossorigin="anonymous" />
+<link rel="stylesheet" href="{{ url_for('static', filename='css/card_templates.css') }}" integrity="sha384-TVlwPLDOpXY40VAOT4Ja0MPN3X8hfsxqJkAbr7r2JT1NOc7ThoHSmQ35bpbCKtxG">
 {% endblock %}
 {% block content %}
 <style nonce="{{ nonce }}">
@@ -602,7 +602,7 @@
   </div> <!-- /heatmap-main-content -->
 </div> <!-- /heatmap-grid-layout -->
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" nonce="{{ nonce }}"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" nonce="{{ nonce }}" integrity="sha384-cxOPjt7s7Iz04uaHJceBmS+qpjv2JkIHNVcuOrM+YHwZOmJGBXI00mdUXEq65HTH" crossorigin="anonymous"></script>
 <script nonce="{{ nonce }}">
 (function() {
   'use strict';

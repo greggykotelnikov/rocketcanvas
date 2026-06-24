@@ -13,7 +13,12 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from dotenv import load_dotenv
 from werkzeug.utils import secure_filename
+import werkzeug.serving
 from PIL import Image
+
+# ── Suppress server version leakage (ZAP: Server Leaks Version Info) ──
+werkzeug.serving.WSGIRequestHandler.server_version = ""
+werkzeug.serving.WSGIRequestHandler.sys_version = ""
 
 from models import db, User
 from auth import register_auth_routes, bcrypt as auth_bcrypt
@@ -100,27 +105,56 @@ def inject_nonce():
     from flask import g
     return dict(nonce=getattr(g, 'nonce', ''))
 
+class SecurityHeadersMiddleware:
+    def __init__(self, app_wsgi):
+        self.app_wsgi = app_wsgi
+
+    def __call__(self, environ, start_response):
+        # Generate a nonce per request if we wanted to inject it into CSP,
+        # but CSP relies on the Flask context which isn't easily available here.
+        # So we'll let Flask handle CSP and we handle HSTS and others here.
+        def custom_start_response(status, headers, exc_info=None):
+            header_keys = [h[0].lower() for h in headers]
+            
+            if 'strict-transport-security' not in header_keys:
+                headers.append(('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload'))
+            if 'x-frame-options' not in header_keys:
+                headers.append(('X-Frame-Options', 'DENY'))
+            if 'x-content-type-options' not in header_keys:
+                headers.append(('X-Content-Type-Options', 'nosniff'))
+            if 'x-xss-protection' not in header_keys:
+                headers.append(('X-XSS-Protection', '1; mode=block'))
+            if 'referrer-policy' not in header_keys:
+                headers.append(('Referrer-Policy', 'strict-origin-when-cross-origin'))
+            if 'permissions-policy' not in header_keys:
+                headers.append(('Permissions-Policy', 'geolocation=(), microphone=(), camera=()'))
+            
+            # Remove Server header
+            headers = [h for h in headers if h[0].lower() != 'server']
+            
+            return start_response(status, headers, exc_info)
+
+        return self.app_wsgi(environ, custom_start_response)
+
+app.wsgi_app = SecurityHeadersMiddleware(app.wsgi_app)
+
 @app.after_request
-def add_security_headers(response):
+def add_csp_header(response):
     from flask import g
     nonce = getattr(g, 'nonce', '')
-    response.headers["X-Frame-Options"]           = "DENY"
-    response.headers["X-Content-Type-Options"]    = "nosniff"
-    response.headers["X-XSS-Protection"]          = "1; mode=block"
-    response.headers["Referrer-Policy"]            = "strict-origin-when-cross-origin"
-    response.headers["Permissions-Policy"]         = "geolocation=(), microphone=(), camera=()"
-    response.headers["Content-Security-Policy"]   = (
+    response.headers["Content-Security-Policy"] = (
         "default-src 'self'; "
         f"script-src 'self' 'nonce-{nonce}' cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; "
         f"style-src 'self' 'nonce-{nonce}' fonts.googleapis.com https://unpkg.com; "
-        "font-src fonts.gstatic.com; "
+        "font-src 'self' fonts.gstatic.com; "
         "img-src 'self' data: https://unpkg.com https://*.tile.openstreetmap.org; "
         "connect-src 'self'; "
-        "worker-src 'self';"
+        "worker-src 'self'; "
+        "form-action 'self'; "
+        "base-uri 'self'; "
+        "frame-ancestors 'none';"
     )
-    response.headers.pop("Server", None)
     return response
-
 
 # ── Helper ─────────────────────────────────────────────────────────────
 def allowed_image(filename: str) -> bool:
@@ -589,6 +623,4 @@ def recommend():
 
 
 if __name__ == "__main__":
-    import werkzeug.serving
-    werkzeug.serving.WSGIRequestHandler.server_version = ""
     app.run(debug=True, ssl_context=('localhost+2.pem', 'localhost+2-key.pem'))

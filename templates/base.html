@@ -10,12 +10,12 @@
   <link rel="manifest" href="/manifest.json"/>
   <link rel="apple-touch-icon" href="/static/images/icon-192.png"/>
   <title>{% block title %}RocketCanvas{% endblock %}</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/p5-dialogue.css') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/card_templates.css') }}">
-  <script src="{{ url_for('static', filename='js/chart.min.js') }}" nonce="{{ nonce }}"></script>
-  <script src="{{ url_for('static', filename='js/rc-charts.js') }}" nonce="{{ nonce }}"></script>
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js" nonce="{{ nonce }}"></script>
+  <link href="{{ url_for('static', filename='css/fonts.css') }}" rel="stylesheet" integrity="sha384-XtuY959uCyhd0lv4TKJe+eR5nFblN8v7ZzB+JLYoEmkK92+a0b7dX4Kb3231QqP7" crossorigin="anonymous"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/p5-dialogue.css') }}" integrity="sha384-sCYyUZEZPc3k7z9+WnpQoPJx6DPZNy5SEuZq7K40x0KteUIjYrIAg0JuTpxHejnA">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/card_templates.css') }}" integrity="sha384-TVlwPLDOpXY40VAOT4Ja0MPN3X8hfsxqJkAbr7r2JT1NOc7ThoHSmQ35bpbCKtxG">
+  <script src="{{ url_for('static', filename='js/chart.min.js') }}" nonce="{{ nonce }}" integrity="sha384-bs/nf9FbdNouRbMiFcrcZfLXYPKiPaGVGplVbv7dLGECccEXDW+S3zjqSKR5ZEaD"></script>
+  <script src="{{ url_for('static', filename='js/rc-charts.js') }}" nonce="{{ nonce }}" integrity="sha384-ityMjwPZ2zgoGj3xdOua/KscD+DtKiDrHP9CyObQIPoGbDiAMT7lB3E38MUoUKrG"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js" nonce="{{ nonce }}" integrity="sha384-Rv68Y7adOjMMJc1/xFMcdNvXre/HF51to4GZjBALmXr7ABnVl5V4UajJwBu7zbhN" crossorigin="anonymous"></script>
   <style nonce="{{ nonce }}">
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -754,11 +754,11 @@
       .catch((err) => console.warn('[SW] Registration failed:', err));
   })();
 </script>
-<script src="{{ url_for('static', filename='js/cursor.js') }}"></script>
-<script src="{{ url_for('static', filename='js/effects.js') }}"></script>
-<script src="{{ url_for('static', filename='js/sfx.js') }}"></script>
-<script src="{{ url_for('static', filename='js/tutorial.js') }}"></script>
-<script>
+<script nonce="{{ nonce }}" src="{{ url_for('static', filename='js/cursor.js') }}" integrity="sha384-NjGAAbLKOIF/NSrHyJVl9o4LHrkJq7Ix1OiLFxR1QYed+0Oyp6YGX9kUKcbwv/Pu"></script>
+<script nonce="{{ nonce }}" src="{{ url_for('static', filename='js/effects.js') }}" integrity="sha384-iWmADe1ig7bdVfeAFxSbqMY5uoQtKJPwmjygQKVk4R5PIJN5nIezTqjpFbLu06So"></script>
+<script nonce="{{ nonce }}" src="{{ url_for('static', filename='js/sfx.js') }}" integrity="sha384-SpFxvEPVmT1rpIG8hySb9XGhFOxDHWDHTGfuASYu6O47+nIq+XIE0+OfN73W0pif"></script>
+<script nonce="{{ nonce }}" src="{{ url_for('static', filename='js/tutorial.js') }}" integrity="sha384-7kebP892DtBI1A0BbXroU0N9Ytwqz56jOql5nxsoooksQR3mB3BYl5IxV+7kjO9u"></script>
+<script nonce="{{ nonce }}">
   document.addEventListener('DOMContentLoaded', () => {
     const successFlashes = document.querySelectorAll('.flash.success');
     if (successFlashes.length > 0 && typeof triggerGoalExplosion === 'function') {

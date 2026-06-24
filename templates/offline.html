@@ -4,8 +4,8 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Offline | RocketCanvas</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"/>
-  <style>
+  <link href="{{ url_for('static', filename='css/fonts.css') }}" rel="stylesheet" integrity="sha384-XtuY959uCyhd0lv4TKJe+eR5nFblN8v7ZzB+JLYoEmkK92+a0b7dX4Kb3231QqP7" crossorigin="anonymous"/>
+  <style nonce="{{ nonce }}">
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
       --bg: #030308; --surface: #1a1535; --border: #3d3875;
@@ -80,7 +80,7 @@
     </p>
     <button class="btn-retry" onclick="window.location.reload()">↻ Retry</button>
   </div>
-  <script>
+  <script nonce="{{ nonce }}">
     // Apply stored theme
     (function() {
       const stored = localStorage.getItem('rc-theme') || 'dark';
