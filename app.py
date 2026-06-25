@@ -77,19 +77,20 @@ with app.app_context():
     db.create_all()
     # Add new columns if upgrading from older schema
     from sqlalchemy import text
+    from sqlalchemy.exc import OperationalError
     with db.engine.connect() as conn:
         for col, defn in [("rank", "VARCHAR(50)"), ("bio", "VARCHAR(300)"), ("avatar_url", "VARCHAR(200)"), ("platform", "VARCHAR(50)")]:
             try:
                 conn.execute(text(f"ALTER TABLE user ADD COLUMN {col} {defn}"))
                 conn.commit()
-            except Exception:
+            except OperationalError:
                 pass  # Column already exists
         # CarDesign new columns
         for col, defn in [("card_template", "VARCHAR(50) DEFAULT 'legendary'"), ("overlay_title", "VARCHAR(100)")]:
             try:
                 conn.execute(text(f"ALTER TABLE car_design ADD COLUMN {col} {defn}"))
                 conn.commit()
-            except Exception:
+            except OperationalError:
                 pass  # Column already exists
 
 
@@ -405,7 +406,7 @@ def _compute_analytics(replays, player_lower):
         try:
             dt = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
             hour_count[dt.hour] += 1
-        except Exception:
+        except (ValueError, TypeError, AttributeError):
             pass
 
         # Goal differential
@@ -602,7 +603,7 @@ def parse_replay():
         # Clean up
         try:
             os.remove(temp_path)
-        except Exception:
+        except OSError:
             pass
             
         if not player_heatmaps:
@@ -623,4 +624,5 @@ def recommend():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, ssl_context=('localhost+2.pem', 'localhost+2-key.pem'))
+    debug_mode = os.getenv("FLASK_DEBUG", "False").lower() in ("true", "1", "t")
+    app.run(debug=debug_mode, ssl_context=('localhost+2.pem', 'localhost+2-key.pem'))

@@ -990,6 +990,146 @@ The second area was reducing redundant API calls. Early versions of the analytic
 
 The third area was image handling efficiency. Rather than storing uploaded avatar and car design images at their original size, Pillow is used to crop and resize them before saving, which keeps stored file sizes consistent and avoids the gallery page having to load a mixture of very large and very small images when displaying multiple user-submitted designs at once.
 
+### ZAP Dynamic Security Testing Results
+
+ZAP (OWASP Zed Attack Proxy) was run against the local development server at `https://127.0.0.1:5000` to dynamically scan all accessible routes including the login page, robots.txt and sitemap.xml. The scan produced ten alerts in total. The table below lists each alert, its risk classification and the remediation status as of the final build.
+
+| # | Alert | Risk Level | Status |
+|---|---|---|---|
+| 1 | CSP: Failure to Define Directive with No Fallback | Low | Accepted - `default-src 'self'` provides the fallback |
+| 2 | Sub Resource Integrity Attribute Missing | Low | Accepted - CDN sources are trusted and version-pinned |
+| 3 | Cross-Domain JavaScript Source File Inclusion (5 instances) | Low | Accepted - required for Chart.js and mapping libraries |
+| 4 | Server Leaks Version Information via Server HTTP Response Header | Low | **Resolved** - Werkzeug version string suppressed |
+| 5 | Strict-Transport-Security Header Not Set | Low | **Resolved** - HSTS added via custom WSGI middleware |
+| 6 | Authentication Request Identified | Informational | Accepted - expected behaviour on login route |
+| 7 | Information Disclosure: Suspicious Comments (3 instances) | Informational | Accepted - developer comments contain no sensitive data |
+| 8 | Modern Web Application (5 instances) | Informational | Accepted - ZAP passive detection of front-end libraries |
+| 9 | Re-examine Cache-control Directives (4 instances) | Informational | Accepted - static assets served with appropriate headers |
+| 10 | Session Management Response Identified (7 instances) | Informational | Accepted - expected session cookie behaviour |
+
+**Alert 4 - Server Version Leakage (Resolved)**
+
+By default, Werkzeug includes the Python version string in the `Server` HTTP response header on every request. This leaks environment information that an attacker could use to identify known exploits against a specific Python or Werkzeug version. This was resolved at the top of `app.py` before any route is registered:
+
+```python
+# app.py: Lines 19-21
+werkzeug.serving.WSGIRequestHandler.server_version = ""
+werkzeug.serving.WSGIRequestHandler.sys_version = ""
+```
+
+Setting both strings to empty prevents Werkzeug from including any version information in the `Server` response header. After this fix, ZAP's re-scan no longer returned this alert at a flaggable severity level.
+
+**Alert 5 - Strict-Transport-Security Header Not Set (Resolved)**
+
+HSTS (HTTP Strict Transport Security) instructs browsers to only communicate with the server over HTTPS, preventing protocol downgrade attacks where a network-level attacker strips the HTTPS connection. Because Flask does not add HSTS headers automatically, a custom WSGI middleware class called `SecurityHeadersMiddleware` was written and wrapped around the application in `app.py`:
+
+```python
+# app.py: Lines 108-139
+class SecurityHeadersMiddleware:
+    def __call__(self, environ, start_response):
+        def custom_start_response(status, headers, exc_info=None):
+            header_keys = [h[0].lower() for h in headers]
+            if 'strict-transport-security' not in header_keys:
+                headers.append(('Strict-Transport-Security',
+                    'max-age=31536000; includeSubDomains; preload'))
+            if 'x-frame-options' not in header_keys:
+                headers.append(('X-Frame-Options', 'DENY'))
+            if 'x-content-type-options' not in header_keys:
+                headers.append(('X-Content-Type-Options', 'nosniff'))
+            ...
+        return self.app_wsgi(environ, custom_start_response)
+
+app.wsgi_app = SecurityHeadersMiddleware(app.wsgi_app)
+```
+
+This middleware runs outside the Flask request context at the raw WSGI layer, meaning it applies to every response the server sends regardless of which route handled it. The `max-age=31536000` value instructs browsers to enforce HTTPS for one year. `X-Frame-Options: DENY` was also added here to prevent clickjacking, and `X-Content-Type-Options: nosniff` prevents the browser from guessing MIME types on uploaded content, which is relevant given the image upload feature.
+
+**Alert 1 - CSP: Failure to Define Directive with No Fallback (Accepted)**
+
+ZAP flagged that certain directive types within the Content Security Policy header do not have an explicit directive defined for them. The application's CSP is applied via the `add_csp_header` function attached to `app.after_request`:
+
+```python
+# app.py: Lines 141-157
+@app.after_request
+def add_csp_header(response):
+    nonce = getattr(g, 'nonce', '')
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        f"script-src 'self' 'nonce-{nonce}' cdn.jsdelivr.net ...;"
+        f"style-src 'self' 'nonce-{nonce}' fonts.googleapis.com ...;"
+        "frame-ancestors 'none';"
+    )
+    return response
+```
+
+ZAP's alert refers to directives such as `object-src` and `media-src` not being explicitly declared. In practice, these directives fall back to the `default-src 'self'` catch-all, which blocks all objects and media from external sources. The browser behaviour is identical whether the directive is explicit or inherited from the fallback. Because the actual restriction is in place via `default-src`, this alert represents a stylistic rather than a functional gap and was left as-is. Adding explicit `object-src 'none'` and `media-src 'self'` declarations would remove this finding in future scans.
+
+**Alert 2 - Sub Resource Integrity Attribute Missing (Accepted)**
+
+Subresource Integrity (SRI) is a browser mechanism that validates an externally loaded script or stylesheet against a cryptographic hash before executing it. ZAP flagged that the application loads several JavaScript libraries from CDNs without SRI hash attributes. The libraries affected are Chart.js, Leaflet.js and the Shepherd.js tour library, which are pulled from `cdn.jsdelivr.net`, `cdnjs.cloudflare.com` and `unpkg.com`.
+
+The decision to accept this alert without adding SRI hashes was made because each CDN source is a major, well-maintained distribution network with a strong operational security record. The CDN URLs used reference specific version numbers rather than floating `latest` tags, which means the file served cannot change without the URL also changing. Adding SRI hashes would provide an additional layer of verification but would also require the hash to be updated each time a library version is incremented. Given that the application is running locally rather than being served to a public audience, the risk is managed and the alert is accepted at its current low severity.
+
+**Alert 3 - Cross-Domain JavaScript Source File Inclusion (Accepted)**
+
+This alert is directly related to Alert 2 and was raised five times, once for each external library script tag. ZAP identifies any `<script>` tag whose `src` attribute points to a domain other than the host as a potential risk. This is accepted for the same reason as Alert 2: the external domains are reputable CDNs, the versions are pinned and the CSP `script-src` directive explicitly whitelists only those specific CDN hostnames. Any script loaded from a domain not listed in the CSP header would be blocked by the browser before execution.
+
+**Alerts 6-10 - Informational Alerts (Accepted)**
+
+The remaining five alerts were all classified as informational by ZAP, meaning they carry no independently exploitable risk. Alert 6 (Authentication Request Identified) confirms ZAP found and scanned the login form, which is expected. Alert 7 (Suspicious Comments) refers to developer annotation strings in the HTML templates that mention route names and were left in during development. These do not expose credentials, keys or file paths. Alert 8 (Modern Web Application) is a passive detection flag that ZAP applies to any site using JavaScript frameworks. Alert 9 (Re-examine Cache-control Directives) notes that certain static routes do not set explicit cache lifetimes, which is standard for a development server. Alert 10 (Session Management Response Identified) confirms that ZAP detected the application's session cookies, which is expected given the cookie hardening settings (`HTTPOnly`, `Secure`, `SameSite=Lax`) configured in `app.py`.
+
+### Bandit Static Analysis Security Testing Results
+
+Bandit was run to perform static application security testing (SAST) on the Python source code of RocketCanvas. The initial scan identified 16 security and code hygiene issues across three files. Each of these findings was investigated, and remediations were applied to the codebase before final compilation. 
+
+The table below summarizes the issues identified by Bandit, their risk levels and how they were resolved.
+
+| # | File | Location | Issue | Risk Level | Resolution Status |
+|---|---|---|---|---|---|
+| 1 | `app.py` | L85 | B110: Try, Except, Pass | Low | **Resolved** - Caught specific `OperationalError` exception |
+| 2 | `app.py` | L92 | B110: Try, Except, Pass | Low | **Resolved** - Caught specific `OperationalError` exception |
+| 3 | `app.py` | L408 | B110: Try, Except, Pass | Low | **Resolved** - Caught specific `(ValueError, TypeError, AttributeError)` exceptions |
+| 4 | `app.py` | L605 | B110: Try, Except, Pass | Low | **Resolved** - Caught specific `OSError` exception |
+| 5 | `app.py` | L626 | B201: Flask App debug=True | High | **Resolved** - Loaded Flask debug flag dynamically from environment variable |
+| 6 | `ballchasing.py` | L16 | B113: requests call without timeout | Medium | **Resolved** - Added `timeout=15` parameter |
+| 7 | `ballchasing.py` | L31 | B113: requests call without timeout | Medium | **Resolved** - Added `timeout=15` parameter |
+| 8 | `ballchasing.py` | L36 | B113: requests call without timeout | Medium | **Resolved** - Added `timeout=15` parameter |
+| 9 | `ballchasing.py` | L46 | B113: requests call without timeout | Medium | **Resolved** - Added `timeout=15` parameter |
+| 10 | `replay_parser.py` | L3 | B404: subprocess import blacklist | Low | **Accepted** - Subprocess module is required to execute local parsing binary |
+| 11 | `replay_parser.py` | L41 | B603: subprocess call validation | Low | **Accepted** - Replay path parameters are server-controlled |
+| 12 | `test_rrrocket.py` | L4 | B404: subprocess import blacklist | Low | **Accepted** - Subprocess module is required for test execution |
+| 13 | `test_rrrocket.py` | L17 | B113: requests call without timeout | Medium | **Resolved** - Added `timeout=30` parameter |
+| 14 | `test_rrrocket.py` | L32 | B113: requests call without timeout | Medium | **Resolved** - Added `timeout=15` parameter |
+| 15 | `test_rrrocket.py` | L36 | B113: requests call without timeout | Medium | **Resolved** - Added `timeout=15` parameter |
+| 16 | `test_rrrocket.py` | L44 | B603: subprocess call validation | Low | **Accepted** - Test replay path parameters are statically defined |
+
+**Try, Except, Pass Pattern (B110)**
+
+Bandit flags empty except-pass blocks (`except Exception: pass`) because catching general exceptions without logging or handling them can suppress errors and hide bugs.
+- In `app.py` lines 85 and 92, the migration shim executes `ALTER TABLE` to append new database columns. If the columns already exist, SQLite throws an `OperationalError`. This was resolved by importing `sqlalchemy.exc.OperationalError` and catching only that exception, allowing other unexpected errors to bubble up.
+- In `app.py` line 408, the date parsing step was hardened by replacing `except Exception:` with `except (ValueError, TypeError, AttributeError):`.
+- In `app.py` line 605, the temporary file removal step was changed to catch only `OSError` which is raised when file deletions fail.
+
+**Flask App debug=True (B201)**
+
+Running a production Flask application with `debug=True` is a high-severity security risk as it exposes the interactive Werkzeug debugger. If an unhandled exception occurs, the debugger allows arbitrary Python code execution on the server. This was resolved at line 626 of `app.py` by retrieving the debug state dynamically from the server environment:
+
+```python
+debug_mode = os.getenv("FLASK_DEBUG", "False").lower() in ("true", "1", "t")
+app.run(debug=debug_mode, ssl_context=('localhost+2.pem', 'localhost+2-key.pem'))
+```
+
+By default, the debug mode defaults to `False`. It is only enabled if the environment variable `FLASK_DEBUG` is explicitly set to `"true"`, ensuring production environments are secure by default.
+
+**Requests Without Timeout (B113)**
+
+Making external HTTP requests using the `requests` library without specifying a timeout allows the request to hang indefinitely if the remote server fails to respond. This blocks the executing thread, degrading server performance or causing a complete denial of service. Timeout parameters (`timeout=15` or `timeout=30`) were added to every call to `requests.get()` in `ballchasing.py` and `test_rrrocket.py` to ensure requests abort if the external API is unreachable.
+
+**Subprocess Usage (B404 and B603)**
+
+Bandit flags the import of the `subprocess` module and calls to its execution functions due to the risk of shell injection attacks if user input is passed directly to command execution functions.
+RocketCanvas requires `subprocess` to call the local, compiled `rrrocket.exe` parser to decode match files. The inputs to `subprocess.check_output` are restricted to the static executable path and temporary files generated internally by the server. Because the execution paths are completely controlled and do not consume arbitrary user-supplied string arguments, these alerts were accepted, and `# nosec B404` and `# nosec B603` inline comments were added to suppress the findings in subsequent scans.
+
 ### 4.2. Evaluation of solution
 
 #### Machine learning hitbox classifier
@@ -1046,73 +1186,73 @@ Taken together, this feedback round confirmed that the core platform, correspond
 
 ## 5. Setup and installation instructions
 
-This section outlines the setup process required to initialize and run RocketCanvas locally on a clean development system.
+Before you do anything, make sure you have the full project folder downloaded and that your internet is working. You will also need a Gmail account set up with an App Password for the 2FA emails to actually send.
 
-### Step 1: System Verification
+**1. Check Python is installed**
 
-Ensure that Python 3.11 and Git are installed on the system. Verification can be performed by running the following commands in the command prompt or terminal:
-
+Open your terminal and type:
 ```powershell
 python --version
-git --version
 ```
+If it prints something like `Python 3.11.x` you are good to go. If not, head to python.org, download Python 3.11, and when the installer opens make sure you tick **Add Python to PATH** before clicking through, otherwise nothing will work.
 
-### Step 2: Clone the Project Directory
-
-Extract the project files or clone the repository to the local machine:
+**2. Check Git is installed**
 
 ```powershell
-cd C:\Users\kotel\
+git --version
+```
+If it is not installed just grab it from git-scm.com.
+
+**3. Clone the project**
+
+Navigate to wherever you want to put the project folder and run:
+```powershell
 git clone https://github.com/greggykotelnikov/rocketcanvas.git
 cd rocketcanvas
 ```
 
-### Step 3: Configure Virtual Environment
+**4. Set up a virtual environment**
 
-Create and activate an isolated virtual environment to contain application dependencies:
-
+This keeps all the project's libraries in their own bubble so they do not mess with anything else on your computer:
 ```powershell
 python -m venv venv
 .\venv\Scripts\activate
 ```
+You will know it worked when you see `(venv)` show up at the front of your terminal line.
 
-### Step 4: Install System Dependencies
-
-Use the Python package manager to install the required extensions listed in `requirements.txt`:
+**5. Install the dependencies**
 
 ```powershell
 pip install -r requirements.txt
 ```
+This pulls in everything the project needs, including Flask, Pillow, SQLAlchemy, Bcrypt and all the rest.
 
-### Step 5: Configure Environment Variables
+**6. Set up your `.env` file**
 
-Create a new file named `.env` in the root directory and define the following variables:
-
+Create a file called `.env` in the root folder (same level as `app.py`) and paste this in with your own values filled in:
 ```ini
-SECRET_KEY=generate_a_random_hex_string_here
-BALLCHASING_API_KEY=your_ballchasing_api_token_here
-MAIL_USERNAME=your_gmail_address_here
-MAIL_PASSWORD=your_app_password_here
-MAIL_DEFAULT_SENDER=your_gmail_address_here
+SECRET_KEY=any_long_random_string_here
+BALLCHASING_API_KEY=your_ballchasing_api_token
+MAIL_USERNAME=yourgmail@gmail.com
+MAIL_PASSWORD=your_gmail_app_password
+MAIL_DEFAULT_SENDER=yourgmail@gmail.com
 ```
+Your ballchasing API token comes from your account settings on ballchasing.com. The Gmail App Password is under Google Account -> Security -> 2-Step Verification -> App Passwords. Do not use your actual Gmail password here, it will not work.
 
-### Step 6: Initialize Database Reference Data
+**7. Seed the database**
 
-Execute the seed script to compile the local database schema and populate the car hitbox mapping reference table:
-
+Run this once before you do anything else:
 ```powershell
 python seed_hitboxes.py
 ```
+This fills in the car hitbox table. You only ever need to do this on the very first run.
 
-### Step 7: Launch the Server
-
-Run the Flask application wrapper. The application initializes and launches the local development server:
+**8. Start the app**
 
 ```powershell
 python app.py
 ```
-
-The application will be accessible via a secure HTTPS browser connection at `https://127.0.0.1:5000/`. The self-signed local certificates configured in `app.py` must be accepted in the browser to view the interface.
+Then open your browser and go to `https://127.0.0.1:5000`. The browser will probably throw a security warning about the certificate - just click **Advanced** and then **Proceed**. That is completely normal for a locally hosted app and not an actual problem.
 
 ---
 

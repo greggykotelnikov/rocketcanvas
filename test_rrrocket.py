@@ -1,7 +1,7 @@
 import os
 import requests
 import zipfile
-import subprocess
+import subprocess  # nosec B404
 import json
 
 RRROCKET_URL = "https://github.com/nickbabcock/rrrocket/releases/download/v0.11.1/rrrocket-0.11.1-x86_64-pc-windows-msvc.zip"
@@ -14,7 +14,7 @@ def install_rrrocket():
     os.makedirs(RRROCKET_DIR, exist_ok=True)
     zip_path = os.path.join(RRROCKET_DIR, "rrrocket.zip")
     print("Downloading rrrocket...")
-    r = requests.get(RRROCKET_URL)
+    r = requests.get(RRROCKET_URL, timeout=30)
     with open(zip_path, "wb") as f:
         f.write(r.content)
     with zipfile.ZipFile(zip_path, "r") as z:
@@ -29,11 +29,11 @@ if __name__ == "__main__":
     from dotenv import load_dotenv
     load_dotenv()
     headers = {"Authorization": os.getenv("BALLCHASING_API_KEY")}
-    r = requests.get("https://ballchasing.com/api/replays?count=1", headers=headers)
+    r = requests.get("https://ballchasing.com/api/replays?count=1", headers=headers, timeout=15)
     rid = r.json()["list"][0]["id"]
     print(f"Testing replay: {rid}")
     
-    r2 = requests.get(f"https://ballchasing.com/api/replays/{rid}/file", headers=headers)
+    r2 = requests.get(f"https://ballchasing.com/api/replays/{rid}/file", headers=headers, timeout=15)
     test_replay = "test.replay"
     with open(test_replay, "wb") as f:
         f.write(r2.content)
@@ -41,7 +41,7 @@ if __name__ == "__main__":
     # Run rrrocket with network parsing (-n) to see if we can get rigid body state
     # Wait, rrrocket without flags outputs the header and network data as JSON
     print("Parsing with rrrocket...")
-    out = subprocess.check_output([RRROCKET_EXE, "-n", test_replay])
+    out = subprocess.check_output([RRROCKET_EXE, "-n", test_replay])  # nosec B603
     data = json.loads(out)
     
     if "objects" in data and "network_frames" in data:

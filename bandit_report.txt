@@ -1,0 +1,184 @@
+Run started:2026-06-25 09:05:40.468938+00:00
+
+Test results:
+>> Issue: [B110:try_except_pass] Try, Except, Pass detected.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b110_try_except_pass.html
+   Location: .\app.py:85:12
+84	                conn.commit()
+85	            except Exception:
+86	                pass  # Column already exists
+87	        # CarDesign new columns
+
+--------------------------------------------------
+>> Issue: [B110:try_except_pass] Try, Except, Pass detected.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b110_try_except_pass.html
+   Location: .\app.py:92:12
+91	                conn.commit()
+92	            except Exception:
+93	                pass  # Column already exists
+94	
+
+--------------------------------------------------
+>> Issue: [B110:try_except_pass] Try, Except, Pass detected.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b110_try_except_pass.html
+   Location: .\app.py:408:8
+407	            hour_count[dt.hour] += 1
+408	        except Exception:
+409	            pass
+410	
+
+--------------------------------------------------
+>> Issue: [B110:try_except_pass] Try, Except, Pass detected.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b110_try_except_pass.html
+   Location: .\app.py:605:8
+604	            os.remove(temp_path)
+605	        except Exception:
+606	            pass
+607	            
+
+--------------------------------------------------
+>> Issue: [B201:flask_debug_true] A Flask app appears to be run with debug=True, which exposes the Werkzeug debugger and allows the execution of arbitrary code.
+   Severity: High   Confidence: Medium
+   CWE: CWE-94 (https://cwe.mitre.org/data/definitions/94.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b201_flask_debug_true.html
+   Location: .\app.py:626:4
+625	if __name__ == "__main__":
+626	    app.run(debug=True, ssl_context=('localhost+2.pem', 'localhost+2-key.pem'))
+
+--------------------------------------------------
+>> Issue: [B113:request_without_timeout] Call to requests without timeout
+   Severity: Medium   Confidence: Low
+   CWE: CWE-400 (https://cwe.mitre.org/data/definitions/400.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b113_request_without_timeout.html
+   Location: .\ballchasing.py:16:8
+15	    """Ping the API to verify the key works."""
+16	    r = requests.get(f"{BASE_URL}/", headers=HEADERS)
+17	    r.raise_for_status()
+
+--------------------------------------------------
+>> Issue: [B113:request_without_timeout] Call to requests without timeout
+   Severity: Medium   Confidence: Low
+   CWE: CWE-400 (https://cwe.mitre.org/data/definitions/400.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b113_request_without_timeout.html
+   Location: .\ballchasing.py:31:8
+30	    }
+31	    r = requests.get(f"{BASE_URL}/replays", headers=HEADERS, params=params)
+32	    r.raise_for_status()
+
+--------------------------------------------------
+>> Issue: [B113:request_without_timeout] Call to requests without timeout
+   Severity: Medium   Confidence: Low
+   CWE: CWE-400 (https://cwe.mitre.org/data/definitions/400.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b113_request_without_timeout.html
+   Location: .\ballchasing.py:36:8
+35	def get_replay_detail(replay_id):
+36	    r = requests.get(f"{BASE_URL}/replays/{replay_id}", headers=HEADERS)
+37	    r.raise_for_status()
+
+--------------------------------------------------
+>> Issue: [B113:request_without_timeout] Call to requests without timeout
+   Severity: Medium   Confidence: Low
+   CWE: CWE-400 (https://cwe.mitre.org/data/definitions/400.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b113_request_without_timeout.html
+   Location: .\ballchasing.py:46:8
+45	    """
+46	    r = requests.get(f"{BASE_URL}/replays/{replay_id}/file", headers=HEADERS)
+47	    r.raise_for_status()
+
+--------------------------------------------------
+>> Issue: [B404:blacklist] Consider possible security implications associated with the subprocess module.
+   Severity: Low   Confidence: High
+   CWE: CWE-78 (https://cwe.mitre.org/data/definitions/78.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/blacklists/blacklist_imports.html#b404-import-subprocess
+   Location: .\replay_parser.py:3:0
+2	import json
+3	import subprocess
+4	import requests
+
+--------------------------------------------------
+>> Issue: [B603:subprocess_without_shell_equals_true] subprocess call - check for execution of untrusted input.
+   Severity: Low   Confidence: High
+   CWE: CWE-78 (https://cwe.mitre.org/data/definitions/78.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b603_subprocess_without_shell_equals_true.html
+   Location: .\replay_parser.py:41:14
+40	    try:
+41	        out = subprocess.check_output([RRROCKET_EXE, "-n", replay_path])
+42	        data = json.loads(out)
+
+--------------------------------------------------
+>> Issue: [B404:blacklist] Consider possible security implications associated with the subprocess module.
+   Severity: Low   Confidence: High
+   CWE: CWE-78 (https://cwe.mitre.org/data/definitions/78.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/blacklists/blacklist_imports.html#b404-import-subprocess
+   Location: .\test_rrrocket.py:4:0
+3	import zipfile
+4	import subprocess
+5	import json
+
+--------------------------------------------------
+>> Issue: [B113:request_without_timeout] Call to requests without timeout
+   Severity: Medium   Confidence: Low
+   CWE: CWE-400 (https://cwe.mitre.org/data/definitions/400.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b113_request_without_timeout.html
+   Location: .\test_rrrocket.py:17:8
+16	    print("Downloading rrrocket...")
+17	    r = requests.get(RRROCKET_URL)
+18	    with open(zip_path, "wb") as f:
+
+--------------------------------------------------
+>> Issue: [B113:request_without_timeout] Call to requests without timeout
+   Severity: Medium   Confidence: Low
+   CWE: CWE-400 (https://cwe.mitre.org/data/definitions/400.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b113_request_without_timeout.html
+   Location: .\test_rrrocket.py:32:8
+31	    headers = {"Authorization": os.getenv("BALLCHASING_API_KEY")}
+32	    r = requests.get("https://ballchasing.com/api/replays?count=1", headers=headers)
+33	    rid = r.json()["list"][0]["id"]
+
+--------------------------------------------------
+>> Issue: [B113:request_without_timeout] Call to requests without timeout
+   Severity: Medium   Confidence: Low
+   CWE: CWE-400 (https://cwe.mitre.org/data/definitions/400.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b113_request_without_timeout.html
+   Location: .\test_rrrocket.py:36:9
+35	    
+36	    r2 = requests.get(f"https://ballchasing.com/api/replays/{rid}/file", headers=headers)
+37	    test_replay = "test.replay"
+
+--------------------------------------------------
+>> Issue: [B603:subprocess_without_shell_equals_true] subprocess call - check for execution of untrusted input.
+   Severity: Low   Confidence: High
+   CWE: CWE-78 (https://cwe.mitre.org/data/definitions/78.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b603_subprocess_without_shell_equals_true.html
+   Location: .\test_rrrocket.py:44:10
+43	    print("Parsing with rrrocket...")
+44	    out = subprocess.check_output([RRROCKET_EXE, "-n", test_replay])
+45	    data = json.loads(out)
+
+--------------------------------------------------
+
+Code scanned:
+	Total lines of code: 1065
+	Total lines skipped (#nosec): 0
+	Total potential issues skipped due to specifically being disabled (e.g., #nosec BXXX): 0
+
+Run metrics:
+	Total issues (by severity):
+		Undefined: 0
+		Low: 8
+		Medium: 7
+		High: 1
+	Total issues (by confidence):
+		Undefined: 0
+		Low: 7
+		Medium: 1
+		High: 8
+Files skipped (0):

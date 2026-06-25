@@ -1,6 +1,6 @@
 import os
 import json
-import subprocess
+import subprocess  # nosec B404
 import requests
 import zipfile
 import threading
@@ -38,7 +38,7 @@ def parse_replay_positions(replay_path):
         return {}
 
     try:
-        out = subprocess.check_output([RRROCKET_EXE, "-n", replay_path])
+        out = subprocess.check_output([RRROCKET_EXE, "-n", replay_path])  # nosec B603
         data = json.loads(out)
     except Exception as e:
         print(f"Error parsing replay: {e}")

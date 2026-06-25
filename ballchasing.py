@@ -13,7 +13,7 @@ HEADERS = {
 
 def test_connection():
     """Ping the API to verify the key works."""
-    r = requests.get(f"{BASE_URL}/", headers=HEADERS)
+    r = requests.get(f"{BASE_URL}/", headers=HEADERS, timeout=15)
     r.raise_for_status()
     return r.json()
 
@@ -28,12 +28,12 @@ def search_replays_by_player(player_name, count=10):
         "sort-by": "replay-date",
         "sort-dir": "desc"
     }
-    r = requests.get(f"{BASE_URL}/replays", headers=HEADERS, params=params)
+    r = requests.get(f"{BASE_URL}/replays", headers=HEADERS, params=params, timeout=15)
     r.raise_for_status()
     return r.json()  # has 'list' key with replay objects\
 
 def get_replay_detail(replay_id):
-    r = requests.get(f"{BASE_URL}/replays/{replay_id}", headers=HEADERS)
+    r = requests.get(f"{BASE_URL}/replays/{replay_id}", headers=HEADERS, timeout=15)
     r.raise_for_status()
     return r.json()
 
@@ -43,6 +43,6 @@ def download_replay(replay_id):
     Returns the binary content (bytes).
     Note: Requires a Patreon-linked API key with download permissions.
     """
-    r = requests.get(f"{BASE_URL}/replays/{replay_id}/file", headers=HEADERS)
+    r = requests.get(f"{BASE_URL}/replays/{replay_id}/file", headers=HEADERS, timeout=15)
     r.raise_for_status()
     return r.content
