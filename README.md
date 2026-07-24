@@ -45,7 +45,7 @@ RocketCanvas is installable as a PWA. A registered service worker handles offlin
 
 ## Technology Stack
 
-<<<<<<< HEAD
+
 | Layer | Technologies |
 |---|---|
 | Backend | Python 3.11, Flask |
@@ -66,7 +66,7 @@ RocketCanvas is installable as a PWA. A registered service worker handles offlin
 * **Libraries**: Chart.js (analytics rendering)
 * **API Integration**: ballchasing.com REST API
 * **Security & Utilities**: Flask-WTF (CSRF protection), Flask-Limiter (rate-limiting), Pillow (avatar crop/resize)
->>>>>>> 42d8296af05fe4860181ec554afefffb9f11a5b7
+
 
 ---
 
