@@ -1,15 +1,27 @@
 """
 train_hitbox_model.py
 =====================
-Retrain the RocketCanvas hitbox classifier from scratch using your
-hitbox_images/ dataset. Produces ml/keras_model.h5 compatible with
-the existing _load_hitbox_model_rebuilt() loader in app.py.
+Retrain the RocketCanvas hitbox classifier from your own screenshots.
 
-Usage:
-    python train_hitbox_model.py
+Put training images in one folder per class (folder names must match
+CLASS_NAMES below; ml/hitbox_images/ is git-ignored):
 
-Requirements (all already in venv311):
-    tensorflow-cpu >= 2.16, numpy, Pillow
+    ml/hitbox_images/octane/*.png
+    ml/hitbox_images/dominus/*.jpg
+    ...
+
+Then, in the ML environment (see requirements-ml.txt):
+
+    python -m venv mlenv
+    mlenv/Scripts/pip install -r requirements-ml.txt
+    mlenv/Scripts/python ml/train_hitbox_model.py
+
+Writes ml/keras_model.h5 and exports ml/hitbox_classifier.onnx, which is
+what the web app loads (via onnxruntime). Restart the app afterwards.
+
+Tip: the bundled model was trained on very few non-Octane images and
+guesses Octane for almost everything. Aim for a similar number of images
+per class (at least ~50 each), taken from in-game screenshots.
 """
 
 import os
@@ -30,8 +42,9 @@ EPOCHS_HEAD  = 15           # Train only the new head first
 EPOCHS_FINE  = 20           # Then fine-tune top layers of backbone
 LEARNING_RATE_HEAD = 1e-3
 LEARNING_RATE_FINE = 1e-5
-DATA_DIR     = pathlib.Path("hitbox_images")
-OUTPUT_PATH  = pathlib.Path("ml/keras_model.h5")
+ML_DIR       = pathlib.Path(__file__).resolve().parent
+DATA_DIR     = ML_DIR / "hitbox_images"   # resolved from this file, not the CWD
+OUTPUT_PATH  = ML_DIR / "keras_model.h5"
 SEED         = 42
 
 # ── Labels (must match labels.txt order) ───────────────────────────────
@@ -42,6 +55,9 @@ print(f"TensorFlow {tf.__version__}")
 print(f"Dataset: {DATA_DIR.resolve()}")
 print(f"Output:  {OUTPUT_PATH.resolve()}")
 
+
+if not DATA_DIR.is_dir():
+    raise SystemExit(f"No training data: create {DATA_DIR} with one sub-folder per class: {', '.join(CLASS_NAMES)}")
 
 # ── Load dataset ───────────────────────────────────────────────────────
 def make_dataset(validation_split=0.2):
@@ -211,6 +227,15 @@ history2 = model.fit(
 OUTPUT_PATH.parent.mkdir(exist_ok=True)
 model.save(str(OUTPUT_PATH))
 print(f"\nModel saved to {OUTPUT_PATH}")
+
+# ── Export for the web app ────────────────────────────────────────────
+# The app runs ONNX via onnxruntime; the [-1, 1] normalisation is applied
+# in the input pipeline above, matching hitbox_classifier.preprocess().
+import tf2onnx  # noqa: E402
+onnx_path = ML_DIR / "hitbox_classifier.onnx"
+spec = (tf.TensorSpec((None, IMG_SIZE, IMG_SIZE, 3), tf.float32, name="image"),)
+tf2onnx.convert.from_keras(model, input_signature=spec, opset=13, output_path=str(onnx_path))
+print(f"ONNX model exported to {onnx_path}")
 
 # ── Quick eval ────────────────────────────────────────────────────────
 loss, acc = model.evaluate(val_ds, verbose=0)

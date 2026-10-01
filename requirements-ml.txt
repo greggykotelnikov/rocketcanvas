@@ -1,0 +1,9 @@
+# Only needed to (re)train or convert the hitbox classifier, not to run the app.
+# TensorFlow 2.15 is the last release with Keras 2, which the existing
+# Teachable Machine .h5 model and tf2onnx both require.
+tensorflow-cpu==2.15.1
+tf2onnx==1.16.1
+onnx==1.16.2
+protobuf>=3.20,<4.21.13
+pillow
+numpy<2
