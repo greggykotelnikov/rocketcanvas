@@ -631,6 +631,17 @@
       margin-right: 0;
     }
 
+    /* ── SKIP LINK ──────────────────────────────────────────────────── */
+    /* First Tab stop on every page; jumps keyboard users past the nav. */
+    .skip-link {
+      position: absolute; left: 1rem; top: -3rem; z-index: 1000;
+      padding: 0.5rem 1rem; border-radius: var(--radius);
+      background: var(--accent2); color: #fff; text-decoration: none; font-weight: 600;
+      transition: top 0.2s ease;
+    }
+    .skip-link:focus { top: 0.75rem; }
+    main.page:focus { outline: none; }
+
     /* ── KEYBOARD FOCUS ─────────────────────────────────────────────── */
     /* Visible focus ring for keyboard users only (:focus-visible), in the
        accent colour. Several controls set outline:none for mouse users,
@@ -678,21 +689,22 @@
 {% endmacro %}
 
 {% if current_user.is_authenticated %}
-<nav>
+<a class="skip-link" href="#main">Skip to content</a>
+<nav aria-label="Main">
   <a href="{{ url_for('profile') }}" class="nav-logo">
     <span class="nav-logo-icon"></span>
     RocketCanvas
   </a>
 
   <div class="nav-center">
-    <a href="{{ url_for('profile') }}"      {% if request.endpoint == 'profile'      %}class="active"{% endif %}>Profile</a>
-    <a href="{{ url_for('dashboard') }}"    {% if request.endpoint == 'dashboard'    %}class="active"{% endif %}>Dashboard</a>
-    <a href="{{ url_for('gallery') }}"      {% if request.endpoint == 'gallery'      %}class="active"{% endif %}>Gallery</a>
-    <a href="{{ url_for('garage') }}"       {% if request.endpoint == 'garage'       %}class="active"{% endif %}>Garage</a>
-    <a href="{{ url_for('analytics') }}"    {% if request.endpoint == 'analytics'    %}class="active"{% endif %}>Analytics</a>
-    <a href="{{ url_for('heatmap') }}"    {% if request.endpoint == 'heatmap'    %}class="active"{% endif %}>Heatmap</a>
-    <a href="{{ url_for('hitbox_lookup') }}" {% if request.endpoint == 'hitbox_lookup' %}class="active"{% endif %}>Hitbox</a>
-    <a href="{{ url_for('recommend') }}"    {% if request.endpoint == 'recommend'    %}class="active"{% endif %}>Recommend</a>
+    <a href="{{ url_for('profile') }}"      {% if request.endpoint == 'profile' %}class="active" aria-current="page"{% endif %}>Profile</a>
+    <a href="{{ url_for('dashboard') }}"    {% if request.endpoint == 'dashboard' %}class="active" aria-current="page"{% endif %}>Dashboard</a>
+    <a href="{{ url_for('gallery') }}"      {% if request.endpoint == 'gallery' %}class="active" aria-current="page"{% endif %}>Gallery</a>
+    <a href="{{ url_for('garage') }}"       {% if request.endpoint == 'garage' %}class="active" aria-current="page"{% endif %}>Garage</a>
+    <a href="{{ url_for('analytics') }}"    {% if request.endpoint == 'analytics' %}class="active" aria-current="page"{% endif %}>Analytics</a>
+    <a href="{{ url_for('heatmap') }}"    {% if request.endpoint == 'heatmap' %}class="active" aria-current="page"{% endif %}>Heatmap</a>
+    <a href="{{ url_for('hitbox_lookup') }}" {% if request.endpoint == 'hitbox_lookup' %}class="active" aria-current="page"{% endif %}>Hitbox</a>
+    <a href="{{ url_for('recommend') }}"    {% if request.endpoint == 'recommend' %}class="active" aria-current="page"{% endif %}>Recommend</a>
     {# POST + CSRF token: a GET logout link can be triggered by any site via <img src=".../logout"> #}
     <form class="nav-logout" method="POST" action="{{ url_for('logout') }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
@@ -707,7 +719,7 @@
     <div class="nav-user-wrap">
       <a href="{{ url_for('profile') }}" class="nav-avatar" id="navAvatar">
         {% if current_user.avatar_url %}
-          <img src="{{ url_for('static', filename='uploads/avatars/' + current_user.avatar_url) }}" alt="avatar"/>
+          <img src="{{ url_for('static', filename='uploads/avatars/' + current_user.avatar_url) }}" alt="{{ current_user.username }}'s profile" width="32" height="32"/>
         {% else %}
           {{ current_user.username[0] }}
         {% endif %}
@@ -720,7 +732,7 @@
 {{ bgm_player('bgm-player-guest') }}
 {% endif %}
 
-<div class="page">
+<main class="page" id="main" tabindex="-1">
   {# Pages that show messages inside their own layout (login/register)
      override this block; otherwise each message appeared twice. #}
   {% block flashes %}
@@ -734,7 +746,7 @@
   {% endwith %}
   {% endblock %}
   {% block content %}{% endblock %}
-</div>
+</main>
 
 <footer class="site-footer">
   <div class="footer-inner">
