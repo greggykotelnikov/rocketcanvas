@@ -237,7 +237,7 @@ function runTour(pageKey, seenPages) {
     if (isTyping) {
       // Skip typewriter animation
       clearInterval(typeTimer);
-      textArea.innerHTML = currentFullText;
+      textArea.textContent = currentFullText;
       portrait.classList.remove('talking');
       isTyping = false;
       
@@ -263,7 +263,7 @@ function runTour(pageKey, seenPages) {
   });
 
   function typeText(text, callback) {
-    textArea.innerHTML = '';
+    textArea.textContent = '';
     optionsArea.style.display = 'none';
     if (nextIndicator) nextIndicator.style.display = 'none';
     portrait.classList.add('talking');
@@ -276,7 +276,7 @@ function runTour(pageKey, seenPages) {
     let i = 0;
     clearInterval(typeTimer);
     typeTimer = setInterval(() => {
-      textArea.innerHTML += text.charAt(i);
+      textArea.textContent += text.charAt(i);
       playBlip();
       i++;
       if (i >= text.length) {
@@ -564,7 +564,7 @@ function runTour(pageKey, seenPages) {
       ? "Hey, I'm Octane. Want a quick tour of this page? I can talk you through it."
       : "Hi. Dominus here. Want a short walkthrough of this screen?";
       
-    textArea.innerHTML = welcomeText;
+    textArea.textContent = welcomeText;
     
     const startText = charKey === 'octane' ? "Let's roll!" : "Proceed";
     

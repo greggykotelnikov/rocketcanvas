@@ -323,7 +323,12 @@
         const reader = new FileReader();
         reader.onload = function(e) {
           const display = document.getElementById('avatarDisplay');
-          display.innerHTML = '<img src="' + e.target.result + '" id="avatarImg" alt="avatar"/>';
+          // Build the element instead of concatenating the data URL into HTML.
+          const img = document.createElement('img');
+          img.src = e.target.result;
+          img.id = 'avatarImg';
+          img.alt = 'avatar';
+          display.replaceChildren(img);
         };
         reader.readAsDataURL(this.files[0]);
         // Submit
