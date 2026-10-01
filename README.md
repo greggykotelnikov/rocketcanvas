@@ -54,7 +54,7 @@ RocketCanvas is installable as a PWA. A registered service worker handles offlin
 | Frontend | Vanilla HTML/CSS/JavaScript, HTML5 Canvas |
 | Charts | Chart.js |
 | Image Processing | Pillow |
-| Replay Parsing | rrrocket v0.11.1 (Windows binary, auto-downloaded) |
+| Replay Parsing | rrrocket v0.11.1 (auto-downloaded for Windows, macOS or Linux) |
 | API | ballchasing.com REST API |
 | Security | Flask-WTF (CSRF), Flask-Limiter (rate limiting) |
 | PWA | Web Audio API, Service Workers, Web App Manifest |
@@ -199,7 +199,7 @@ User-submitted car design images displayed in the gallery.
 
 ## Replay Parsing
 
-The `/parse-replay` endpoint accepts a `.replay` file uploaded from the browser. The file is saved to a temporary location and passed to `replay_parser.py`, which calls `rrrocket.exe` as a subprocess. `rrrocket` is a purpose-built binary that decodes Rocket League's proprietary binary replay format and outputs structured JSON.
+The `/parse-replay` endpoint accepts a `.replay` file uploaded from the browser. The file is saved to a temporary location and passed to `replay_parser.py`, which calls `rrrocket` as a subprocess. `rrrocket` is a purpose-built binary that decodes Rocket League's proprietary binary replay format and outputs structured JSON.
 
 The parser then walks through every network frame in the JSON output, tracking:
 - Which actor IDs correspond to players (via `PRI_TA` / `PlayerReplicationInfo` object names)
@@ -209,9 +209,7 @@ The parser then walks through every network frame in the JSON output, tracking:
 
 The X and Y coordinates (in centimetres) are extracted and returned as a dictionary mapping each player's name to their list of positional samples. The frontend renders these samples as a density heatmap on a Canvas element.
 
-`rrrocket` is automatically downloaded from GitHub at runtime if the binary is not already present in the `bin/` directory. This download is thread-safe and guarded by a lock.
-
-> **Platform note**: `rrrocket.exe` is a Windows binary. Replay parsing will not work on macOS or Linux without replacing this dependency with a cross-platform alternative.
+`rrrocket` is automatically downloaded from GitHub at runtime if the binary is not already present in the `bin/` directory. The correct build for the host (Windows x64, Linux x64, macOS Intel or Apple Silicon) is chosen automatically, its SHA-256 checksum is verified against a pinned value, and the download is guarded by a lock.
 
 ---
 
@@ -219,7 +217,6 @@ The X and Y coordinates (in centimetres) are extracted and returned as a diction
 
 ### Prerequisites
 - Python 3.11+
-- Windows (required for replay parsing)
 - A modern browser (Chrome, Edge or Firefox recommended)
 - (Optional) `mkcert` for local HTTPS certificates
 
@@ -280,7 +277,7 @@ The suite uses an in-memory SQLite database, captures 2FA emails instead of send
 
 ## Known Limitations
 
-- **Windows only**: The replay parser depends on `rrrocket.exe`, a Windows binary. It is auto-downloaded at runtime but will fail on macOS or Linux.
+- **Replay parsing platforms**: `rrrocket` builds exist for Windows x64, Linux x64 and macOS (Intel and Apple Silicon). Other platforms (e.g. Linux on ARM) cannot parse replays.
 - **Browser requirements**: A modern browser is required for HTML5 Canvas rendering, the Web Audio API and service workers. The app will not function correctly in older or unsupported browsers.
 - **SQLite**: The database is a local SQLite file and is not suitable for multi-instance or production deployments without switching to PostgreSQL or similar.
 - **Ballchasing API dependency**: Dashboard and analytics features require a valid Ballchasing API key. Without one, the dashboard shows a 'missing Ballchasing API key' message.

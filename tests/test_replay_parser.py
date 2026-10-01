@@ -68,3 +68,19 @@ def test_demolition_unlink_keeps_owner_and_actor_id_zero_works():
 
 def test_missing_sections_return_empty():
     assert extract_player_positions({}) == {}
+
+
+def test_build_selection_per_platform(monkeypatch):
+    import replay_parser
+
+    def build_for(system, machine):
+        monkeypatch.setattr(replay_parser.platform, "system", lambda: system)
+        monkeypatch.setattr(replay_parser.platform, "machine", lambda: machine)
+        b = replay_parser._current_build()
+        return b and b[0]
+
+    assert build_for("Windows", "AMD64") == "x86_64-pc-windows-msvc"
+    assert build_for("Linux", "x86_64") == "x86_64-unknown-linux-musl"
+    assert build_for("Darwin", "arm64") == "aarch64-apple-darwin"
+    assert build_for("Darwin", "x86_64") == "x86_64-apple-darwin"
+    assert build_for("Linux", "aarch64") is None
