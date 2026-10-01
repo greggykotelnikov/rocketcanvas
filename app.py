@@ -647,31 +647,30 @@ def parse_replay():
     if not file or file.filename == "":
         return jsonify({"success": False, "error": "No file uploaded."}), 400
         
-    if not file.filename.endswith(".replay"):
+    if not file.filename.lower().endswith(".replay"):
         return jsonify({"success": False, "error": "Invalid file type. Must be a .replay file."}), 400
 
-    # Save to a temporary file
+    fd, temp_path = tempfile.mkstemp(suffix=".replay")
+    os.close(fd)
     try:
-        with tempfile.NamedTemporaryFile(suffix=".replay", delete=False) as tmp:
-            file.save(tmp.name)
-            temp_path = tmp.name
-        
-        # Parse coordinates
+        file.save(temp_path)
         player_heatmaps = parse_replay_positions(temp_path)
-        
-        # Clean up
+    except Exception:
+        # Log the details server-side; don't echo exception text (paths,
+        # internals) back to the client.
+        app.logger.exception("Replay parsing failed")
+        return jsonify({"success": False, "error": "Failed to parse replay file."}), 500
+    finally:
+        # Always remove the upload, even if parsing raised.
         try:
             os.remove(temp_path)
         except OSError:
             pass
-            
-        if not player_heatmaps:
-            return jsonify({"success": False, "error": "Could not extract positions from replay."}), 400
-            
-        return jsonify({"success": True, "players": player_heatmaps})
-        
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
+
+    if not player_heatmaps:
+        return jsonify({"success": False, "error": "Could not extract positions from replay."}), 400
+
+    return jsonify({"success": True, "players": player_heatmaps})
 
 
 @app.route("/recommend")
