@@ -190,17 +190,17 @@
     .hint-text { font-size: 0.75rem; margin-top: 0.5rem; }
     .hidden { display: none !important; }
 
+    /* Alignment utilities */
+    .align-left { text-align: left; }
+    .align-center { text-align: center; }
+
     .nav-avatar {
       width: 32px;
       height: 32px;
       border-radius: 50%;
-      overflow: hidden;
       border: 1px solid var(--border);
-      flex-shrink: 0;
-    }
-    /* Alignment utilities */
-    .align-left { text-align: left; }
-    .align-center { text-align: center; }  align-items: center;
+      display: flex;
+      align-items: center;
       justify-content: center;
       font-family: var(--mono);
       font-size: 0.85rem;
