@@ -8,6 +8,7 @@ import threading
 RRROCKET_URL = "https://github.com/nickbabcock/rrrocket/releases/download/v0.11.1/rrrocket-0.11.1-x86_64-pc-windows-msvc.zip"
 RRROCKET_DIR = os.path.join(os.path.dirname(__file__), "bin")
 RRROCKET_EXE = os.path.join(RRROCKET_DIR, "rrrocket-0.11.1-x86_64-pc-windows-msvc", "rrrocket.exe")
+RRROCKET_TIMEOUT_S = 60
 _install_lock = threading.Lock()
 
 def ensure_rrrocket():
@@ -38,7 +39,12 @@ def parse_replay_positions(replay_path):
         return {}
 
     try:
-        out = subprocess.check_output([RRROCKET_EXE, "-n", replay_path])  # nosec B603
+        # Timeout so a malformed/hostile replay can't hang the request worker.
+        out = subprocess.check_output(  # nosec B603 - fixed exe path, no shell
+            [RRROCKET_EXE, "-n", replay_path],
+            timeout=RRROCKET_TIMEOUT_S,
+            stderr=subprocess.DEVNULL,
+        )
         data = json.loads(out)
     except Exception as e:
         print(f"Error parsing replay: {e}")
