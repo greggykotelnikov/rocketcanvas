@@ -268,7 +268,7 @@ Open `http://localhost:5000` (or `https://localhost:5000` if you set up certific
 
 ### 6. Run the tests
 ```bash
-pip install pytest
+pip install -r requirements-dev.txt
 python -m pytest
 ```
 The suite uses an in-memory SQLite database, captures 2FA emails instead of sending them and mocks the Ballchasing API, so no `.env` is needed.
