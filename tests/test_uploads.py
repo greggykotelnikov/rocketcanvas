@@ -59,6 +59,7 @@ def test_gallery_upload_sanitises_fields(app, auth_client):
         "design_image": (image_bytes("PNG", "RGB"), "car.gif"),
     }, content_type="multipart/form-data", follow_redirects=True)
     assert b"Design uploaded" in resp.data
+    assert b"flash celebrate" in resp.data
     with app.app_context():
         design = CarDesign.query.one()
         assert len(design.title) == 150

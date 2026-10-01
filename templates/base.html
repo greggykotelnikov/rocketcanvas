@@ -249,7 +249,8 @@
     }
     .flash-close:hover { opacity: 1; }
     .flash.error   { border-color: var(--loss); color: var(--loss); background: rgba(244,63,94,0.08); }
-    .flash.success { border-color: var(--win);  color: var(--win);  background: rgba(34,209,122,0.08); }
+    .flash.success,
+    .flash.celebrate { border-color: var(--win);  color: var(--win);  background: rgba(34,209,122,0.08); }
 
     /* ── BUTTONS ────────────────────────────────────────────────────── */
     .btn {
@@ -838,11 +839,13 @@
     }
     document.querySelectorAll('.flash').forEach(el => {
       el.querySelector('.flash-close').addEventListener('click', () => dismissFlash(el));
-      if (el.classList.contains('success')) setTimeout(() => dismissFlash(el), 5000);
+      if (el.matches('.success, .celebrate')) setTimeout(() => dismissFlash(el), 5000);
     });
 
-    const successFlashes = document.querySelectorAll('.flash.success');
-    if (successFlashes.length > 0 && typeof triggerGoalExplosion === 'function') {
+    // Confetti + goal-explosion sound only for real achievements (flash
+    // category 'celebrate'), not for routine messages like "Design deleted".
+    const celebrations = document.querySelectorAll('.flash.celebrate');
+    if (celebrations.length > 0 && typeof triggerGoalExplosion === 'function') {
       if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
         setTimeout(() => { triggerGoalExplosion(); }, 300);
       }

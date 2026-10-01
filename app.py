@@ -464,7 +464,7 @@ def upload_design():
     new_design = CarDesign(user_id=current_user.id, title=title, image_filename=filename, card_template=card_template, overlay_title=overlay_title)
     db.session.add(new_design)
     db.session.commit()
-    flash("Design uploaded successfully!", "success")
+    flash("Design uploaded successfully!", "celebrate")  # confetti-worthy
     
     return redirect(url_for("gallery"))
 
