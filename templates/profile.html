@@ -195,7 +195,7 @@
         <label>Platform</label>
         <select class="input" name="platform">
           <option value="">None</option>
-          {% for p in ['Steam', 'Epic Games', 'PlayStation', 'Xbox', 'Nintendo'] %}
+          {% for p in platforms %}
             <option value="{{ p }}" {% if current_user.platform == p %}selected{% endif %}>{{ p }}</option>
           {% endfor %}
         </select>
@@ -204,16 +204,6 @@
         <label>Rank / Title</label>
         <select class="input" name="rank">
           <option value="">None</option>
-          {% set ranks = [
-            'Bronze I','Bronze II','Bronze III',
-            'Silver I','Silver II','Silver III',
-            'Gold I','Gold II','Gold III',
-            'Platinum I','Platinum II','Platinum III',
-            'Diamond I','Diamond II','Diamond III',
-            'Champion I','Champion II','Champion III',
-            'Grand Champion I','Grand Champion II','Grand Champion III',
-            'Supersonic Legend'
-          ] %}
           {% for r in ranks %}
             <option value="{{ r }}" {% if current_user.rank == r %}selected{% endif %}>{{ r }}</option>
           {% endfor %}

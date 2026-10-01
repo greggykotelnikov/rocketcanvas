@@ -54,6 +54,12 @@ AVATAR_UPLOAD_DIR = os.path.join(app.root_path, "static", "uploads", "avatars")
 DESIGN_UPLOAD_DIR = os.path.join(app.root_path, "static", "uploads", "designs")
 ALLOWED_IMAGE_EXT = {"png", "jpg", "jpeg", "webp", "gif"}
 CARD_TEMPLATES    = {"legendary", "golden", "chroma", "carbon", "holographic"}
+PLATFORMS = ["Steam", "Epic Games", "PlayStation", "Xbox", "Nintendo"]
+RANKS = [
+    f"{tier} {div}"
+    for tier in ("Bronze", "Silver", "Gold", "Platinum", "Diamond", "Champion", "Grand Champion")
+    for div in ("I", "II", "III")
+] + ["Supersonic Legend"]
 
 os.makedirs(AVATAR_UPLOAD_DIR, exist_ok=True)
 os.makedirs(DESIGN_UPLOAD_DIR, exist_ok=True)
@@ -219,16 +225,20 @@ def index():
 @app.route("/profile")
 @login_required
 def profile():
-    return render_template("profile.html", user=current_user)
+    return render_template("profile.html", user=current_user, platforms=PLATFORMS, ranks=RANKS)
 
 
 @app.route("/profile/update", methods=["POST"])
 @login_required
 def update_profile():
-    current_user.rl_username = request.form.get("rl_username", "").strip() or None
-    current_user.rank        = request.form.get("rank", "").strip() or None
+    rank     = request.form.get("rank", "").strip()
+    platform = request.form.get("platform", "").strip()
+    # Rank and platform come from fixed dropdowns; ignore anything else so
+    # arbitrary strings can't be stored and shown on the profile.
+    current_user.rl_username = request.form.get("rl_username", "").strip()[:80] or None
+    current_user.rank        = rank if rank in RANKS else None
     current_user.bio         = request.form.get("bio", "").strip()[:300] or None
-    current_user.platform    = request.form.get("platform", "").strip() or None
+    current_user.platform    = platform if platform in PLATFORMS else None
     db.session.commit()
     flash("Profile updated.", "success")
     return redirect(url_for("profile"))
@@ -393,8 +403,8 @@ def upload_design():
 @app.route("/link-rl", methods=["POST"])
 @login_required
 def link_rl():
-    rl_username = request.form.get("rl_username", "").strip()
-    current_user.rl_username = rl_username
+    rl_username = request.form.get("rl_username", "").strip()[:80]
+    current_user.rl_username = rl_username or None
     db.session.commit()
     flash("Rocket League username saved.", "success")
     return redirect(url_for("profile"))
