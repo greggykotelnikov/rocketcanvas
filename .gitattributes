@@ -1,0 +1,23 @@
+# Check out text files with LF line endings on every OS.
+#
+# Templates pin static JS/CSS with Subresource Integrity (sha384) hashes of
+# the exact file bytes. With Windows' default core.autocrlf=true, git
+# rewrote those files to CRLF on checkout, every hash stopped matching and
+# browsers refused to load any script or stylesheet.
+* text=auto eol=lf
+
+# Binary assets: never touch.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.webp binary
+*.ico  binary
+*.mp3  binary
+*.ogg  binary
+*.wav  binary
+*.woff binary
+*.woff2 binary
+*.ttf  binary
+*.h5   binary
+*.replay binary
