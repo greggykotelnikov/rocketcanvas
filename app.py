@@ -1,5 +1,6 @@
 import os
 import secrets as _secrets
+import uuid
 from collections import defaultdict
 from datetime import datetime
 from functools import lru_cache
@@ -178,6 +179,17 @@ def add_csp_header(response):
 # ── Helper ─────────────────────────────────────────────────────────────
 def allowed_image(filename: str) -> bool:
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_IMAGE_EXT
+def _delete_old_avatar(filename):
+    """Remove a previously uploaded avatar file, ignoring missing files."""
+    if not filename:
+        return
+    path = os.path.join(AVATAR_UPLOAD_DIR, os.path.basename(filename))
+    try:
+        os.remove(path)
+    except OSError:
+        pass
+
+
 # ── PWA Routes ─────────────────────────────────────────────────────
 @app.route("/manifest.json")
 def manifest():
@@ -232,12 +244,19 @@ def update_avatar():
         flash("Only image files are allowed (PNG, JPG, WEBP).", "error")
         return redirect(url_for("profile"))
 
-    ext = file.filename.rsplit(".", 1)[1].lower()
-    filename = f"{current_user.id}.{ext}"
+    # Always re-encode as PNG under a fresh name: the service worker caches
+    # /static/ cache-first, so reusing "<id>.<ext>" meant a new avatar never
+    # showed up, and saving RGBA/palette images as .jpg raised an error.
+    filename = f"{current_user.id}_{uuid.uuid4().hex[:12]}.png"
     filepath = os.path.join(AVATAR_UPLOAD_DIR, filename)
 
     try:
         img = Image.open(file)
+        img.verify()          # reject truncated / non-image payloads
+        file.seek(0)
+        img = Image.open(file)
+        if img.mode not in ("RGB", "RGBA"):
+            img = img.convert("RGBA")
         # Crop to square centre
         w, h   = img.size
         side   = min(w, h)
@@ -245,11 +264,12 @@ def update_avatar():
         top    = (h - side) // 2
         img    = img.crop((left, top, left + side, top + side))
         img    = img.resize((256, 256), Image.LANCZOS)
-        img.save(filepath)
+        img.save(filepath, format="PNG")
     except Exception:
         flash("Could not process image. Please try a different file.", "error")
         return redirect(url_for("profile"))
 
+    _delete_old_avatar(current_user.avatar_url)
     current_user.avatar_url = filename
     db.session.commit()
     flash("Avatar updated.", "success")
@@ -267,6 +287,8 @@ def set_preset_avatar():
         filename = f"{current_user.id}_{preset}"
         dst = os.path.join(AVATAR_UPLOAD_DIR, filename)
         shutil.copyfile(src, dst)
+        if current_user.avatar_url != filename:
+            _delete_old_avatar(current_user.avatar_url)
         current_user.avatar_url = filename
         db.session.commit()
         flash("Avatar updated.", "success")
@@ -337,7 +359,6 @@ def upload_design():
         return redirect(url_for("gallery"))
         
     ext = file.filename.rsplit(".", 1)[1].lower()
-    import uuid
     filename = f"{uuid.uuid4().hex}.{ext}"
     filepath = os.path.join(DESIGN_UPLOAD_DIR, filename)
     
