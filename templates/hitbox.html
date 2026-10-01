@@ -13,7 +13,7 @@
 
   <!-- Search -->
   <div class="hitbox-search-wrapper">
-    <form method="POST" action="/hitbox" class="hitbox-form">
+    <form method="POST" action="/hitbox" class="hitbox-form" data-loading-text="Searching...">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
       <div class="search-row">
         <input

@@ -136,7 +136,7 @@
 <div class="dashboard-header">
   <div class="dashboard-title">Dashboard</div>
   <div class="dashboard-sub">Search any Rocket League player to load their replay stats</div>
-  <form class="search-row" method="GET" action="{{ url_for('dashboard') }}">
+  <form class="search-row" method="GET" action="{{ url_for('dashboard') }}" data-loading-text="Searching...">
     <input class="input" type="text" id="playerSearch" name="player"
       placeholder="Search player name…"
       value="{{ player or '' }}" autofocus/>

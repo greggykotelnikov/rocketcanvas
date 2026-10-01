@@ -108,7 +108,7 @@
 <div class="analytics-header">
   <div class="analytics-title">Analytics</div>
   <div class="analytics-sub">Deep dive into performance data such as win rates, maps and activity patterns</div>
-  <form class="search-row" method="GET" action="{{ url_for('analytics') }}">
+  <form class="search-row" method="GET" action="{{ url_for('analytics') }}" data-loading-text="Analysing...">
     <input class="input" type="text" id="analyticsSearch" name="player"
       placeholder="Search player name…"
       value="{{ player or '' }}" autofocus/>

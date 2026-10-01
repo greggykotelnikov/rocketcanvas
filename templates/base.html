@@ -631,6 +631,18 @@
       margin-right: 0;
     }
 
+    /* ── LOADING BUTTONS ────────────────────────────────────────────── */
+    /* Forms marked data-loading-text show a spinner on their submit button
+       while the next page loads (player searches take ~1s). */
+    .is-loading { pointer-events: none; opacity: 0.85; }
+    .is-loading::before {
+      content: ''; width: 0.85em; height: 0.85em; flex-shrink: 0;
+      border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%;
+      display: inline-block; margin-right: 0.4em; vertical-align: -0.1em;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
     /* ── SKIP LINK ──────────────────────────────────────────────────── */
     /* First Tab stop on every page; jumps keyboard users past the nav. */
     .skip-link {
@@ -857,6 +869,27 @@
 
     // Confetti + goal-explosion sound only for real achievements (flash
     // category 'celebrate'), not for routine messages like "Design deleted".
+    document.querySelectorAll('form[data-loading-text]').forEach(form => {
+      form.addEventListener('submit', () => {
+        const btn = form.querySelector('[type="submit"]');
+        if (!btn || btn.classList.contains('is-loading')) return;
+        btn.dataset.idleText = btn.textContent;
+        btn.classList.add('is-loading');
+        btn.setAttribute('aria-busy', 'true');
+        btn.textContent = form.dataset.loadingText;
+      });
+    });
+    // Going back restores the page from the bfcache with the spinner still
+    // showing; put the buttons back to normal.
+    window.addEventListener('pageshow', e => {
+      if (!e.persisted) return;
+      document.querySelectorAll('.is-loading').forEach(btn => {
+        btn.classList.remove('is-loading');
+        btn.removeAttribute('aria-busy');
+        if (btn.dataset.idleText) btn.textContent = btn.dataset.idleText;
+      });
+    });
+
     const celebrations = document.querySelectorAll('.flash.celebrate');
     if (celebrations.length > 0 && typeof triggerGoalExplosion === 'function') {
       if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
