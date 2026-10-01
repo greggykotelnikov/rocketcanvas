@@ -229,7 +229,7 @@ Generate local certificates with:
 ```bash
 mkcert localhost 127.0.0.1 ::1
 ```
-Place `localhost+2.pem` and `localhost+2-key.pem` in the project root.
+Place `localhost+2.pem` and `localhost+2-key.pem` in the project root (or set `SSL_CERT_FILE` / `SSL_KEY_FILE` in `.env`). These files are git-ignored: never commit a private key.
 
 ### 1. Clone and set up a virtual environment
 ```bash

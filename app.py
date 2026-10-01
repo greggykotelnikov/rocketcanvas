@@ -774,4 +774,14 @@ def recommend():
 
 if __name__ == "__main__":
     debug_mode = os.getenv("FLASK_DEBUG", "False").lower() in ("true", "1", "t")
-    app.run(debug=debug_mode, ssl_context=('localhost+2.pem', 'localhost+2-key.pem'))
+    # Certificates are per-developer and not committed; see README (mkcert).
+    cert = os.getenv("SSL_CERT_FILE", "localhost+2.pem")
+    key  = os.getenv("SSL_KEY_FILE",  "localhost+2-key.pem")
+    missing = [p for p in (cert, key) if not os.path.exists(p)]
+    if missing:
+        raise SystemExit(
+            f"Missing TLS file(s): {', '.join(missing)}\n"
+            "Generate local certificates with:  mkcert localhost 127.0.0.1 ::1\n"
+            "or point SSL_CERT_FILE / SSL_KEY_FILE at existing ones."
+        )
+    app.run(debug=debug_mode, ssl_context=(cert, key))
