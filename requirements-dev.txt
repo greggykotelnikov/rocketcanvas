@@ -1,2 +1,3 @@
 -r requirements.txt
 pytest==9.1.1
+bandit==1.9.4
