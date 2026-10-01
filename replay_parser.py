@@ -50,66 +50,93 @@ def parse_replay_positions(replay_path):
         print(f"Error parsing replay: {e}")
         return {}
 
+    return extract_player_positions(data)
+
+
+def extract_player_positions(data):
+    """
+    Walk rrrocket's network frames and collect [x, y] car positions per player.
+
+    Actor ids are recycled: when a car is destroyed (goal reset, demolition)
+    its id can later be handed to a brand-new car or to an unrelated actor.
+    So each car is tracked for its own lifetime (spawn -> delete) and its
+    positions are attributed to the player linked to that particular car.
+    """
     if "objects" not in data or "network_frames" not in data:
         return {}
 
     objects = data["objects"]
-    pri_actors = {}      # actor_id -> player name
-    car_to_pri = {}      # actor_id (car) -> pri actor_id
-    car_positions = {}   # actor_id (car) -> [[x,y], ...]
+    pri_names = {}       # PRI actor_id -> player name
+    live_cars = {}       # car actor_id -> {"pri": pri actor_id or None, "positions": [[x, y], ...]}
+    finished_cars = []   # cars that have been destroyed (or whose id was reused)
+
+    def retire(actor_id):
+        car = live_cars.pop(actor_id, None)
+        if car is not None:
+            finished_cars.append(car)
 
     for f in data["network_frames"]["frames"]:
+        # Deleted actors free their ids; close out any car using that id.
+        for actor_id in f.get("deleted_actors", []):
+            retire(actor_id)
+
         # Register new actors
-        if "new_actors" in f:
-            for actor in f["new_actors"]:
-                obj_name = objects[actor["object_id"]]
-                actor_id = actor["actor_id"]
-                if "PRI_TA" in obj_name or "PlayerReplicationInfo" in obj_name:
-                    pri_actors[actor_id] = "Unknown"
-                elif "Car_Default" in obj_name:
-                    car_positions[actor_id] = []
+        for actor in f.get("new_actors", []):
+            object_id = actor.get("object_id")
+            if object_id is None or object_id >= len(objects):
+                continue
+            obj_name = objects[object_id]
+            actor_id = actor["actor_id"]
+            retire(actor_id)  # id reuse without an explicit delete
+            if "PRI_TA" in obj_name or "PlayerReplicationInfo" in obj_name:
+                pri_names[actor_id] = None
+            elif "Car_Default" in obj_name:
+                live_cars[actor_id] = {"pri": None, "positions": []}
 
         # Update actors
-        if "updated_actors" in f:
-            for actor in f["updated_actors"]:
-                actor_id = actor["actor_id"]
-                prop_id = actor.get("object_id")
-                if prop_id is None or prop_id >= len(objects): continue
-                prop_name = objects[prop_id]
-                attr = actor.get("attribute", {})
-                
-                # Check for PlayerName
-                if actor_id in pri_actors:
-                    if "PlayerName" in prop_name:
-                        val = attr.get("String")
-                        if val:
-                            pri_actors[actor_id] = val
+        for actor in f.get("updated_actors", []):
+            actor_id = actor["actor_id"]
+            prop_id = actor.get("object_id")
+            if prop_id is None or prop_id >= len(objects):
+                continue
+            prop_name = objects[prop_id]
+            attr = actor.get("attribute", {})
 
-                # Check for Car linking to PRI
-                if actor_id in car_positions:
-                    if "PlayerReplicationInfo" in prop_name and ("Pawn" in prop_name or "Car" in prop_name):
-                        if "ActiveActor" in attr:
-                            if attr["ActiveActor"].get("active"):
-                                car_to_pri[actor_id] = attr["ActiveActor"]["actor"]
-                        elif "Int" in attr:
-                            car_to_pri[actor_id] = attr["Int"]
+            # Check for PlayerName
+            if actor_id in pri_names and "PlayerName" in prop_name:
+                val = attr.get("String")
+                if val:
+                    pri_names[actor_id] = val
 
-                    # Check for RigidBody location (property name is ReplicatedRBState)
-                    if "ReplicatedRBState" in prop_name:
-                        loc = attr.get("RigidBody", {}).get("location", {})
-                        if "x" in loc and "y" in loc:
-                            # rrrocket gives cm, usually RL maps are ~10240x8192
-                            car_positions[actor_id].append([loc["x"], loc["y"]])
+            car = live_cars.get(actor_id)
+            if car is None:
+                continue
 
-    # Build final map
+            # Check for Car linking to PRI. An inactive link (e.g. the car is
+            # being demolished) keeps the previous owner.
+            if "PlayerReplicationInfo" in prop_name and ("Pawn" in prop_name or "Car" in prop_name):
+                if "ActiveActor" in attr:
+                    if attr["ActiveActor"].get("active"):
+                        car["pri"] = attr["ActiveActor"]["actor"]
+                elif "Int" in attr:
+                    car["pri"] = attr["Int"]
+
+            # Check for RigidBody location (property name is ReplicatedRBState)
+            if "ReplicatedRBState" in prop_name:
+                loc = attr.get("RigidBody", {}).get("location", {})
+                if "x" in loc and "y" in loc:
+                    # rrrocket gives cm, usually RL maps are ~10240x8192
+                    car["positions"].append([loc["x"], loc["y"]])
+
+    finished_cars.extend(live_cars.values())
+
+    # Build final map. A player owns many cars over a match (one per
+    # kickoff/respawn), so merge all of them.
     player_heatmaps = {}
-    for car_id, positions in car_positions.items():
-        if not positions: continue
-        pri_id = car_to_pri.get(car_id)
-        if pri_id and pri_id in pri_actors:
-            name = pri_actors[pri_id]
-            if name != "Unknown":
-                player_heatmaps[name] = positions
+    for car in finished_cars:
+        name = pri_names.get(car["pri"]) if car["pri"] is not None else None
+        if name and car["positions"]:
+            player_heatmaps.setdefault(name, []).extend(car["positions"])
 
     return player_heatmaps
 
