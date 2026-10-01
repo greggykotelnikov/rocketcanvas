@@ -110,7 +110,9 @@
     display: flex;
     flex-direction: column;
     height: 100%;
-    transition: transform var(--t), border-color var(--t), box-shadow var(--t);
+    /* Springy lift on hover; only transform/shadow/border animate. */
+    transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+                box-shadow 0.35s ease, border-color 0.35s ease;
   }
   
   .design-card:hover {
@@ -131,12 +133,13 @@
     display: block;
     object-fit: cover;
     border-radius: 12px 12px 0 0;
-    transition: transform var(--t);
+    transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   .design-card:hover .design-img {
-    transform: scale(1.03);
+    transform: scale(1.05);
   }
+  .design-card:active { transform: translateY(-2px) scale(0.99); }
 
   .design-info { 
     padding: 1.25rem; 
