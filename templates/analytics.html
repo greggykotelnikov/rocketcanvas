@@ -240,8 +240,7 @@
     const RED_DIM      = 'rgba(244,63,94,0.1)';
     const GRID         = getComputedStyle(document.documentElement).getPropertyValue('--border').trim() || '#1c1f38';
     const TICK         = getComputedStyle(document.documentElement).getPropertyValue('--muted').trim() || '#454d6a';
-    const MONO         = 'Share Tech Mono, monospace';
-    const RAJDHANI     = 'Rajdhani, sans-serif';
+    const MONO         = "'JetBrains Mono', monospace";  // the site's loaded mono font (fonts.css)
 
     const baseAxis = {
       x: { ticks: { color: TICK, font: { family: MONO, size: 10 }, maxRotation: 0, autoSkip: true }, grid: { color: GRID } },
