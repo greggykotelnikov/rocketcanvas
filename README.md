@@ -269,6 +269,13 @@ python app.py
 ```
 Open `https://localhost:5000` in your browser. Accept the self-signed certificate warning if prompted.
 
+### 6. Run the tests
+```bash
+pip install pytest
+python -m pytest
+```
+The suite uses an in-memory SQLite database, captures 2FA emails instead of sending them and mocks the Ballchasing API, so no `.env` is needed.
+
 ---
 
 ## Known Limitations
@@ -276,7 +283,7 @@ Open `https://localhost:5000` in your browser. Accept the self-signed certificat
 - **Windows only**: The replay parser depends on `rrrocket.exe`, a Windows binary. It is auto-downloaded at runtime but will fail on macOS or Linux.
 - **Browser requirements**: A modern browser is required for HTML5 Canvas rendering, the Web Audio API and service workers. The app will not function correctly in older or unsupported browsers.
 - **SQLite**: The database is a local SQLite file and is not suitable for multi-instance or production deployments without switching to PostgreSQL or similar.
-- **Ballchasing API dependency**: Dashboard and analytics features require a valid Ballchasing API key. Without one, player search will fail silently.
+- **Ballchasing API dependency**: Dashboard and analytics features require a valid Ballchasing API key. Without one, the dashboard shows a 'missing Ballchasing API key' message.
 - **No email provider fallback**: 2FA codes are sent via Gmail SMTP. If SMTP credentials are not configured the login flow will break entirely, as users cannot complete verification without receiving their code.
 
 ---
