@@ -29,7 +29,7 @@ load_dotenv()
 
 # ── App factory ────────────────────────────────────────────────────────
 app = Flask(__name__)
-app.config["SECRET_KEY"]                  = os.getenv("SECRET_KEY", _secrets.token_hex(32))
+app.config["SECRET_KEY"]                  = os.getenv("SECRET_KEY") or _secrets.token_hex(32)
 app.config["SQLALCHEMY_DATABASE_URI"]     = os.getenv("DATABASE_URL", "sqlite:///rocketcanvas.db")
 app.config["MAIL_SERVER"]                 = "smtp.gmail.com"
 app.config["MAIL_PORT"]                   = 587
@@ -42,6 +42,12 @@ app.config["SESSION_COOKIE_SECURE"]       = True
 app.config["SESSION_COOKIE_HTTPONLY"]     = True
 app.config["WTF_CSRF_ENABLED"]            = True
 app.config["MAX_CONTENT_LENGTH"]          = 4 * 1024 * 1024   # 4 MB avatar limit
+
+if not os.getenv("SECRET_KEY"):
+    app.logger.warning(
+        "SECRET_KEY is not set; using a random key. All sessions will be "
+        "invalidated whenever the server restarts. Set SECRET_KEY in .env."
+    )
 
 AVATAR_UPLOAD_DIR = os.path.join(app.root_path, "static", "uploads", "avatars")
 DESIGN_UPLOAD_DIR = os.path.join(app.root_path, "static", "uploads", "designs")
