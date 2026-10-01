@@ -617,6 +617,19 @@
       z-index: 300;
       margin-right: 0;
     }
+
+    /* ── REDUCED MOTION ─────────────────────────────────────────────── */
+    /* Respect the OS "reduce motion" setting: near-instant transitions and
+       no looping/entrance animations (the page JS also skips confetti). */
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        animation-delay: 0s !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
   </style>
   {% block head %}{% endblock %}
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo.png') }}"/>
@@ -788,7 +801,9 @@
   document.addEventListener('DOMContentLoaded', () => {
     const successFlashes = document.querySelectorAll('.flash.success');
     if (successFlashes.length > 0 && typeof triggerGoalExplosion === 'function') {
-      setTimeout(() => { triggerGoalExplosion(); }, 300);
+      if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        setTimeout(() => { triggerGoalExplosion(); }, 300);
+      }
     }
   });
 </script>
