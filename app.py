@@ -145,7 +145,8 @@ class SecurityHeadersMiddleware:
         def custom_start_response(status, headers, exc_info=None):
             header_keys = [h[0].lower() for h in headers]
             
-            if 'strict-transport-security' not in header_keys:
+            # HSTS only makes sense over HTTPS (browsers ignore it on http://).
+            if environ.get('wsgi.url_scheme') == 'https' and 'strict-transport-security' not in header_keys:
                 headers.append(('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload'))
             if 'x-frame-options' not in header_keys:
                 headers.append(('X-Frame-Options', 'DENY'))
@@ -774,14 +775,17 @@ def recommend():
 
 if __name__ == "__main__":
     debug_mode = os.getenv("FLASK_DEBUG", "False").lower() in ("true", "1", "t")
-    # Certificates are per-developer and not committed; see README (mkcert).
+    # Certificates are optional for local development. If mkcert files are
+    # present (or SSL_CERT_FILE / SSL_KEY_FILE point at some), serve HTTPS;
+    # otherwise fall back to plain HTTP on localhost, which browsers still
+    # treat as a secure context (service workers, Web Audio, etc. all work).
     cert = os.getenv("SSL_CERT_FILE", "localhost+2.pem")
     key  = os.getenv("SSL_KEY_FILE",  "localhost+2-key.pem")
-    missing = [p for p in (cert, key) if not os.path.exists(p)]
-    if missing:
-        raise SystemExit(
-            f"Missing TLS file(s): {', '.join(missing)}\n"
-            "Generate local certificates with:  mkcert localhost 127.0.0.1 ::1\n"
-            "or point SSL_CERT_FILE / SSL_KEY_FILE at existing ones."
-        )
-    app.run(debug=debug_mode, ssl_context=(cert, key))
+    if os.path.exists(cert) and os.path.exists(key):
+        app.run(debug=debug_mode, ssl_context=(cert, key))
+    else:
+        print("No TLS certificate found - serving over plain HTTP at http://localhost:5000\n"
+              "(only reachable from this machine; run 'mkcert localhost 127.0.0.1 ::1' for HTTPS)")
+        # A Secure cookie would not be stored over http:// in every browser.
+        app.config["SESSION_COOKIE_SECURE"] = False
+        app.run(debug=debug_mode, host="127.0.0.1")

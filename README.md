@@ -221,15 +221,15 @@ The X and Y coordinates (in centimetres) are extracted and returned as a diction
 - Python 3.11+
 - Windows (required for replay parsing)
 - A modern browser (Chrome, Edge or Firefox recommended)
-- `mkcert` for local HTTPS certificates
+- (Optional) `mkcert` for local HTTPS certificates
 
-The app must run over HTTPS because it uses secure cookies, the Web Audio API and service workers, all of which require a secure context.
+HTTPS is optional for local development. Without certificates the app serves plain HTTP on `http://localhost:5000`; browsers treat `localhost` as a secure context, so service workers, the Web Audio API and login cookies all still work.
 
-Generate local certificates with:
+To use HTTPS instead, generate local certificates with:
 ```bash
 mkcert localhost 127.0.0.1 ::1
 ```
-Place `localhost+2.pem` and `localhost+2-key.pem` in the project root (or set `SSL_CERT_FILE` / `SSL_KEY_FILE` in `.env`). These files are git-ignored: never commit a private key.
+and place `localhost+2.pem` and `localhost+2-key.pem` in the project root (or set `SSL_CERT_FILE` / `SSL_KEY_FILE` in `.env`). These files are git-ignored: never commit a private key.
 
 ### 1. Clone and set up a virtual environment
 ```bash
@@ -267,7 +267,7 @@ python seed_hitboxes.py
 ```bash
 python app.py
 ```
-Open `https://localhost:5000` in your browser. Accept the self-signed certificate warning if prompted.
+Open `http://localhost:5000` (or `https://localhost:5000` if you set up certificates) in your browser.
 
 ### 6. Run the tests
 ```bash

@@ -6,7 +6,8 @@ def test_security_headers_present(client):
     assert h["X-Frame-Options"] == "DENY"
     assert h["X-Content-Type-Options"] == "nosniff"
     assert h["X-XSS-Protection"] == "0"
-    assert "max-age=" in h["Strict-Transport-Security"]
+    assert "Strict-Transport-Security" not in h  # plain-HTTP test client
+    assert "max-age=" in client.get("/login", base_url="https://localhost").headers["Strict-Transport-Security"]
     assert "Server" not in h
 
 
