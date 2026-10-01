@@ -1,5 +1,6 @@
 // ── RocketCanvas Service Worker ──────────────────────────────────────
-const CACHE_VERSION = 'rc-v4';
+// Bumped to purge per-user HTML pages cached by earlier versions.
+const CACHE_VERSION = 'rc-v5';
 const PRECACHE_URLS = [
   '/offline',
   '/static/images/icon-192.png',
@@ -36,49 +37,40 @@ self.addEventListener('fetch', (event) => {
   // Skip non-GET requests
   if (request.method !== 'GET') return;
 
-  // Navigation requests (HTML pages) → network-first
+  // Only handle same-origin requests; let the browser deal with CDNs.
+  if (new URL(request.url).origin !== self.location.origin) return;
+
+  // Navigation requests (HTML pages) → network only, offline page as fallback.
+  // Pages are per-user (profile, match history), so they are never cached:
+  // a cached copy would outlive logout and be visible to the next person
+  // using the device.
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request)
-        .then((response) => {
-          // Cache a copy of successful responses
-          const clone = response.clone();
-          caches.open(CACHE_VERSION).then((cache) => cache.put(request, clone));
-          return response;
-        })
-        .catch(() => {
-          // Try cache, then fall back to offline page
-          return caches.match(request, { ignoreSearch: true })
-            .then((cached) => cached || caches.match('/offline', { ignoreSearch: true }));
-        })
+      fetch(request).catch(() => caches.match('/offline'))
     );
     return;
   }
 
-  // Static assets → cache-first
-  if (request.url.includes('/static/')) {
+  // Shared static assets → cache-first. User uploads are excluded so a
+  // replaced/deleted avatar or design isn't served from cache forever.
+  const path = new URL(request.url).pathname;
+  if (path.startsWith('/static/') && !path.startsWith('/static/uploads/')) {
     event.respondWith(
-      caches.match(request, { ignoreSearch: true })
+      caches.match(request)
         .then((cached) => {
           if (cached) return cached;
           return fetch(request).then((response) => {
-            const clone = response.clone();
-            caches.open(CACHE_VERSION).then((cache) => cache.put(request, clone));
+            // Don't cache 404s/500s or redirects as if they were the asset.
+            if (response.ok) {
+              const clone = response.clone();
+              caches.open(CACHE_VERSION).then((cache) => cache.put(request, clone));
+            }
             return response;
-          }).catch(() => null);
+          });
         })
     );
     return;
   }
 
-  // Everything else → network-first with cache fallback
-  event.respondWith(
-    fetch(request)
-      .then((response) => {
-        const clone = response.clone();
-        caches.open(CACHE_VERSION).then((cache) => cache.put(request, clone));
-        return response;
-      })
-      .catch(() => caches.match(request, { ignoreSearch: true }))
-  );
+  // Everything else (API/JSON, uploads) → straight to the network.
 });
