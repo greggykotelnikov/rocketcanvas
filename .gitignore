@@ -27,3 +27,10 @@ ml/hitbox_images/
 *.zip
 *.rar
 *.exe
+
+# Local TLS certificates (generate with mkcert, never commit)
+*.pem
+*.key
+
+# rrrocket is auto-downloaded at runtime by replay_parser.py
+bin/
