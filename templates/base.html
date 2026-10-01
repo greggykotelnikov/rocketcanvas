@@ -618,6 +618,16 @@
       margin-right: 0;
     }
 
+    /* ── KEYBOARD FOCUS ─────────────────────────────────────────────── */
+    /* Visible focus ring for keyboard users only (:focus-visible), in the
+       accent colour. Several controls set outline:none for mouse users,
+       which left keyboard users with no idea where focus was. */
+    :focus-visible {
+      outline: 2px solid var(--accent3);
+      outline-offset: 2px;
+    }
+    .input:focus-visible, .hitbox-input:focus-visible { outline: none; } /* they show an accent border instead */
+
     /* ── REDUCED MOTION ─────────────────────────────────────────────── */
     /* Respect the OS "reduce motion" setting: near-instant transitions and
        no looping/entrance animations (the page JS also skips confetti). */
