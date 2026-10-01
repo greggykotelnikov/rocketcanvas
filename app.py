@@ -98,6 +98,12 @@ with app.app_context():
                 conn.commit()
             except OperationalError:
                 pass  # Column already exists
+        # TwoFactorCode new columns
+        try:
+            conn.execute(text("ALTER TABLE two_factor_code ADD COLUMN attempts INTEGER NOT NULL DEFAULT 0"))
+            conn.commit()
+        except OperationalError:
+            pass  # Column already exists
 
 
 # ── Security headers ───────────────────────────────────────────────────

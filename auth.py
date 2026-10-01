@@ -4,10 +4,13 @@ from flask_mail import Message
 from flask_bcrypt import Bcrypt
 from datetime import datetime, timedelta
 import secrets
+from flask import current_app
 from models import db, User, TwoFactorCode
 
 auth = Blueprint('auth', __name__)
 bcrypt = Bcrypt()
+
+MAX_2FA_ATTEMPTS = 5
 
 def send_2fa_email(mail, user):
     code = str(secrets.randbelow(900000) + 100000)
@@ -32,6 +35,17 @@ def send_2fa_email(mail, user):
     """
     mail.send(msg)
     return code
+
+def _try_send_2fa(mail, user):
+    """Send a 2FA code, flashing an error instead of crashing if SMTP fails."""
+    try:
+        send_2fa_email(mail, user)
+        return True
+    except Exception:
+        current_app.logger.exception("Failed to send 2FA email to user %s", user.id)
+        session.pop("pending_user_id", None)
+        flash("We couldn't send your verification code. Please try again later.", "error")
+        return False
 
 def register_auth_routes(app, mail, limiter):
     @app.route("/register", methods=["GET", "POST"])
@@ -75,7 +89,8 @@ def register_auth_routes(app, mail, limiter):
             db.session.commit()
 
             session["pending_user_id"] = user.id
-            send_2fa_email(mail, user)
+            if not _try_send_2fa(mail, user):
+                return render_template("login.html", mode="login")
             return redirect(url_for("verify"))
 
         return render_template("login.html", mode="register")
@@ -93,7 +108,8 @@ def register_auth_routes(app, mail, limiter):
                 return render_template("login.html", mode="login")
 
             session["pending_user_id"] = user.id
-            send_2fa_email(mail, user)
+            if not _try_send_2fa(mail, user):
+                return render_template("login.html", mode="login")
             return redirect(url_for("verify"))
 
         return render_template("login.html", mode="login")
@@ -109,18 +125,37 @@ def register_auth_routes(app, mail, limiter):
             entered = request.form.get("code", "").strip()
             now = datetime.utcnow()
 
+            # Only the most recently issued code is live (older ones are
+            # invalidated in send_2fa_email), so check against that one and
+            # count failures on it.
             record = TwoFactorCode.query.filter_by(
-                user_id=user_id, code=entered, used=False
-            ).first()
+                user_id=user_id, used=False
+            ).order_by(TwoFactorCode.id.desc()).first()
 
             if not record or record.expires_at < now:
+                session.pop("pending_user_id", None)
+                flash("Your code has expired. Please log in again.", "error")
+                return redirect(url_for("login"))
+
+            if not secrets.compare_digest(record.code, entered):
+                record.attempts += 1
+                if record.attempts >= MAX_2FA_ATTEMPTS:
+                    record.used = True
+                    db.session.commit()
+                    session.pop("pending_user_id", None)
+                    flash("Too many incorrect codes. Please log in again.", "error")
+                    return redirect(url_for("login"))
+                db.session.commit()
                 flash("Invalid or expired code.", "error")
                 return render_template("verify.html")
 
             record.used = True
             db.session.commit()
 
-            user = User.query.get(user_id)
+            user = db.session.get(User, user_id)
+            if user is None:
+                session.pop("pending_user_id", None)
+                return redirect(url_for("login"))
             login_user(user)
             session.pop("pending_user_id", None)
             return redirect(url_for("profile"))

@@ -22,6 +22,7 @@ class TwoFactorCode(db.Model):
     code       = db.Column(db.String(6),  nullable=False)
     expires_at = db.Column(db.DateTime,   nullable=False)
     used       = db.Column(db.Boolean,    default=False)
+    attempts   = db.Column(db.Integer,    default=0, nullable=False)
 
 
 class CarHitbox(db.Model):
