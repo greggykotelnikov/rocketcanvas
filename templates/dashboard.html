@@ -292,8 +292,11 @@
       }
     };
 
+    // Replays arrive newest-first; charts read left-to-right as oldest-to-newest.
+    const chronological = replays.slice().reverse();
+
     // ── Win rate rolling 5 ──────────────────────────────────────────
-    const results = replays.map(r => r.result);
+    const results = chronological.map(r => r.result);
     const wrData  = [];
     for (let i = 4; i < results.length; i++) {
       const w = results.slice(i - 4, i + 1).filter(x => x === 'win').length;
@@ -357,11 +360,10 @@
     });
 
     // ── Goals per game ──────────────────────────────────────────────
-    const goalsData = replays.map(r => {
-      const blueNames   = (r.blue?.players  || []).map(p => p.name.toLowerCase());
-      const orangeNames = (r.orange?.players || []).map(p => p.name.toLowerCase());
-      if (blueNames.some(n => n.includes(player.toLowerCase())))   return r.blue?.goals  || 0;
-      if (orangeNames.some(n => n.includes(player.toLowerCase()))) return r.orange?.goals || 0;
+    // player_team is computed server-side (exact-name match first).
+    const goalsData = chronological.map(r => {
+      if (r.player_team === 'blue')   return r.blue?.goals   || 0;
+      if (r.player_team === 'orange') return r.orange?.goals || 0;
       return null;
     }).filter(v => v !== null);
     const goalsAvg = goalsData.map((_, i) => {

@@ -490,7 +490,12 @@ def _compute_analytics(replays, player_lower):
     goal_diffs = []
     goals_scored_list, goals_conceded_list = [], []
 
-    for i, r in enumerate(replays):
+    # Ballchasing returns newest first. Time-series charts read left-to-right
+    # as oldest-to-newest, so walk the matches chronologically. The current
+    # streak still counts back from the most recent match below.
+    chronological = list(reversed(replays))
+
+    for i, r in enumerate(chronological):
         result = r.get("result", "unknown")
         if result == "win":   wins   += 1
         elif result == "loss": losses += 1
@@ -510,28 +515,22 @@ def _compute_analytics(replays, player_lower):
         except (ValueError, TypeError, AttributeError):
             pass
 
-        # Goal differential
-        blue_goals   = r.get("blue",   {}).get("goals", 0) or 0
-        orange_goals = r.get("orange", {}).get("goals", 0) or 0
-        blue_names   = [p["name"].lower() for p in r.get("blue",   {}).get("players", [])]
-        orange_names = [p["name"].lower() for p in r.get("orange", {}).get("players", [])]
-        if any(player_lower in n for n in blue_names):
-            diff = blue_goals - orange_goals
-        elif any(player_lower in n for n in orange_names):
-            diff = orange_goals - blue_goals
+        # Goal differential / goals scored & conceded, from the player's side
+        blue_goals, orange_goals = _team_goals(r)
+        team = r.get("player_team") or _player_team(r, player_lower)
+        if team == "blue":
+            scored, conceded = blue_goals, orange_goals
+        elif team == "orange":
+            scored, conceded = orange_goals, blue_goals
         else:
-            diff = 0
+            scored = conceded = None
+        diff = scored - conceded if scored is not None else 0
         goal_diffs.append(diff)
         diff_labels.append(f"#{i+1}")
         diff_values.append(diff)
-
-        # Goals scored / conceded for avg chart
-        if any(player_lower in n for n in blue_names):
-            goals_scored_list.append(blue_goals)
-            goals_conceded_list.append(orange_goals)
-        elif any(player_lower in n for n in orange_names):
-            goals_scored_list.append(orange_goals)
-            goals_conceded_list.append(blue_goals)
+        if scored is not None:
+            goals_scored_list.append(scored)
+            goals_conceded_list.append(conceded)
 
     total = len(replays)
     known = wins + losses
@@ -553,22 +552,22 @@ def _compute_analytics(replays, player_lower):
     pl_labels  = list(playlist_count.keys())[:6]
     pl_values  = [playlist_count[k] for k in pl_labels]
 
-    # Streaks
-    results = [r.get("result", "unknown") for r in replays]
-    best_win, worst_loss, cur_win, cur_loss = 0, 0, 0, 0
+    # Streaks (oldest -> newest)
+    results = [r.get("result", "unknown") for r in chronological]
+    best_win, worst_loss = 0, 0
     tmp_w, tmp_l = 0, 0
     for res in results:
         if res == "win":   tmp_w += 1; tmp_l = 0
         elif res == "loss": tmp_l += 1; tmp_w = 0
         best_win   = max(best_win, tmp_w)
         worst_loss = max(worst_loss, tmp_l)
-    # Current streak (from tail)
+    # Current streak, counting back from the most recent match
     cur_streak = 0
     cur_type   = "n/a"
     if results:
-        last = results[0]
+        last = results[-1]
         cur_type = last if last in ("win", "loss") else "n/a"
-        for res in results:
+        for res in reversed(results):
             if res == last and last in ("win", "loss"): cur_streak += 1
             else: break
 
