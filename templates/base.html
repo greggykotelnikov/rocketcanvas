@@ -762,9 +762,10 @@
       </p>
       <div class="footer-pills">
         <span class="footer-pill">Flask</span>
-        <span class="footer-pill">Three.js / WebGL</span>
+        <span class="footer-pill">HTML5 Canvas</span>
         <span class="footer-pill">Chart.js</span>
         <span class="footer-pill">SQLite</span>
+        <span class="footer-pill">ONNX Runtime</span>
         <span class="footer-pill">Ballchasing API</span>
       </div>
     </div>
@@ -773,10 +774,10 @@
     <div>
       <div class="footer-col-title">Explore</div>
       <ul class="footer-links">
-        <li><a href="{{ url_for('dashboard') if current_user.is_authenticated else '#' }}">Dashboard</a></li>
-        <li><a href="{{ url_for('gallery') if current_user.is_authenticated else '#' }}">Preset Gallery</a></li>
-        <li><a href="{{ url_for('garage') if current_user.is_authenticated else '#' }}">2D Garage Builder</a></li>
-        <li><a href="{{ url_for('recommend') if current_user.is_authenticated else '#' }}">Recommendations</a></li>
+        <li><a href="{{ url_for('dashboard') if current_user.is_authenticated else url_for('login') }}">Dashboard</a></li>
+        <li><a href="{{ url_for('gallery') if current_user.is_authenticated else url_for('login') }}">Preset Gallery</a></li>
+        <li><a href="{{ url_for('garage') if current_user.is_authenticated else url_for('login') }}">2D Garage Builder</a></li>
+        <li><a href="{{ url_for('recommend') if current_user.is_authenticated else url_for('login') }}">Recommendations</a></li>
       </ul>
     </div>
 
@@ -784,10 +785,10 @@
     <div>
       <div class="footer-col-title">Analytics &amp; Tools</div>
       <ul class="footer-links">
-        <li><a href="{{ url_for('analytics') if current_user.is_authenticated else '#' }}">Match Analytics</a></li>
-        <li><a href="{{ url_for('heatmap') if current_user.is_authenticated else '#' }}">Position Heatmaps</a></li>
-        <li><a href="{{ url_for('hitbox_lookup') if current_user.is_authenticated else '#' }}">3D Hitbox Lookup</a></li>
-        <li><a href="{{ url_for('profile') if current_user.is_authenticated else '#' }}">My Profile</a></li>
+        <li><a href="{{ url_for('analytics') if current_user.is_authenticated else url_for('login') }}">Match Analytics</a></li>
+        <li><a href="{{ url_for('heatmap') if current_user.is_authenticated else url_for('login') }}">Position Heatmaps</a></li>
+        <li><a href="{{ url_for('hitbox_lookup') if current_user.is_authenticated else url_for('login') }}">3D Hitbox Lookup</a></li>
+        <li><a href="{{ url_for('profile') if current_user.is_authenticated else url_for('login') }}">My Profile</a></li>
       </ul>
     </div>
 
@@ -796,7 +797,7 @@
       <div class="footer-col-title">Developer &amp; API</div>
       <ul class="footer-links">
         <li><a href="https://ballchasing.com" target="_blank" rel="noopener noreferrer">Ballchasing API</a></li>
-        <li><a href="https://github.com/greggykotelnikov" target="_blank" rel="noopener noreferrer">GitHub Repo</a></li>
+        <li><a href="https://github.com/greggykotelnikov/rocketcanvas" target="_blank" rel="noopener noreferrer">GitHub Repo</a></li>
         <li><a href="https://opensource.org/licenses/MIT" target="_blank" rel="noopener noreferrer">MIT License</a></li>
       </ul>
     </div>
