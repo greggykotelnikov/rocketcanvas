@@ -254,8 +254,8 @@ BALLCHASING_API_KEY=your-ballchasing-api-key
 ```
 A Ballchasing API key can be generated on your profile page at [ballchasing.com](https://ballchasing.com).
 
-### 4. Seed the database
-Populate the hitbox table with official car data:
+### 4. Seed the database (automatic)
+The hitbox table is populated automatically the first time the app starts. After adding cars to `seed_hitboxes.py`, run it to insert the new ones into an existing database:
 ```bash
 python seed_hitboxes.py
 ```

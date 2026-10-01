@@ -1,5 +1,11 @@
-from app import app, db
-from models import CarHitbox
+"""
+Official car -> hitbox class data.
+
+The app seeds this automatically on startup when the CarHitbox table is
+empty. Run this file directly to add any cars missing from an existing
+database:  python seed_hitboxes.py
+"""
+from models import db, CarHitbox
 
 CAR_HITBOXES = {
     # BREAKOUT
@@ -211,14 +217,23 @@ CAR_HITBOXES = {
     "Twin Mill III": "Plank",
 }
 
-with app.app_context():
-    db.create_all()
-    count = 0
-    for car, hitbox in CAR_HITBOXES.items():
-        existing = CarHitbox.query.filter_by(car_name=car).first()
-        if not existing:
-            db.session.add(CarHitbox(car_name=car, hitbox_class=hitbox))
-            count += 1
+def seed_hitboxes():
+    """Insert any cars from CAR_HITBOXES that aren't in the table yet.
+
+    Returns the number of rows added. Must run inside an app context.
+    """
+    existing = {name for (name,) in db.session.query(CarHitbox.car_name)}
+    new_rows = [CarHitbox(car_name=car, hitbox_class=hitbox)
+                for car, hitbox in CAR_HITBOXES.items() if car not in existing]
+    db.session.add_all(new_rows)
     db.session.commit()
-    print(f"Seeded {count} cars successfully!")
-    print(f"Total cars in DB: {CarHitbox.query.count()}")
+    return len(new_rows)
+
+
+if __name__ == "__main__":
+    from app import app
+
+    with app.app_context():
+        count = seed_hitboxes()
+        print(f"Seeded {count} cars successfully!")
+        print(f"Total cars in DB: {CarHitbox.query.count()}")

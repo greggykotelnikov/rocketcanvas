@@ -36,3 +36,11 @@ def test_exact_match_preferred(auth_client, cars, monkeypatch):
     for query in ("", "%", "_"):
         lookup(auth_client, query)
         assert captured["result"]["found"] is False, query
+
+
+def test_seed_is_idempotent_and_fills_empty_table(app):
+    from seed_hitboxes import CAR_HITBOXES, seed_hitboxes
+    with app.app_context():
+        assert seed_hitboxes() == len(CAR_HITBOXES)
+        assert seed_hitboxes() == 0
+        assert CarHitbox.query.count() == len(CAR_HITBOXES)

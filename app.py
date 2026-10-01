@@ -122,6 +122,12 @@ with app.app_context():
         except OperationalError:
             pass  # Column already exists
 
+    # First run: populate the hitbox lookup so the page isn't empty until
+    # someone remembers to run seed_hitboxes.py by hand.
+    from seed_hitboxes import seed_hitboxes
+    if CarHitbox.query.first() is None:
+        seed_hitboxes()
+
 
 # ── Security headers ───────────────────────────────────────────────────
 @app.before_request
