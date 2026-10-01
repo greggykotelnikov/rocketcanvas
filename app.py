@@ -23,7 +23,8 @@ werkzeug.serving.WSGIRequestHandler.sys_version = ""
 
 from models import db, User
 from auth import register_auth_routes, bcrypt as auth_bcrypt
-from ballchasing import search_replays_by_player
+import requests
+from ballchasing import search_replays_by_player, BallchasingConfigError
 from models import CarHitbox, CarDesign
 
 load_dotenv()
@@ -413,27 +414,68 @@ def link_rl():
 @app.route("/dashboard")
 @login_required
 def dashboard():
-    player = request.args.get("player", "").strip()
-    replays = []
-    if player:
-        try:
-            data = search_replays_by_player(player, count=50)
-            raw  = data.get("list", [])
-            for r in raw:
-                blue_names   = [p["name"].lower() for p in r.get("blue",   {}).get("players", [])]
-                orange_names = [p["name"].lower() for p in r.get("orange", {}).get("players", [])]
-                blue_goals   = r.get("blue",   {}).get("goals", 0) or 0
-                orange_goals = r.get("orange", {}).get("goals", 0) or 0
-                if any(player.lower() in name for name in blue_names):
-                    r["result"] = "win" if blue_goals > orange_goals else "loss"
-                elif any(player.lower() in name for name in orange_names):
-                    r["result"] = "win" if orange_goals > blue_goals else "loss"
-                else:
-                    r["result"] = "unknown"
-                replays.append(r)
-        except Exception:
-            replays = []
+    player = request.args.get("player", "").strip()[:64]
+    replays = _fetch_player_replays(player) if player else []
     return render_template("dashboard.html", player=player, replays=replays, user=current_user)
+
+
+# ── Ballchasing helpers ────────────────────────────────────────────────
+def _player_team(replay, player_lower):
+    """Return "blue"/"orange" for the team the searched player was on, or None.
+
+    Prefer an exact (case-insensitive) name match; fall back to a substring
+    match. Substring-only meant a search for "max" was attributed to
+    whichever team had "Maxwell" in it first.
+    """
+    names = {
+        team: [(p.get("name") or "").lower() for p in replay.get(team, {}).get("players", [])]
+        for team in ("blue", "orange")
+    }
+    for team in ("blue", "orange"):
+        if player_lower in names[team]:
+            return team
+    for team in ("blue", "orange"):
+        if any(player_lower in n for n in names[team]):
+            return team
+    return None
+
+
+def _team_goals(replay):
+    blue   = replay.get("blue",   {}).get("goals", 0) or 0
+    orange = replay.get("orange", {}).get("goals", 0) or 0
+    return blue, orange
+
+
+def _fetch_player_replays(player):
+    """Fetch the player's recent replays and tag each with team and result.
+
+    Shared by /dashboard and /analytics (previously copy-pasted). API errors
+    are surfaced as a flash message instead of silently showing no matches.
+    """
+    try:
+        data = search_replays_by_player(player, count=50)
+    except BallchasingConfigError:
+        flash("Replay search isn't configured on this server (missing Ballchasing API key).", "error")
+        return []
+    except (requests.RequestException, ValueError):
+        app.logger.exception("Ballchasing search failed for %r", player)
+        flash("Couldn't reach ballchasing.com right now. Please try again later.", "error")
+        return []
+
+    player_lower = player.lower()
+    replays = []
+    for r in data.get("list", []):
+        team = _player_team(r, player_lower)
+        blue_goals, orange_goals = _team_goals(r)
+        r["player_team"] = team
+        if team == "blue":
+            r["result"] = "win" if blue_goals > orange_goals else "loss"
+        elif team == "orange":
+            r["result"] = "win" if orange_goals > blue_goals else "loss"
+        else:
+            r["result"] = "unknown"
+        replays.append(r)
+    return replays
 
 
 # ── Analytics route ────────────────────────────────────────────────────
@@ -577,29 +619,9 @@ def _compute_analytics(replays, player_lower):
 @app.route("/analytics")
 @login_required
 def analytics():
-    player = request.args.get("player", "").strip()
-    replays, stats = [], None
-
-    if player:
-        try:
-            data = search_replays_by_player(player, count=50)
-            raw  = data.get("list", [])
-            for r in raw:
-                blue_names   = [p["name"].lower() for p in r.get("blue",   {}).get("players", [])]
-                orange_names = [p["name"].lower() for p in r.get("orange", {}).get("players", [])]
-                blue_goals   = r.get("blue",   {}).get("goals", 0) or 0
-                orange_goals = r.get("orange", {}).get("goals", 0) or 0
-                if any(player.lower() in name for name in blue_names):
-                    r["result"] = "win" if blue_goals > orange_goals else "loss"
-                elif any(player.lower() in name for name in orange_names):
-                    r["result"] = "win" if orange_goals > blue_goals else "loss"
-                else:
-                    r["result"] = "unknown"
-                replays.append(r)
-            if replays:
-                stats = _compute_analytics(replays, player.lower())
-        except Exception:
-            replays = []
+    player = request.args.get("player", "").strip()[:64]
+    replays = _fetch_player_replays(player) if player else []
+    stats = _compute_analytics(replays, player.lower()) if replays else None
 
     return render_template("analytics.html", player=player, replays=replays, stats=stats, user=current_user)
 
