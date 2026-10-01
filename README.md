@@ -26,6 +26,9 @@ Users can upload a raw `.replay` file directly from their Rocket League installa
 ### 3D Hitbox Visualiser
 An interactive 3D wireframe tool that renders all six official Rocket League hitbox classes (Octane, Dominus, Breakout, Hybrid, Plank and Merc) using HTML5 Canvas with manual geometry and vector math. The user can rotate the hitbox in real time using yaw and pitch controls. Telemetry stats and exact hitbox dimensions are displayed alongside the render. There is also a searchable lookup table that maps car names to their hitbox class.
 
+### Screenshot Hitbox Recogniser (experimental)
+On the hitbox page, drop in a screenshot of a car and an image classifier guesses its hitbox class, showing the top three guesses with confidence bars and example cars. The model is a Google Teachable Machine MobileNetV2 classifier, exported to ONNX and run with `onnxruntime`, so the app does not need TensorFlow. The bundled model is heavily biased toward Octane; see [Retraining the hitbox classifier](#retraining-the-hitbox-classifier).
+
 ### 2D Garage Builder
 A layered sprite editor that lets users build a car visually by stacking image layers across five categories: body, chassis, additions, patches and effects. The end result can be exported and submitted to the gallery.
 
@@ -87,7 +90,11 @@ rocketcanvas/
 ├── models.py               # SQLAlchemy models: User, TwoFactorCode, CarHitbox, CarDesign
 ├── ballchasing.py          # Wrapper for the ballchasing.com REST API
 ├── replay_parser.py        # Parses .replay files via rrrocket, extracts player positions
+├── hitbox_classifier.py    # Screenshot -> hitbox class inference (onnxruntime)
 ├── seed_hitboxes.py        # Seeds the database with official car hitbox data
+├── ml/                     # Classifier model (.h5 + ONNX), labels and training script
+├── scripts/                # Dev helpers: SRI hashes, model conversion, sample replay
+├── tests/                  # pytest suite
 ├── requirements.txt        # Python package dependencies
 ├── templates/
 │   ├── base.html           # Shared layout, navigation, theme controls, footer
@@ -187,6 +194,9 @@ User-submitted car design images displayed in the gallery.
 | GET/POST | `/hitbox` | Yes | Look up car hitbox class |
 | GET | `/heatmap` | Yes | View heatmap page |
 | POST | `/parse-replay` | Yes | Upload `.replay` file and receive position data |
+| POST | `/hitbox/recognise` | Yes | Upload a car screenshot and receive hitbox guesses |
+| POST | `/gallery/<id>/delete` | Yes | Delete one of your own gallery designs |
+| POST | `/verify/resend` | No | Send a fresh 2FA code for the login in progress |
 | GET | `/garage` | Yes | Open the 2D garage builder |
 | GET | `/gallery` | Yes | Browse trading card gallery |
 | POST | `/gallery/upload` | Yes | Submit a new car design |
@@ -210,6 +220,24 @@ The parser then walks through every network frame in the JSON output, tracking:
 The X and Y coordinates (in centimetres) are extracted and returned as a dictionary mapping each player's name to their list of positional samples. The frontend renders these samples as a density heatmap on a Canvas element.
 
 `rrrocket` is automatically downloaded from GitHub at runtime if the binary is not already present in the `bin/` directory. The correct build for the host (Windows x64, Linux x64, macOS Intel or Apple Silicon) is chosen automatically, its SHA-256 checksum is verified against a pinned value, and the download is guarded by a lock.
+
+---
+
+## Retraining the hitbox classifier
+
+1. Collect in-game screenshots into one folder per class: `ml/hitbox_images/{octane,dominus,hybrid,merc,plank,breakout}/`. Aim for a similar number per class (at least ~50 each). The folder is git-ignored.
+2. Create a separate environment for TensorFlow (not needed to run the app):
+   ```bash
+   python -m venv mlenv
+   mlenv/Scripts/pip install -r requirements-ml.txt
+   ```
+3. Train and export:
+   ```bash
+   mlenv/Scripts/python ml/train_hitbox_model.py
+   ```
+   This writes `ml/keras_model.h5` and `ml/hitbox_classifier.onnx`. Restart the app to pick up the new model.
+
+`scripts/convert_model_to_onnx.py` re-exports an existing `.h5` (for example a new Teachable Machine download) without retraining.
 
 ---
 
