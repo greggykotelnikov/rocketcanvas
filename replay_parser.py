@@ -1,3 +1,4 @@
+import hashlib
 import os
 import json
 import subprocess  # nosec B404
@@ -8,6 +9,9 @@ import threading
 RRROCKET_URL = "https://github.com/nickbabcock/rrrocket/releases/download/v0.11.1/rrrocket-0.11.1-x86_64-pc-windows-msvc.zip"
 RRROCKET_DIR = os.path.join(os.path.dirname(__file__), "bin")
 RRROCKET_EXE = os.path.join(RRROCKET_DIR, "rrrocket-0.11.1-x86_64-pc-windows-msvc", "rrrocket.exe")
+# SHA-256 of the official v0.11.1 release zip. We execute what we download,
+# so refuse anything that doesn't match exactly.
+RRROCKET_ZIP_SHA256 = "0477fe1177d8bfc1bd9929b40679461205507e60f0b46cb1af9d6e4a7231335a"
 RRROCKET_TIMEOUT_S = 60
 _install_lock = threading.Lock()
 
@@ -20,6 +24,9 @@ def ensure_rrrocket():
         try:
             r = requests.get(RRROCKET_URL, timeout=30)
             r.raise_for_status()
+            digest = hashlib.sha256(r.content).hexdigest()
+            if digest != RRROCKET_ZIP_SHA256:
+                raise ValueError(f"rrrocket download checksum mismatch: {digest}")
             with open(zip_path, "wb") as f:
                 f.write(r.content)
             with zipfile.ZipFile(zip_path, "r") as z:
