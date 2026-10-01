@@ -64,7 +64,12 @@
       font-family: var(--ui);
       min-height: 100vh;
       transition: background-color var(--t), color var(--t);
+      /* Column layout so the footer is pushed to the bottom of the window
+         on short pages instead of stopping halfway and showing the sky. */
+      display: flex;
+      flex-direction: column;
     }
+    body > .site-footer { margin-top: auto; }
 
     /* ── PAGE ENTRY ANIMATION ───────────────────────────────────────── */
     /* Fade + short rise. Only opacity/transform animate, so it stays on the
@@ -262,7 +267,7 @@
     .btn {
       display: inline-flex; align-items: center; gap: 0.4rem;
       padding: 0.6rem 1.5rem;
-      font-family: var(--mono); font-weight: normal; font-size: 0.55rem;
+      font-family: var(--mono); font-weight: 600; font-size: 0.72rem; letter-spacing: 0.06em;
       text-transform: uppercase;
       border: 3px solid #000; cursor: pointer; text-decoration: none;
       border-radius: var(--radius);
@@ -292,7 +297,7 @@
       box-shadow: 2px 2px 0px #000;
       transform: translate(2px, 2px);
     }
-    .btn-sm { padding: 0.4rem 1rem; font-size: 0.5rem; }
+    .btn-sm { padding: 0.4rem 1rem; font-size: 0.65rem; }
 
     /* ── INPUTS ─────────────────────────────────────────────────────── */
     .input {
@@ -391,6 +396,7 @@
 
     /* ── PAGE WRAPPER ───────────────────────────────────────────────── */
     .page {
+      width: 100%;   /* flex item: fill up to max-width rather than shrink-wrap */
       max-width: 80%;
       margin: 2rem auto;
       padding: 2.5rem;
