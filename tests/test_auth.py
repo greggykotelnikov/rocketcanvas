@@ -3,7 +3,7 @@ from models import TwoFactorCode
 
 def register(client):
     return client.post("/register", data={
-        "email": "a@example.com", "username": "a", "password": "passw0rd!",
+        "email": "a@example.com", "username": "ace", "password": "passw0rd!",
     })
 
 
@@ -85,3 +85,23 @@ def test_login_unknown_email_still_runs_bcrypt(client, monkeypatch):
     resp = client.post("/login", data={"email": "nobody@example.com", "password": "x"})
     assert b"Invalid email or password" in resp.data
     assert len(calls) == 1
+
+
+def _reg(client, **over):
+    data = {"email": "z@example.com", "username": "zed", "password": "passw0rd!"}
+    data.update(over)
+    return client.post("/register", data=data)
+
+
+def test_register_validation(client):
+    assert b"valid email" in _reg(client, email="").data
+    assert b"valid email" in _reg(client, email="not-an-email").data
+    assert b"Username must be" in _reg(client, username="").data
+    assert b"Username must be" in _reg(client, username="<script>").data
+    assert b"too long" in _reg(client, password="a1!" + "x" * 70).data
+
+
+def test_username_uniqueness_is_case_insensitive(app):
+    _reg(app.test_client(), email="first@example.com", username="Pilot")
+    resp = _reg(app.test_client(), email="second@example.com", username="pilot")
+    assert b"Username taken" in resp.data

@@ -3,7 +3,9 @@ from flask_login import login_user, logout_user, login_required, current_user
 from flask_mail import Message
 from flask_bcrypt import Bcrypt
 from datetime import datetime, timedelta
+import re
 import secrets
+from sqlalchemy import func
 from flask import current_app
 from models import db, User, TwoFactorCode
 
@@ -11,6 +13,8 @@ auth = Blueprint('auth', __name__)
 bcrypt = Bcrypt()
 
 MAX_2FA_ATTEMPTS = 5
+EMAIL_RE    = re.compile(r"[^@\s]+@[^@\s]+\.[^@\s]+")
+USERNAME_RE = re.compile(r"[A-Za-z0-9_.\-]{3,30}")
 
 def send_2fa_email(mail, user):
     code = str(secrets.randbelow(900000) + 100000)
@@ -65,12 +69,18 @@ def register_auth_routes(app, mail, limiter):
             username = request.form.get("username", "").strip()
             password = request.form.get("password", "")
 
-            if len(username) > 80:
-                flash("Username must be under 80 characters.", "error")
+            if not EMAIL_RE.fullmatch(email) or len(email) > 120:
+                flash("Please enter a valid email address.", "error")
+                return render_template("login.html", mode="register")
+
+            if not USERNAME_RE.fullmatch(username):
+                flash("Username must be 3-30 characters: letters, numbers, '_', '-' or '.'.", "error")
                 return render_template("login.html", mode="register")
             
-            if len(password) > 100:
-                flash("Password is too long.", "error")
+            # bcrypt only looks at the first 72 bytes; anything longer would
+            # silently be ignored, so reject it instead.
+            if len(password.encode("utf-8")) > 72:
+                flash("Password is too long (max 72 bytes).", "error")
                 return render_template("login.html", mode="register")
             
             if len(password) < 8:
@@ -88,7 +98,8 @@ def register_auth_routes(app, mail, limiter):
             if User.query.filter_by(email=email).first():
                 flash("Email already registered.", "error")
                 return render_template("login.html", mode="register")
-            if User.query.filter_by(username=username).first():
+            # Case-insensitive so "Pilot" can't impersonate "pilot".
+            if User.query.filter(func.lower(User.username) == username.lower()).first():
                 flash("Username taken.", "error")
                 return render_template("login.html", mode="register")
 
