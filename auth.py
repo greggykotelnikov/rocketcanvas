@@ -36,6 +36,15 @@ def send_2fa_email(mail, user):
     mail.send(msg)
     return code
 
+_DUMMY_HASH = None
+
+def _dummy_hash():
+    """A real bcrypt hash (same cost factor) to compare against for unknown users."""
+    global _DUMMY_HASH
+    if _DUMMY_HASH is None:
+        _DUMMY_HASH = bcrypt.generate_password_hash(secrets.token_hex(16)).decode("utf-8")
+    return _DUMMY_HASH
+
 def _try_send_2fa(mail, user):
     """Send a 2FA code, flashing an error instead of crashing if SMTP fails."""
     try:
@@ -103,7 +112,11 @@ def register_auth_routes(app, mail, limiter):
             password = request.form.get("password", "")
             user = User.query.filter_by(email=email).first()
 
-            if not user or not bcrypt.check_password_hash(user.password_hash, password):
+            # Always run a bcrypt check, even for unknown emails, so response
+            # time doesn't reveal which addresses have accounts.
+            password_hash = user.password_hash if user else _dummy_hash()
+            password_ok = bcrypt.check_password_hash(password_hash, password)
+            if not user or not password_ok:
                 flash("Invalid email or password.", "error")
                 return render_template("login.html", mode="login")
 

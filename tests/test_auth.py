@@ -74,3 +74,14 @@ def test_logout_requires_post(auth_client):
 def test_nav_renders_logout_form(auth_client):
     html = auth_client.get("/profile").get_data(as_text=True)
     assert 'class="nav-logout" method="POST"' in html
+
+
+def test_login_unknown_email_still_runs_bcrypt(client, monkeypatch):
+    import auth
+    calls = []
+    real = auth.bcrypt.check_password_hash
+    monkeypatch.setattr(auth.bcrypt, "check_password_hash",
+                        lambda h, p: calls.append(h) or real(h, p))
+    resp = client.post("/login", data={"email": "nobody@example.com", "password": "x"})
+    assert b"Invalid email or password" in resp.data
+    assert len(calls) == 1
