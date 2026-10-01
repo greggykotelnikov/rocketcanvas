@@ -58,6 +58,26 @@
     {% endif %}
   </div>
 
+  <!-- Screenshot recogniser (experimental ML) -->
+  <div class="recognise-section">
+    <div class="recognise-head">
+      <h2 class="recognise-title">Recognise from a screenshot</h2>
+      <span class="experimental-badge" title="The model is still being trained and can be wrong">Experimental</span>
+    </div>
+    <p class="recognise-sub">Drop in a screenshot of a car and the classifier will guess its hitbox.</p>
+    <label class="recognise-drop" id="recogniseDrop" tabindex="0">
+      <input type="file" id="recogniseInput" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+      <img id="recognisePreview" class="recognise-preview" alt="" hidden>
+      <span class="recognise-drop-text" id="recogniseDropText">Click or drop an image here</span>
+    </label>
+    <div class="recognise-result" id="recogniseResult" aria-live="polite" hidden>
+      <ol class="recognise-bars" id="recogniseBars"></ol>
+      <p class="recognise-examples" id="recogniseExamples"></p>
+      <button type="button" class="hitbox-btn recognise-show" id="recogniseShow">Show in visualiser</button>
+    </div>
+    <p class="recognise-error" id="recogniseError" role="alert" hidden></p>
+  </div>
+
   <!-- Holographic Hitbox Visualizer HUD -->
   <div class="visualizer-section">
     <div class="visualizer-tabs-container">
@@ -192,6 +212,45 @@
     color: var(--muted);
     font-size: 1rem;
   }
+
+  /* Screenshot recogniser */
+  .recognise-section {
+    max-width: 620px;
+    margin: 0 auto 3rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius2, 12px);
+    padding: 1.25rem 1.5rem;
+  }
+  .recognise-head { display: flex; align-items: center; gap: 0.75rem; }
+  .recognise-title { font-size: 1.05rem; margin: 0; color: var(--text); }
+  .experimental-badge {
+    font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--accent); border: 1px solid var(--accent); border-radius: 999px; padding: 0.1rem 0.5rem;
+  }
+  .recognise-sub { color: var(--muted); font-size: 0.85rem; margin: 0.4rem 0 1rem; }
+  .recognise-drop {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.5rem;
+    min-height: 140px; padding: 1rem; cursor: pointer; text-align: center;
+    border: 2px dashed var(--border2); border-radius: 10px; color: var(--muted);
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .recognise-drop:hover, .recognise-drop:focus-visible, .recognise-drop.dragging {
+    border-color: var(--accent); background: var(--accent-glow2, rgba(168,85,247,0.06)); outline: none;
+  }
+  .recognise-drop.busy { opacity: 0.6; pointer-events: none; }
+  .recognise-preview { max-height: 180px; max-width: 100%; border-radius: 6px; }
+  .recognise-bars { list-style: none; padding: 0; margin: 1rem 0 0.5rem; display: grid; gap: 0.5rem; }
+  .recognise-bar { display: grid; grid-template-columns: 6rem 1fr 3.5rem; align-items: center; gap: 0.75rem; font-size: 0.85rem; }
+  .recognise-bar-track { height: 8px; background: var(--surface2); border-radius: 999px; overflow: hidden; }
+  .recognise-bar-fill {
+    display: block; height: 100%; width: 0; border-radius: inherit;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .recognise-bar-pct { text-align: right; font-family: var(--mono); color: var(--muted); }
+  .recognise-examples { color: var(--muted); font-size: 0.8rem; margin: 0.5rem 0 1rem; }
+  .recognise-error { color: var(--loss, #f87171); font-size: 0.85rem; margin-top: 0.75rem; }
 
   /* Search */
   .hitbox-search-wrapper {
@@ -1045,6 +1104,95 @@
       }
     }
   };
+
+  // ── SCREENSHOT RECOGNISER (experimental) ───────────────────────────
+  (function initRecogniser() {
+    const drop = document.getElementById('recogniseDrop');
+    const input = document.getElementById('recogniseInput');
+    const preview = document.getElementById('recognisePreview');
+    const dropText = document.getElementById('recogniseDropText');
+    const result = document.getElementById('recogniseResult');
+    const bars = document.getElementById('recogniseBars');
+    const examples = document.getElementById('recogniseExamples');
+    const errorEl = document.getElementById('recogniseError');
+    const showBtn = document.getElementById('recogniseShow');
+    const csrf = document.querySelector('input[name="csrf_token"]').value;
+    let topGuess = null;
+
+    function showError(msg) {
+      errorEl.textContent = msg;
+      errorEl.hidden = false;
+      result.hidden = true;
+    }
+
+    function render(data) {
+      bars.replaceChildren();
+      data.predictions.forEach(p => {
+        const li = document.createElement('li');
+        li.className = 'recognise-bar';
+        const name = document.createElement('span');
+        name.textContent = p.hitbox;
+        const track = document.createElement('span');
+        track.className = 'recognise-bar-track';
+        const fill = document.createElement('span');
+        fill.className = 'recognise-bar-fill';
+        track.appendChild(fill);
+        const pct = document.createElement('span');
+        pct.className = 'recognise-bar-pct';
+        pct.textContent = Math.round(p.confidence * 100) + '%';
+        li.append(name, track, pct);
+        bars.appendChild(li);
+        // Start at 0 and set the width on the next frame so the bar animates.
+        requestAnimationFrame(() => { fill.style.width = (p.confidence * 100).toFixed(1) + '%'; });
+      });
+      topGuess = data.predictions[0].hitbox;
+      examples.textContent = data.examples.length
+        ? 'Cars with this hitbox include ' + data.examples.join(', ') + '.'
+        : '';
+      errorEl.hidden = true;
+      result.hidden = false;
+    }
+
+    async function recognise(file) {
+      if (!file || !file.type.startsWith('image/')) {
+        showError('Please choose an image file.');
+        return;
+      }
+      if (preview.src) URL.revokeObjectURL(preview.src);
+      preview.src = URL.createObjectURL(file);
+      preview.hidden = false;
+      dropText.textContent = 'Analysing...';
+      drop.classList.add('busy');
+      const body = new FormData();
+      body.append('image', file);
+      try {
+        const resp = await fetch("{{ url_for('recognise_hitbox') }}", {
+          method: 'POST', body, headers: { 'X-CSRFToken': csrf }
+        });
+        const data = await resp.json().catch(() => ({}));
+        if (!resp.ok || !data.success) throw new Error(data.error || 'Recognition failed.');
+        render(data);
+      } catch (err) {
+        showError(err.message);
+      } finally {
+        drop.classList.remove('busy');
+        dropText.textContent = 'Click or drop another image';
+      }
+    }
+
+    input.addEventListener('change', () => recognise(input.files[0]));
+    drop.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.click(); }
+    });
+    ['dragenter', 'dragover'].forEach(t => drop.addEventListener(t, e => {
+      e.preventDefault(); drop.classList.add('dragging');
+    }));
+    ['dragleave', 'drop'].forEach(t => drop.addEventListener(t, e => {
+      e.preventDefault(); drop.classList.remove('dragging');
+    }));
+    drop.addEventListener('drop', e => recognise(e.dataTransfer.files[0]));
+    showBtn.addEventListener('click', () => { if (topGuess) window.visualizeClass(topGuess); });
+  })();
 
   // ── 3D MATHEMATICS AND PROJECTION ──────────────────────────────────
   function project(x, y, z) {
