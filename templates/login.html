@@ -297,6 +297,10 @@
     pointer-events: none;
     z-index: 10;
   }
+  .field-hint {
+    display: block; margin-top: 0.25rem;
+    color: #4a5470; font-family: 'Share Tech Mono', monospace; font-size: 0.65rem;
+  }
 </style>
 {% endblock %}
 
@@ -383,7 +387,7 @@
         <label>Password</label>
         <input type="password" name="password" placeholder="••••••••" maxlength="72" {% if mode == 'register' %}minlength="8" pattern="(?=.*\d)(?=.*[^a-zA-Z0-9]).{8,}" title="Must be at least 8 characters long, contain a number and a special character"{% endif %} required/>
         {% if mode == 'register' %}
-        <small style="color: #4a5470; font-family: 'Share Tech Mono', monospace; font-size: 0.65rem; margin-top: 0.25rem; display: block;">
+        <small class="field-hint">
           Min 8 chars, 1 number, 1 special char.
         </small>
         {% endif %}

@@ -62,6 +62,8 @@
     box-shadow: 0 10px 40px rgba(0,0,0,0.5);
     position: relative;
   }
+  .modal-content input[type="file"].input { padding: 0.5rem; }
+  .upload-submit { width: 100%; margin-top: 1rem; }
   .modal-close {
     position: absolute; top: 1rem; right: 1.5rem;
     background: none; border: none; line-height: 1;
@@ -280,7 +282,7 @@
 
 <div class="field">
   <label>Image</label>
-  <input type="file" name="design_image" class="input" accept="image/*" required style="padding: 0.5rem;"/>
+  <input type="file" name="design_image" class="input" accept="image/*" required/>
   <div class="hint-text">Supported: PNG, JPG, WEBP.</div>
 </div>
 
@@ -300,7 +302,7 @@
   <input type="text" name="overlay_title" class="input" placeholder="Goal Machine" maxlength="100"/>
 </div>
       
-      <button type="submit" class="upload-btn" style="width: 100%; margin-top: 1rem;">Submit Design</button>
+      <button type="submit" class="upload-btn upload-submit">Submit Design</button>
     </form>
   </div>
 </div>
