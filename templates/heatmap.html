@@ -443,6 +443,17 @@
     .stats-strip { grid-template-columns: repeat(2, 1fr); }
     #heatmapPitch { height: 380px; }
   }
+
+  /* Panels that start hidden and are revealed by the page script via
+     el.style.display (inline style attributes are blocked by the CSP). */
+  #playerSelectWrap, #exportWrap, #loadingOverlay, #heatmapLegend, #heatmapStats { display: none; }
+  #heatmapStats { margin-top: 1.5rem; }
+  #clearBtn { border: 1px solid var(--border); }
+  .swatch-attack      { background: #10e88a; }
+  .swatch-mid         { background: #b06eff; }
+  .swatch-defence     { background: #ff4d6a; }
+  .swatch-big-boost   { background: radial-gradient(circle, #fbbf24, #f59e0b); }
+  .swatch-small-boost { background: radial-gradient(circle, #94a3b8, #64748b); }
 </style>
 
 <div class="heatmap-page-header">
@@ -472,18 +483,18 @@
 
       <div class="sidebar-buttons">
         <button class="btn btn-primary btn-sm btn-full" id="loadDemoBtn" type="button">Load Demo Data</button>
-        <button class="btn btn-ghost btn-sm btn-full" id="clearBtn" type="button" style="border: 1px solid var(--border);">Clear</button>
+        <button class="btn btn-ghost btn-sm btn-full" id="clearBtn" type="button">Clear</button>
       </div>
     </div>
 
     <!-- Active Player Selector (Shown on load) -->
-    <div class="glass-card" id="playerSelectWrap" style="display: none;">
+    <div class="glass-card" id="playerSelectWrap">
       <div class="card-title-sm">Active Player</div>
       <select id="playerSelect" class="sidebar-select"></select>
     </div>
 
     <!-- Exports Panel (Shown on load) -->
-    <div class="glass-card" id="exportWrap" style="display: none;">
+    <div class="glass-card" id="exportWrap">
       <div class="card-title-sm">Export Dataset</div>
       <div class="export-buttons-grid">
         <button class="btn btn-sm btn-export-csv" id="downloadCsvBtn" type="button">Export CSV</button>
@@ -506,7 +517,7 @@
   <div class="heatmap-main-content">
     
     <!-- Loading overlay state card -->
-    <div id="loadingOverlay" class="loading-state-card" style="display: none;">
+    <div id="loadingOverlay" class="loading-state-card">
       <div class="rc-loader-ring"></div>
       <div>
         <div class="loading-bold">Parsing .replay with rrrocket</div>
@@ -529,12 +540,12 @@
         <div class="map-header-status">Interactive 2D Pitch View</div>
         
         <!-- Legend (shown dynamically) -->
-        <div class="heatmap-legend" id="heatmapLegend" style="display:none;">
-          <div class="legend-item"><span class="legend-swatch" style="background:#10e88a;"></span> Attack</div>
-          <div class="legend-item"><span class="legend-swatch" style="background:#b06eff;"></span> Midfield</div>
-          <div class="legend-item"><span class="legend-swatch" style="background:#ff4d6a;"></span> Defence</div>
-          <div class="legend-item"><span class="legend-swatch" style="background:radial-gradient(circle, #fbbf24, #f59e0b);"></span> Big Boost</div>
-          <div class="legend-item"><span class="legend-swatch" style="background:radial-gradient(circle, #94a3b8, #64748b);"></span> Small Boost</div>
+        <div class="heatmap-legend" id="heatmapLegend">
+          <div class="legend-item"><span class="legend-swatch swatch-attack"></span> Attack</div>
+          <div class="legend-item"><span class="legend-swatch swatch-mid"></span> Midfield</div>
+          <div class="legend-item"><span class="legend-swatch swatch-defence"></span> Defence</div>
+          <div class="legend-item"><span class="legend-swatch swatch-big-boost"></span> Big Boost</div>
+          <div class="legend-item"><span class="legend-swatch swatch-small-boost"></span> Small Boost</div>
         </div>
       </div>
 
@@ -544,7 +555,7 @@
     </div>
 
     <!-- Stats (shown after data load) -->
-    <div id="heatmapStats" style="display:none; margin-top: 1.5rem;">
+    <div id="heatmapStats">
       <div class="stats-strip">
         <div class="stat-tile">
           <div class="st-label">Total Positions</div>
@@ -765,7 +776,7 @@
     if (!positions || positions.length === 0) return;
 
     document.getElementById('emptyState').style.display = 'none';
-    document.getElementById('heatmapStats').style.display = '';
+    document.getElementById('heatmapStats').style.display = 'block';
     document.getElementById('heatmapLegend').style.display = 'flex';
 
     // Clamp positions to pitch bounds
