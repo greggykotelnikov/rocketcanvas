@@ -114,7 +114,7 @@
       value="{{ player or '' }}" autofocus/>
     <button class="btn btn-primary" type="submit">Analyse</button>
     {% if current_user.rl_username and player != current_user.rl_username %}
-      <a class="btn" href="{{ url_for('analytics', player=current_user.rl_username) }}" title="Load your linked Rocket League account">My stats</a>
+      <a class="btn btn-ghost" href="{{ url_for('analytics', player=current_user.rl_username) }}" title="Load your linked Rocket League account">My stats</a>
     {% endif %}
   </form>
 </div>
