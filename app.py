@@ -208,6 +208,21 @@ def upload_too_large(_err):
     return redirect(url_for(back))
 
 
+@app.errorhandler(429)
+def rate_limited(_err):
+    message = "Too many requests. Please wait a moment and try again."
+    if request.path == "/parse-replay":
+        from flask import jsonify
+        return jsonify({"success": False, "error": message}), 429
+    if request.endpoint in ("login", "register"):
+        flash(message, "error")
+        return render_template("login.html", mode=request.endpoint), 429
+    if request.endpoint == "verify":
+        flash(message, "error")
+        return render_template("verify.html"), 429
+    return message, 429
+
+
 # ── Helper ─────────────────────────────────────────────────────────────
 def allowed_image(filename: str) -> bool:
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_IMAGE_EXT
@@ -291,6 +306,7 @@ def update_profile():
 
 @app.route("/profile/avatar", methods=["POST"])
 @login_required
+@limiter.limit("10 per hour")
 def update_avatar():
     file = request.files.get("avatar")
     if not file or file.filename == "":
@@ -396,6 +412,7 @@ def garage():
 
 @app.route("/gallery/upload", methods=["POST"])
 @login_required
+@limiter.limit("10 per hour")
 def upload_design():
     # Enforce the same limits as the form/DB columns: maxlength in the HTML
     # is trivially bypassed and SQLite does not enforce VARCHAR lengths.
@@ -451,6 +468,7 @@ def link_rl():
 
 @app.route("/dashboard")
 @login_required
+@limiter.limit("20 per minute")  # every search spends Ballchasing API quota
 def dashboard():
     player = request.args.get("player", "").strip()[:64]
     replays = _fetch_player_replays(player) if player else []
@@ -658,6 +676,7 @@ def _compute_analytics(replays, player_lower):
 
 @app.route("/analytics")
 @login_required
+@limiter.limit("20 per minute")  # every search spends Ballchasing API quota
 def analytics():
     player = request.args.get("player", "").strip()[:64]
     replays = _fetch_player_replays(player) if player else []
@@ -709,6 +728,7 @@ def heatmap():
 
 @app.route("/parse-replay", methods=["POST"])
 @login_required
+@limiter.limit("5 per minute")   # each call runs rrrocket in a subprocess
 def parse_replay():
     from flask import jsonify
     from replay_parser import parse_replay_positions
