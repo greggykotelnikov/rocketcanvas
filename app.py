@@ -5,7 +5,7 @@ from collections import defaultdict
 from datetime import datetime
 from functools import lru_cache
 
-from flask import Flask, flash, request, render_template, redirect, url_for, send_from_directory
+from flask import Flask, abort, flash, request, render_template, redirect, url_for, send_from_directory
 from flask_login import LoginManager, login_required, current_user
 from flask_mail import Mail
 from flask_bcrypt import Bcrypt
@@ -460,6 +460,24 @@ def upload_design():
     db.session.commit()
     flash("Design uploaded successfully!", "success")
     
+    return redirect(url_for("gallery"))
+
+
+@app.route("/gallery/<int:design_id>/delete", methods=["POST"])
+@login_required
+def delete_design(design_id):
+    design = db.session.get(CarDesign, design_id)
+    if design is None:
+        abort(404)
+    if design.user_id != current_user.id:
+        abort(403)  # only the uploader can remove their card
+    try:
+        os.remove(os.path.join(DESIGN_UPLOAD_DIR, os.path.basename(design.image_filename)))
+    except OSError:
+        pass  # file already gone; still remove the record
+    db.session.delete(design)
+    db.session.commit()
+    flash("Design deleted.", "success")
     return redirect(url_for("gallery"))
 
 

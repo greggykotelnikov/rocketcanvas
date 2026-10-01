@@ -149,6 +149,13 @@
     overflow: hidden;
   }
   
+  .delete-design-form { margin: 0.5rem 0 0; text-align: right; }
+  .delete-design-btn {
+    background: none; border: 1px solid var(--border); color: var(--muted);
+    font: inherit; font-size: 0.7rem; letter-spacing: 0.05em; text-transform: uppercase;
+    padding: 0.2rem 0.6rem; cursor: pointer; border-radius: var(--radius, 4px);
+  }
+  .delete-design-btn:hover { color: #f87171; border-color: #f87171; }
   .design-meta { 
     font-size: 0.78rem; 
     color: var(--muted); 
@@ -229,6 +236,12 @@
             <span>Minted By <span class="design-author">{{ design.user.username }}</span></span>
             <span>{{ design.created_at.strftime('%b %d, %Y') }}</span>
           </div>
+          {% if design.user_id == current_user.id %}
+          <form class="delete-design-form" method="POST" action="{{ url_for('delete_design', design_id=design.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <button type="submit" class="delete-design-btn" title="Delete this design">Delete</button>
+          </form>
+          {% endif %}
           <div class="card-stats">
             <div class="stat"><span class="stat-val">99</span><span class="stat-label">Aesthetics</span></div>
             <div class="stat"><span class="stat-val">S+</span><span class="stat-label">Tier</span></div>
@@ -287,6 +300,13 @@
 </div>
 
 <script nonce="{{ nonce }}">
+  // Ask before deleting a design (the delete form is a normal POST)
+  document.querySelectorAll('.delete-design-form').forEach(form => {
+    form.addEventListener('submit', e => {
+      if (!window.confirm('Delete this design? This cannot be undone.')) e.preventDefault();
+    });
+  });
+
   // Open modal
   document.getElementById('openUploadModalBtn').addEventListener('click', function() {
     document.getElementById('uploadModal').classList.add('active');
