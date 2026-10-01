@@ -10,7 +10,7 @@ import zipfile
 
 import requests
 
-RRROCKET_VERSION = "0.11.1"
+RRROCKET_VERSION = "0.11.6"
 RRROCKET_DIR = os.path.join(os.path.dirname(__file__), "bin")
 RRROCKET_TIMEOUT_S = 60
 
@@ -18,13 +18,13 @@ RRROCKET_TIMEOUT_S = 60
 # We execute what we download, so refuse anything that doesn't match.
 _RRROCKET_BUILDS = {
     ("windows", "x86_64"): ("x86_64-pc-windows-msvc", ".zip",
-                            "0477fe1177d8bfc1bd9929b40679461205507e60f0b46cb1af9d6e4a7231335a"),
+                            "6fa7d153fba8d58caf79b4e0eb7c8a6c7a59ff687c3c29a4e3fa55e202b1af07"),
     ("linux", "x86_64"):   ("x86_64-unknown-linux-musl", ".tar.gz",
-                            "9417a28be27b76020d127e3147a732b92080eb225f0d2a6087d6b046d869b3e8"),
+                            "3694e222e9fd8ff528dd54d16cf4d4fa1e8dd3319b74c8da5bfadbfc9da6c222"),
     ("darwin", "x86_64"):  ("x86_64-apple-darwin", ".tar.gz",
-                            "f7cf8e2c3e199a42eb6ac1c87a53a979d723ad67e1882214100472e98460959d"),
+                            "21e4fb5c3b947ee0326b5bb79c1275f2f36f14efc65f135b44b84555517bd316"),
     ("darwin", "arm64"):   ("aarch64-apple-darwin", ".tar.gz",
-                            "8ca9bdad51b39515baac1605ee0e881671c8367459d61c7dfbb95a46276d1fc6"),
+                            "11b4ec8c6e258761b71c49c77d438a08c7903d43cf7167fe96446a91a4098916"),
 }
 _ARCH_ALIASES = {"amd64": "x86_64", "x86_64": "x86_64", "arm64": "arm64", "aarch64": "arm64"}
 
@@ -95,9 +95,15 @@ def parse_replay_positions(replay_path):
         out = subprocess.check_output(  # nosec B603 - fixed exe path, no shell
             [RRROCKET_EXE, "-n", replay_path],
             timeout=RRROCKET_TIMEOUT_S,
-            stderr=subprocess.DEVNULL,
+            stderr=subprocess.PIPE,
         )
         data = json.loads(out)
+    except subprocess.CalledProcessError as e:
+        # rrrocket explains *why* on stderr (e.g. an unsupported replay
+        # version); keep that in the log instead of just the exit code.
+        detail = (e.stderr or b"").decode("utf-8", "replace").strip()
+        print(f"Error parsing replay: rrrocket exited {e.returncode}: {detail}")
+        return {}
     except Exception as e:
         print(f"Error parsing replay: {e}")
         return {}

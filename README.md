@@ -57,7 +57,7 @@ RocketCanvas is installable as a PWA. A registered service worker handles offlin
 | Frontend | Vanilla HTML/CSS/JavaScript, HTML5 Canvas |
 | Charts | Chart.js |
 | Image Processing | Pillow |
-| Replay Parsing | rrrocket v0.11.1 (auto-downloaded for Windows, macOS or Linux) |
+| Replay Parsing | rrrocket v0.11.6 (auto-downloaded for Windows, macOS or Linux) |
 | API | ballchasing.com REST API |
 | Security | Flask-WTF (CSRF), Flask-Limiter (rate limiting) |
 | PWA | Web Audio API, Service Workers, Web App Manifest |
