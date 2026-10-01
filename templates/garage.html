@@ -215,6 +215,21 @@
     transform: scale(1.3);
     background: var(--accent3);
   }
+
+  /* Layer tuning controls (formerly inline style attributes, which the CSP blocks) */
+  .field-flush { margin-bottom: 0; }
+  .tuning-panel {
+    border-top: 1px solid var(--border); padding-top: 1.5rem; margin-top: 0.5rem;
+    display: flex; flex-direction: column; gap: 1.25rem;
+  }
+  .tuning-title {
+    font-size: 0.85rem; color: var(--accent); letter-spacing: 0.1em;
+    text-transform: uppercase; font-weight: 700;
+  }
+  .slider-head { display: flex; justify-content: space-between; margin-bottom: 0.4rem; }
+  .slider-head label { margin-bottom: 0; }
+  .slider-val { font-size: 0.75rem; font-family: var(--mono); color: var(--muted); }
+  #reset-placement-btn { justify-content: center; }
 </style>
 {% endblock %}
 
@@ -237,7 +252,7 @@
 
     <!-- Controls -->
     <div class="garage-controls">
-      <div class="field" style="margin-bottom: 0;">
+      <div class="field field-flush">
         <label>Parts Catalogue</label>
         <div class="part-tabs" role="tablist">
           <button type="button" class="part-tab active" data-panel="chassis-panel">Chassis</button>
@@ -306,10 +321,10 @@
       </div>
 
       <!-- Placement Tuning Sliders -->
-      <div style="border-top: 1px solid var(--border); padding-top: 1.5rem; margin-top: 0.5rem; display: flex; flex-direction: column; gap: 1.25rem;">
-        <label style="font-size: 0.85rem; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700;">Tuning & Placement</label>
+      <div class="tuning-panel">
+        <label class="tuning-title">Tuning &amp; Placement</label>
         
-        <div class="field" style="margin-bottom: 0;">
+        <div class="field field-flush">
           <label>Select Layer to Adjust</label>
           <select class="input" id="adjust-layer-select">
             <option value="chassis">Chassis</option>
@@ -320,31 +335,31 @@
           </select>
         </div>
 
-        <div class="field" style="margin-bottom: 0;">
-          <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem;">
-            <label style="margin-bottom: 0;">Horizontal Offset (X)</label>
-            <span id="x-val" style="font-size: 0.75rem; font-family: var(--mono); color: var(--muted);">0px</span>
+        <div class="field field-flush">
+          <div class="slider-head">
+            <label>Horizontal Offset (X)</label>
+            <span id="x-val" class="slider-val">0px</span>
           </div>
           <input type="range" class="adjust-slider" id="offset-x-slider" min="-150" max="150" value="0">
         </div>
 
-        <div class="field" style="margin-bottom: 0;">
-          <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem;">
-            <label style="margin-bottom: 0;">Vertical Offset (Y)</label>
-            <span id="y-val" style="font-size: 0.75rem; font-family: var(--mono); color: var(--muted);">0px</span>
+        <div class="field field-flush">
+          <div class="slider-head">
+            <label>Vertical Offset (Y)</label>
+            <span id="y-val" class="slider-val">0px</span>
           </div>
           <input type="range" class="adjust-slider" id="offset-y-slider" min="-150" max="150" value="0">
         </div>
 
-        <div class="field" style="margin-bottom: 0;">
-          <div style="display: flex; justify-content: space-between; margin-bottom: 0.4rem;">
-            <label style="margin-bottom: 0;">Scale</label>
-            <span id="scale-val" style="font-size: 0.75rem; font-family: var(--mono); color: var(--muted);">100%</span>
+        <div class="field field-flush">
+          <div class="slider-head">
+            <label>Scale</label>
+            <span id="scale-val" class="slider-val">100%</span>
           </div>
           <input type="range" class="adjust-slider" id="scale-slider" min="30" max="300" value="100">
         </div>
 
-        <button type="button" class="btn btn-ghost btn-sm" id="reset-placement-btn" style="justify-content: center;">Reset Layer</button>
+        <button type="button" class="btn btn-ghost btn-sm" id="reset-placement-btn">Reset Layer</button>
       </div>
 
     </div>
