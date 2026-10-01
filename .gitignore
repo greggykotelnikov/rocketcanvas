@@ -34,3 +34,4 @@ ml/hitbox_images/
 
 # rrrocket is auto-downloaded at runtime by replay_parser.py
 bin/
+.pytest_cache/
