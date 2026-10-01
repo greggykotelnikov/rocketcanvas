@@ -720,6 +720,9 @@
 {% endif %}
 
 <div class="page">
+  {# Pages that show messages inside their own layout (login/register)
+     override this block; otherwise each message appeared twice. #}
+  {% block flashes %}
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% for category, message in messages %}
       <div class="flash {{ category }}" role="{{ 'alert' if category == 'error' else 'status' }}">
@@ -728,6 +731,7 @@
       </div>
     {% endfor %}
   {% endwith %}
+  {% endblock %}
   {% block content %}{% endblock %}
 </div>
 

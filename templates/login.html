@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{% if mode == 'register' %}Register{% else %}Sign in{% endif %} | RocketCanvas{% endblock %}
+{% block flashes %}{% endblock %}{# messages are shown inside the auth card below #}
 {% block head %}
   <style nonce="{{ nonce }}">
     body {

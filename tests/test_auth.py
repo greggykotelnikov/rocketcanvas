@@ -121,3 +121,13 @@ def test_resend_code_replaces_old_code(app, client):
 
 def test_resend_without_pending_login_redirects(client):
     assert client.post("/verify/resend").location.endswith("/login")
+
+
+def test_login_error_shown_once(client):
+    html = client.post("/login", data={"email": "no@example.com", "password": "x"}).get_data(as_text=True)
+    assert html.count("Invalid email or password") == 1
+
+
+def test_flash_shown_on_other_pages(app, auth_client):
+    html = auth_client.post("/profile/update", data={}, follow_redirects=True).get_data(as_text=True)
+    assert html.count("Profile updated.") == 1
