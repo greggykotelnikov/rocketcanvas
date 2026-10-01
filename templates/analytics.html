@@ -96,6 +96,13 @@
     .charts-row { grid-template-columns: 1fr; }
     .kpi-strip { grid-template-columns: repeat(2, 1fr); }
   }
+  /* Fixed-height chart containers: Chart.js (maintainAspectRatio: false)
+     sizes the canvas to its parent, so the parent needs a real height. */
+  .chart-box { position: relative; }
+  .chart-box.h-130 { height: 130px; }
+  .chart-box.h-140 { height: 140px; }
+  .chart-box.h-200 { height: 200px; }
+  .chart-box.h-220 { height: 220px; }
 </style>
 
 <div class="analytics-header">
@@ -150,11 +157,11 @@
   <div class="charts-row">
     <div class="chart-card">
       <div class="chart-card-title">Win Rate Trend (rolling 5)</div>
-      <div style="position: relative; height: 200px;"><canvas id="wrTrendChart"></canvas></div>
+      <div class="chart-box h-200"><canvas id="wrTrendChart"></canvas></div>
     </div>
     <div class="chart-card">
       <div class="chart-card-title">Playlist Breakdown</div>
-      <div style="position: relative; height: 200px;"><canvas id="playlistChart"></canvas></div>
+      <div class="chart-box h-200"><canvas id="playlistChart"></canvas></div>
     </div>
   </div>
 
@@ -162,11 +169,11 @@
   <div class="charts-row">
     <div class="chart-card">
       <div class="chart-card-title">Map Win Rate (top 6 maps)</div>
-      <div style="position: relative; height: 220px;"><canvas id="mapChart"></canvas></div>
+      <div class="chart-box h-220"><canvas id="mapChart"></canvas></div>
     </div>
     <div class="chart-card">
       <div class="chart-card-title">Activity by Hour of Day</div>
-      <div style="position: relative; height: 220px;"><canvas id="hourChart"></canvas></div>
+      <div class="chart-box h-220"><canvas id="hourChart"></canvas></div>
     </div>
   </div>
 
@@ -174,7 +181,7 @@
   <div class="charts-row full">
     <div class="chart-card">
       <div class="chart-card-title">Goal Differential Per Game</div>
-      <div style="position: relative; height: 140px;"><canvas id="diffChart"></canvas></div>
+      <div class="chart-box h-140"><canvas id="diffChart"></canvas></div>
     </div>
   </div>
 
@@ -182,11 +189,11 @@
   <div class="charts-row">
     <div class="chart-card">
       <div class="chart-card-title">Win / Loss Breakdown</div>
-      <div style="position: relative; height: 200px;"><canvas id="wlChart"></canvas></div>
+      <div class="chart-box h-200"><canvas id="wlChart"></canvas></div>
     </div>
     <div class="chart-card">
       <div class="chart-card-title">Avg Goals Scored vs Conceded</div>
-      <div style="position: relative; height: 200px;"><canvas id="goalsAvgChart"></canvas></div>
+      <div class="chart-box h-200"><canvas id="goalsAvgChart"></canvas></div>
     </div>
   </div>
 
@@ -194,7 +201,7 @@
   <div class="charts-row full">
     <div class="chart-card">
       <div class="chart-card-title">Cumulative Wins Over Time</div>
-      <div style="position: relative; height: 130px;"><canvas id="cumWinsChart"></canvas></div>
+      <div class="chart-box h-130"><canvas id="cumWinsChart"></canvas></div>
     </div>
   </div>
 
