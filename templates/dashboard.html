@@ -150,7 +150,7 @@
   {% set losses = replays | selectattr('result','equalto','loss') | list %}
   {% set known  = wins|length + losses|length %}
   {% set wr     = ((wins|length / known * 100) | round(1)) if known > 0 else 0 %}
-  {% set avg_dur = (replays | map(attribute='duration') | list | sum / replays|length) | round | int %}
+  {% set avg_dur = (replays | map(attribute='duration') | map('default', 0, true) | list | sum / replays|length) | round | int %}
 
   <!-- Stats strip -->
   <div class="stats-strip">
@@ -224,8 +224,9 @@
             <span class="score-sep">-</span>
             <span class="score-orange">{{ r.orange.goals or 0 }}</span>
           </td>
-          <td>{{ r.date[:10] }}</td>
-          <td>{{ r.duration // 60 }}m {{ r.duration % 60 }}s</td>
+          {% set dur = r.duration or 0 %}
+          <td>{{ (r.date or '')[:10] }}</td>
+          <td>{{ dur // 60 }}m {{ dur % 60 }}s</td>
         </tr>
         {% endfor %}
       </tbody>

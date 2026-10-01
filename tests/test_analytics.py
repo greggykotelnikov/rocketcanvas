@@ -33,3 +33,23 @@ def test_rolling_win_rate_window():
     stats = appmod._compute_analytics(newest_first("W", "W", "W", "W", "W", "L"), "pilot")
     # Chronological: L W W W W W
     assert stats["wr_trend_values"] == [80.0, 100.0]
+
+
+def test_null_duration_and_unknown_team_are_tolerated(auth_client, monkeypatch):
+    replays = [
+        make_replay(["pilot"], ["x"], 3, 0, duration=None),
+        make_replay(["a"], ["b"], 9, 0),  # player not found -> unknown
+    ]
+    monkeypatch.setattr(appmod, "search_replays_by_player", lambda p, count: {"list": replays})
+    assert auth_client.get("/dashboard?player=pilot").status_code == 200
+    assert auth_client.get("/analytics?player=pilot").status_code == 200
+    stats = appmod._compute_analytics(replays, "pilot")
+    assert stats["avg_diff"] == 3.0  # unknown game not averaged in as 0
+
+
+def test_playlists_sorted_by_frequency():
+    replays = [make_replay(["pilot"], [], 1, 0, playlist_id=p)
+               for p in ["a", "b", "c", "d", "e", "f", "g", "g", "g"]]
+    stats = appmod._compute_analytics(tagged(replays), "pilot")
+    assert stats["playlist_labels"][0] == "g"
+    assert stats["playlist_values"][0] == 3

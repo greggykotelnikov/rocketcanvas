@@ -487,7 +487,6 @@ def _compute_analytics(replays, player_lower):
     playlist_count = defaultdict(int)
     hour_count = [0] * 24
     diff_values, diff_labels = [], []
-    goal_diffs = []
     goals_scored_list, goals_conceded_list = [], []
 
     # Ballchasing returns newest first. Time-series charts read left-to-right
@@ -525,7 +524,6 @@ def _compute_analytics(replays, player_lower):
         else:
             scored = conceded = None
         diff = scored - conceded if scored is not None else 0
-        goal_diffs.append(diff)
         diff_labels.append(f"#{i+1}")
         diff_values.append(diff)
         if scored is not None:
@@ -549,7 +547,8 @@ def _compute_analytics(replays, player_lower):
     # Playlist
     top_pl    = max(playlist_count, key=playlist_count.get) if playlist_count else "N/A"
     top_pl_pct = round(playlist_count[top_pl] / total * 100) if total else 0
-    pl_labels  = list(playlist_count.keys())[:6]
+    # Six most-played playlists (was: first six encountered, unsorted)
+    pl_labels  = sorted(playlist_count, key=playlist_count.get, reverse=True)[:6]
     pl_values  = [playlist_count[k] for k in pl_labels]
 
     # Streaks (oldest -> newest)
@@ -572,7 +571,8 @@ def _compute_analytics(replays, player_lower):
             else: break
 
     # Avg duration
-    avg_dur_s = int(sum(r.get("duration", 0) for r in replays) / total) if total > 0 else 0
+    # Ballchasing can return null for duration; treat it as 0 instead of crashing
+    avg_dur_s = int(sum(r.get("duration") or 0 for r in replays) / total) if total > 0 else 0
 
     # Win rate trend (rolling 5)
     wr_trend_labels, wr_trend_values = [], []
@@ -585,9 +585,12 @@ def _compute_analytics(replays, player_lower):
     # Hour labels
     hour_labels = [f"{h:02d}:00" for h in range(24)]
 
-    avg_diff = round(sum(goal_diffs) / len(goal_diffs), 1) if goal_diffs else 0
-    avg_scored   = round(sum(goals_scored_list)   / len(goals_scored_list),   1) if goals_scored_list   else 0
-    avg_conceded = round(sum(goals_conceded_list) / len(goals_conceded_list), 1) if goals_conceded_list else 0
+    # Averages only over games where we know which team the player was on;
+    # unknown games were previously counted as a 0 goal differential.
+    known_games  = len(goals_scored_list)
+    avg_scored   = round(sum(goals_scored_list)   / known_games, 1) if known_games else 0
+    avg_conceded = round(sum(goals_conceded_list) / known_games, 1) if known_games else 0
+    avg_diff     = round((sum(goals_scored_list) - sum(goals_conceded_list)) / known_games, 1) if known_games else 0
 
     # Cumulative wins over time
     cumulative_wins = []
