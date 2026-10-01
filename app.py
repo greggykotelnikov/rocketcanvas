@@ -751,6 +751,34 @@ def hitbox_lookup():
         grouped=grouped
     )
 
+@app.route("/hitbox/recognise", methods=["POST"])
+@login_required
+@limiter.limit("10 per minute")
+def recognise_hitbox():
+    """Guess the hitbox class of the car in an uploaded screenshot (experimental)."""
+    from flask import jsonify
+    import hitbox_classifier
+
+    if not hitbox_classifier.is_available():
+        app.logger.warning("Hitbox classifier unavailable: %s", hitbox_classifier.unavailable_reason())
+        return jsonify({"success": False, "error": "Image recognition isn't available on this server."}), 503
+
+    file = request.files.get("image")
+    if not file or file.filename == "" or not allowed_image(file.filename):
+        return jsonify({"success": False, "error": "Please upload a PNG, JPG, WEBP or GIF image."}), 400
+    try:
+        img = _open_uploaded_image(file)
+    except Exception:
+        return jsonify({"success": False, "error": "Could not read that image."}), 400
+
+    predictions = hitbox_classifier.predict(img, top_k=3)
+    # A few example cars for the top guess, from the lookup table.
+    examples = [c.car_name for c in CarHitbox.query
+                .filter_by(hitbox_class=predictions[0]["hitbox"])
+                .order_by(CarHitbox.car_name).limit(6)]
+    return jsonify({"success": True, "predictions": predictions, "examples": examples})
+
+
 @app.route("/heatmap")
 @login_required
 def heatmap():
