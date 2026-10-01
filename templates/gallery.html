@@ -48,6 +48,11 @@
     transition: opacity var(--t);
   }
   .modal-overlay.active { opacity: 1; pointer-events: auto; }
+  .modal-overlay .modal-content {
+    transform: translateY(12px) scale(0.97);
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .modal-overlay.active .modal-content { transform: none; }
   .modal-content {
     background: var(--bg);
     border: 1px solid var(--border);
@@ -59,6 +64,7 @@
   }
   .modal-close {
     position: absolute; top: 1rem; right: 1.5rem;
+    background: none; border: none; line-height: 1;
     font-size: 1.5rem; cursor: pointer; color: var(--muted);
     transition: color var(--t);
   }
@@ -260,10 +266,10 @@
 {% endif %}
 
 <!-- Upload Modal -->
-<div class="modal-overlay" id="uploadModal">
+<div class="modal-overlay" id="uploadModal" role="dialog" aria-modal="true" aria-labelledby="uploadModalTitle">
   <div class="modal-content">
-    <button class="modal-close" onclick="document.getElementById('uploadModal').classList.remove('active')">&times;</button>
-    <h2 class="modal-title">Upload Design</h2>
+    <button type="button" class="modal-close" id="closeUploadModalBtn" aria-label="Close">&times;</button>
+    <h2 class="modal-title" id="uploadModalTitle">Upload Design</h2>
     <form method="POST" action="{{ url_for('upload_design') }}" enctype="multipart/form-data">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
       
@@ -307,14 +313,28 @@
     });
   });
 
-  // Open modal
-  document.getElementById('openUploadModalBtn').addEventListener('click', function() {
-    document.getElementById('uploadModal').classList.add('active');
-  });
+  // ── Upload modal ──────────────────────────────────────────────────
+  // (No inline onclick: the CSP blocks inline event handlers, which is why
+  // the close button used to do nothing.)
+  const uploadModal = document.getElementById('uploadModal');
+  const openBtn = document.getElementById('openUploadModalBtn');
 
-  // Close modal when clicking outside
-  document.getElementById('uploadModal').addEventListener('click', function(e) {
-    if (e.target === this) this.classList.remove('active');
+  function openModal() {
+    uploadModal.classList.add('active');
+    const first = uploadModal.querySelector('input[name="title"]');
+    if (first) setTimeout(() => first.focus(), 50);
+  }
+  function closeModal() {
+    uploadModal.classList.remove('active');
+    openBtn.focus();
+  }
+
+  openBtn.addEventListener('click', openModal);
+  document.getElementById('closeUploadModalBtn').addEventListener('click', closeModal);
+  // Close when clicking the backdrop or pressing Escape
+  uploadModal.addEventListener('click', e => { if (e.target === uploadModal) closeModal(); });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && uploadModal.classList.contains('active')) closeModal();
   });
 </script>
 {% endblock %}
