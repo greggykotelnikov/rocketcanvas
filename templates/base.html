@@ -236,6 +236,18 @@
       from { opacity: 0; transform: translateX(-8px); }
       to   { opacity: 1; transform: translateX(0); }
     }
+    .flash {
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem;
+      transition: opacity 0.35s ease, transform 0.35s ease, max-height 0.35s ease, margin 0.35s ease, padding 0.35s ease;
+      max-height: 12rem; overflow: hidden;
+    }
+    .flash.leaving { opacity: 0; transform: translateX(-8px); max-height: 0; margin-bottom: 0; padding-top: 0; padding-bottom: 0; }
+    .flash-close {
+      background: none; border: none; color: inherit; cursor: pointer;
+      font-size: 1.1rem; line-height: 1; opacity: 0.6; padding: 0 0.15rem;
+      transition: opacity var(--t);
+    }
+    .flash-close:hover { opacity: 1; }
     .flash.error   { border-color: var(--loss); color: var(--loss); background: rgba(244,63,94,0.08); }
     .flash.success { border-color: var(--win);  color: var(--win);  background: rgba(34,209,122,0.08); }
 
@@ -710,7 +722,10 @@
 <div class="page">
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% for category, message in messages %}
-      <div class="flash {{ category }}">{{ message }}</div>
+      <div class="flash {{ category }}" role="{{ 'alert' if category == 'error' else 'status' }}">
+        <span class="flash-text">{{ message }}</span>
+        <button type="button" class="flash-close" aria-label="Dismiss">&times;</button>
+      </div>
     {% endfor %}
   {% endwith %}
   {% block content %}{% endblock %}
@@ -809,6 +824,19 @@
 <script nonce="{{ nonce }}" src="{{ url_for('static', filename='js/tutorial.js') }}" integrity="sha384-NX9SS0IBu/MzsXQz1hywv05o6K5ejZvDe/sj3EYshp7xCQTsXPpU8UFkLBacbpgM"></script>
 <script nonce="{{ nonce }}">
   document.addEventListener('DOMContentLoaded', () => {
+    // Flash messages: dismissable, and success messages fade out by themselves
+    // (errors stay until dismissed so they aren't missed).
+    function dismissFlash(el) {
+      if (el.classList.contains('leaving')) return;
+      el.classList.add('leaving');
+      el.addEventListener('transitionend', () => el.remove(), { once: true });
+      setTimeout(() => el.remove(), 600);  // fallback if no transition runs
+    }
+    document.querySelectorAll('.flash').forEach(el => {
+      el.querySelector('.flash-close').addEventListener('click', () => dismissFlash(el));
+      if (el.classList.contains('success')) setTimeout(() => dismissFlash(el), 5000);
+    });
+
     const successFlashes = document.querySelectorAll('.flash.success');
     if (successFlashes.length > 0 && typeof triggerGoalExplosion === 'function') {
       if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
