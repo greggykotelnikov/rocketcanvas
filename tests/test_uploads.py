@@ -74,3 +74,15 @@ def test_gallery_upload_rejects_non_image(app, auth_client):
         "design_image": (io.BytesIO(b"GIF89a not really"), "car.gif"),
     }, content_type="multipart/form-data", follow_redirects=True)
     assert b"Could not process image" in resp.data
+
+
+def test_huge_dimension_image_rejected(app, auth_client):
+    # 6000x6000 single-colour PNG compresses to a tiny file but would
+    # decode to ~100 MB of RGBA.
+    buf = io.BytesIO()
+    Image.new("1", (6000, 6000)).save(buf, format="PNG")
+    buf.seek(0)
+    assert len(buf.getvalue()) < 200_000
+    resp = auth_client.post("/profile/avatar", data={"avatar": (buf, "bomb.png")},
+                            content_type="multipart/form-data", follow_redirects=True)
+    assert b"Could not process image" in resp.data

@@ -191,6 +191,26 @@ def add_csp_header(response):
 # ── Helper ─────────────────────────────────────────────────────────────
 def allowed_image(filename: str) -> bool:
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_IMAGE_EXT
+MAX_IMAGE_PIXELS = 25_000_000   # ~5000x5000; reject decompression bombs
+
+
+def _open_uploaded_image(file):
+    """Open an uploaded image safely, raising ValueError if it's unusable.
+
+    verify() rejects truncated / non-image payloads, and the pixel cap is
+    checked from the header *before* decoding, so a small file claiming
+    huge dimensions can't exhaust memory.
+    """
+    img = Image.open(file)
+    img.verify()
+    file.seek(0)
+    img = Image.open(file)
+    w, h = img.size
+    if w * h > MAX_IMAGE_PIXELS:
+        raise ValueError(f"image too large: {w}x{h}")
+    return img
+
+
 def _delete_old_avatar(filename):
     """Remove a previously uploaded avatar file, ignoring missing files."""
     if not filename:
@@ -267,10 +287,7 @@ def update_avatar():
     filepath = os.path.join(AVATAR_UPLOAD_DIR, filename)
 
     try:
-        img = Image.open(file)
-        img.verify()          # reject truncated / non-image payloads
-        file.seek(0)
-        img = Image.open(file)
+        img = _open_uploaded_image(file)
         if img.mode not in ("RGB", "RGBA"):
             img = img.convert("RGBA")
         # Crop to square centre
@@ -385,10 +402,7 @@ def upload_design():
     filepath = os.path.join(DESIGN_UPLOAD_DIR, filename)
     
     try:
-        img = Image.open(file)
-        img.verify()          # reject truncated / non-image payloads
-        file.seek(0)
-        img = Image.open(file)
+        img = _open_uploaded_image(file)
         if img.mode != "RGB":
             img = img.convert("RGB")
         img.thumbnail((1920, 1080), Image.LANCZOS)
