@@ -44,7 +44,7 @@ app.config["SESSION_COOKIE_SAMESITE"]     = "Lax"
 app.config["SESSION_COOKIE_SECURE"]       = True
 app.config["SESSION_COOKIE_HTTPONLY"]     = True
 app.config["WTF_CSRF_ENABLED"]            = True
-app.config["MAX_CONTENT_LENGTH"]          = 4 * 1024 * 1024   # 4 MB avatar limit
+app.config["MAX_CONTENT_LENGTH"]          = 4 * 1024 * 1024   # 4 MB limit for every upload (avatars, designs, replays)
 
 if not os.getenv("SECRET_KEY"):
     app.logger.warning(
@@ -187,6 +187,26 @@ def add_csp_header(response):
         "frame-ancestors 'none';"
     )
     return response
+
+# ── Error handlers ─────────────────────────────────────────────────────
+@app.errorhandler(413)
+def upload_too_large(_err):
+    """Friendly response when an upload exceeds MAX_CONTENT_LENGTH.
+
+    The default HTML 413 page broke the heatmap's fetch() (it expects JSON)
+    and dumped form users on a bare error page.
+    """
+    limit_mb = app.config["MAX_CONTENT_LENGTH"] // (1024 * 1024)
+    message = f"File is too large (max {limit_mb} MB)."
+    if request.path == "/parse-replay":
+        from flask import jsonify
+        return jsonify({"success": False, "error": message}), 413
+    flash(message, "error")
+    # Send the user back to the page the form lives on (never to an
+    # arbitrary Referer, which would be an open redirect).
+    back = {"update_avatar": "profile", "upload_design": "gallery"}.get(request.endpoint, "profile")
+    return redirect(url_for(back))
+
 
 # ── Helper ─────────────────────────────────────────────────────────────
 def allowed_image(filename: str) -> bool:

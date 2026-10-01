@@ -33,3 +33,16 @@ def test_parser_error_is_not_leaked_and_temp_file_removed(auth_client, monkeypat
     assert resp.status_code == 500
     assert "secret" not in resp.get_data(as_text=True)
     assert not os.path.exists(seen["path"])
+
+
+def test_oversized_upload_returns_json(auth_client):
+    resp = upload(auth_client, data=b"0" * (5 * 1024 * 1024))
+    assert resp.status_code == 413
+    assert resp.get_json()["success"] is False
+
+
+def test_oversized_avatar_redirects_with_message(auth_client):
+    resp = auth_client.post("/profile/avatar",
+                            data={"avatar": (io.BytesIO(b"0" * (5 * 1024 * 1024)), "big.png")},
+                            content_type="multipart/form-data", follow_redirects=True)
+    assert b"too large" in resp.data
