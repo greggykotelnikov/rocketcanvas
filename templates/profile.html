@@ -282,14 +282,14 @@
 <div class="card">
   <div class="section-title">Quick Actions</div>
   <div class="quick-links">
-    <a class="quick-link" href="{{ url_for('dashboard') }}{% if current_user.rl_username %}?player={{ current_user.rl_username }}{% endif %}">
+    <a class="quick-link" href="{{ url_for('dashboard', player=current_user.rl_username) if current_user.rl_username else url_for('dashboard') }}">
       <img class="ql-thumb" src="{{ url_for('static', filename='images/dashboard.png') }}" alt="Dashboard preview">
       <div class="ql-body">
         <span class="ql-label">Jump to</span>
         <span class="ql-title">My Dashboard</span>
       </div>
     </a>
-    <a class="quick-link" href="{{ url_for('analytics') }}{% if current_user.rl_username %}?player={{ current_user.rl_username }}{% endif %}">
+    <a class="quick-link" href="{{ url_for('analytics', player=current_user.rl_username) if current_user.rl_username else url_for('analytics') }}">
       <img class="ql-thumb" src="{{ url_for('static', filename='images/analytic_image.jpg') }}" alt="Analytics preview">
       <div class="ql-body">
         <span class="ql-label">Deep dive</span>
