@@ -26,6 +26,7 @@ from auth import register_auth_routes, bcrypt as auth_bcrypt
 import requests
 from ballchasing import search_replays_by_player, BallchasingConfigError
 from models import CarHitbox, CarDesign
+from sqlalchemy import func
 
 load_dotenv()
 
@@ -636,10 +637,19 @@ def hitbox_lookup():
     all_cars = CarHitbox.query.order_by(CarHitbox.hitbox_class, CarHitbox.car_name).all()
 
     if request.method == "POST":
-        car_name = request.form.get("car_name", "").strip()
-        car = CarHitbox.query.filter(
-            CarHitbox.car_name.ilike(f"%{car_name}%")
-        ).first()
+        car_name = request.form.get("car_name", "").strip()[:100]
+        car = None
+        if car_name:
+            # Exact (case-insensitive) match first so "Octane" doesn't resolve
+            # to "Octane ZSR"; then the shortest substring match, with LIKE
+            # wildcards in the user's input escaped. An empty search used to
+            # match "%%", i.e. every car, and report the first one as found.
+            car = CarHitbox.query.filter(func.lower(CarHitbox.car_name) == car_name.lower()).first()
+            if car is None:
+                escaped = car_name.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+                car = CarHitbox.query.filter(
+                    CarHitbox.car_name.ilike(f"%{escaped}%", escape="\\")
+                ).order_by(func.length(CarHitbox.car_name)).first()
         result = {"car": car.car_name, "hitbox": car.hitbox_class, "found": True} if car \
             else {"car": car_name, "hitbox": None, "found": False}
 
