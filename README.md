@@ -50,7 +50,7 @@ RocketCanvas is installable as a PWA. A registered service worker handles offlin
 |---|---|
 | Backend | Python 3.11, Flask |
 | Database | SQLite via Flask-SQLAlchemy |
-| Authentication | Flask-Login, Flask-Bcrypt, Flask-Mail |
+| Authentication | Flask-Login, Flask-Bcrypt, Flask-Mail (email-based 2FA codes) |
 | Frontend | Vanilla HTML/CSS/JavaScript, HTML5 Canvas |
 | Charts | Chart.js |
 | Image Processing | Pillow |
@@ -58,15 +58,6 @@ RocketCanvas is installable as a PWA. A registered service worker handles offlin
 | API | ballchasing.com REST API |
 | Security | Flask-WTF (CSRF), Flask-Limiter (rate limiting) |
 | PWA | Web Audio API, Service Workers, Web App Manifest |
-=======
-* **Backend**: Python 3.11 , Flask
-* **Database**: SQLite via Flask-SQLAlchemy
-* **Authentication**: Flask-Login + Flask-Bcrypt (with secure 2-Factor Authentication mail-verify codes)
-* **Frontend**: Vanilla CSS, JavaScript, HTML5 Canvas
-* **Libraries**: Chart.js (analytics rendering)
-* **API Integration**: ballchasing.com REST API
-* **Security & Utilities**: Flask-WTF (CSRF protection), Flask-Limiter (rate-limiting), Pillow (avatar crop/resize)
-
 
 ---
 
