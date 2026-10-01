@@ -152,7 +152,10 @@ class SecurityHeadersMiddleware:
             if 'x-content-type-options' not in header_keys:
                 headers.append(('X-Content-Type-Options', 'nosniff'))
             if 'x-xss-protection' not in header_keys:
-                headers.append(('X-XSS-Protection', '1; mode=block'))
+                # '0' per OWASP: the legacy XSS auditor is removed from modern
+                # browsers and in older ones '1; mode=block' could be abused to
+                # leak data. The nonce-based CSP is the real XSS defence.
+                headers.append(('X-XSS-Protection', '0'))
             if 'referrer-policy' not in header_keys:
                 headers.append(('Referrer-Policy', 'strict-origin-when-cross-origin'))
             if 'permissions-policy' not in header_keys:

@@ -69,7 +69,7 @@ Beyond authentication, the following security controls are applied:
 
 - **CSRF protection**: All POST routes are protected by WTForms CSRF tokens via Flask-WTF.
 - **Content Security Policy**: A per-request cryptographic nonce (`g.nonce`) is injected into all `<script>` and `<style>` tags and included in the CSP header to block inline XSS.
-- **Security headers**: HSTS, X-Frame-Options (DENY), X-Content-Type-Options (nosniff), X-XSS-Protection, Referrer-Policy and Permissions-Policy are all applied via a custom WSGI middleware layer.
+- **Security headers**: HSTS, X-Frame-Options (DENY), X-Content-Type-Options (nosniff), X-XSS-Protection (set to 0, per OWASP), Referrer-Policy and Permissions-Policy are all applied via a custom WSGI middleware layer.
 - **Session hardening**: Cookies are set with `HTTPOnly`, `Secure` and `SameSite=Lax`.
 - **Rate limiting**: Flask-Limiter applies a global limit of 300 requests per day and 60 per hour, with stricter per-route limits on login and register.
 - **Password hashing**: Bcrypt with automatic salting.
