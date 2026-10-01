@@ -53,6 +53,7 @@ if not os.getenv("SECRET_KEY"):
 AVATAR_UPLOAD_DIR = os.path.join(app.root_path, "static", "uploads", "avatars")
 DESIGN_UPLOAD_DIR = os.path.join(app.root_path, "static", "uploads", "designs")
 ALLOWED_IMAGE_EXT = {"png", "jpg", "jpeg", "webp", "gif"}
+CARD_TEMPLATES    = {"legendary", "golden", "chroma", "carbon", "holographic"}
 
 os.makedirs(AVATAR_UPLOAD_DIR, exist_ok=True)
 os.makedirs(DESIGN_UPLOAD_DIR, exist_ok=True)
@@ -344,10 +345,15 @@ def garage():
 @app.route("/gallery/upload", methods=["POST"])
 @login_required
 def upload_design():
-    title = request.form.get("title", "").strip()
+    # Enforce the same limits as the form/DB columns: maxlength in the HTML
+    # is trivially bypassed and SQLite does not enforce VARCHAR lengths.
+    title = request.form.get("title", "").strip()[:150]
     file = request.files.get("design_image")
     card_template = request.form.get("card_template", "legendary")
-    overlay_title = request.form.get("overlay_title", "").strip()
+    overlay_title = request.form.get("overlay_title", "").strip()[:100] or None
+    if card_template not in CARD_TEMPLATES:
+        # Rendered into a CSS class on the gallery card; only allow known styles.
+        card_template = "legendary"
     if not title:
         flash("Title is required.", "error")
         return redirect(url_for("gallery"))
@@ -358,16 +364,20 @@ def upload_design():
         flash("Only image files are allowed.", "error")
         return redirect(url_for("gallery"))
         
-    ext = file.filename.rsplit(".", 1)[1].lower()
-    filename = f"{uuid.uuid4().hex}.{ext}"
+    # Re-encode as PNG: converting to RGB and then saving under the user's
+    # ".gif"/".webp" extension produced a mismatched or lossy file.
+    filename = f"{uuid.uuid4().hex}.png"
     filepath = os.path.join(DESIGN_UPLOAD_DIR, filename)
     
     try:
         img = Image.open(file)
+        img.verify()          # reject truncated / non-image payloads
+        file.seek(0)
+        img = Image.open(file)
         if img.mode != "RGB":
             img = img.convert("RGB")
         img.thumbnail((1920, 1080), Image.LANCZOS)
-        img.save(filepath)
+        img.save(filepath, format="PNG")
     except Exception:
         flash("Could not process image.", "error")
         return redirect(url_for("gallery"))

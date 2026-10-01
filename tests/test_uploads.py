@@ -48,3 +48,29 @@ def test_non_image_avatar_rejected(app, auth_client):
                             content_type="multipart/form-data", follow_redirects=True)
     assert b"Could not process image" in resp.data
     assert current_avatar(app) is None
+
+
+def test_gallery_upload_sanitises_fields(app, auth_client):
+    from models import CarDesign
+    resp = auth_client.post("/gallery/upload", data={
+        "title": "T" * 500,
+        "overlay_title": "O" * 500,
+        "card_template": "legendary\" onmouseover=\"alert(1)",
+        "design_image": (image_bytes("PNG", "RGB"), "car.gif"),
+    }, content_type="multipart/form-data", follow_redirects=True)
+    assert b"Design uploaded" in resp.data
+    with app.app_context():
+        design = CarDesign.query.one()
+        assert len(design.title) == 150
+        assert len(design.overlay_title) == 100
+        assert design.card_template == "legendary"
+        assert design.image_filename.endswith(".png")
+        os.remove(os.path.join(appmod.DESIGN_UPLOAD_DIR, design.image_filename))
+
+
+def test_gallery_upload_rejects_non_image(app, auth_client):
+    resp = auth_client.post("/gallery/upload", data={
+        "title": "x",
+        "design_image": (io.BytesIO(b"GIF89a not really"), "car.gif"),
+    }, content_type="multipart/form-data", follow_redirects=True)
+    assert b"Could not process image" in resp.data
