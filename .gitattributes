@@ -21,3 +21,7 @@
 *.ttf  binary
 *.h5   binary
 *.replay binary
+
+# GitHub language stats: the Jinja templates outweigh the Python by bytes,
+# so the repo was labelled "HTML". Leave them out of the language bar.
+templates/*.html linguist-detectable=false
