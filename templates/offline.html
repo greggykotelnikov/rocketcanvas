@@ -78,7 +78,7 @@
       It looks like you've lost your connection.<br/>
       Check your network and try again.
     </p>
-    <button class="btn-retry" onclick="window.location.reload()">↻ Retry</button>
+    <button type="button" class="btn-retry" id="retryBtn">↻ Retry</button>
   </div>
   <script nonce="{{ nonce }}">
     // Apply stored theme
@@ -86,6 +86,12 @@
       const stored = localStorage.getItem('rc-theme') || 'dark';
       document.documentElement.setAttribute('data-theme', stored);
     })();
+
+    // Bound here rather than with onclick="...": the CSP blocks inline
+    // event handlers, so the Retry button previously did nothing.
+    document.getElementById('retryBtn').addEventListener('click', () => window.location.reload());
+    // Reload automatically as soon as the connection comes back.
+    window.addEventListener('online', () => window.location.reload());
   </script>
 </body>
 </html>
