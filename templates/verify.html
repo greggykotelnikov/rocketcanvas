@@ -12,6 +12,9 @@
     color:var(--text); padding:1rem; outline:none; margin-bottom:1.5rem; transition:border-color 0.2s;
   }
   .code-input:focus { border-color:var(--accent); }
+  .resend-form { margin-top:1rem; text-align:center; }
+  .resend-btn { background:none; border:none; color:var(--muted); font:inherit; font-size:0.8rem; cursor:pointer; text-decoration:underline; }
+  .resend-btn:hover { color:var(--accent); }
 </style>
 <div class="auth-wrap">
   <div class="auth-box">
@@ -19,8 +22,14 @@
     <div class="auth-sub">Check your email for a 6-digit code</div>
     <form method="POST">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-      <input class="code-input" type="text" name="code" maxlength="6" placeholder="000000" autofocus required/>
+      <input class="code-input" type="text" name="code" maxlength="6" placeholder="000000"
+             inputmode="numeric" pattern="[0-9]{6}" autocomplete="one-time-code"
+             title="The 6-digit code from your email" autofocus required/>
       <button class="btn btn-primary w-full" type="submit">Verify</button>
+    </form>
+    <form class="resend-form" method="POST" action="{{ url_for('resend_code') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <button class="resend-btn" type="submit">Didn't get it? Resend code</button>
     </form>
   </div>
 </div>

@@ -186,6 +186,24 @@ def register_auth_routes(app, mail, limiter):
 
         return render_template("verify.html")
 
+    @app.route("/verify/resend", methods=["POST"])
+    @limiter.limit("3 per 10 minutes")
+    def resend_code():
+        """Issue a fresh 2FA code for the login in progress.
+
+        send_2fa_email() invalidates the previous code, so a resend also
+        resets the attempt counter without letting an attacker accumulate
+        guesses across several live codes.
+        """
+        user_id = session.get("pending_user_id")
+        user = db.session.get(User, user_id) if user_id else None
+        if user is None:
+            return redirect(url_for("login"))
+        if _try_send_2fa(mail, user):
+            flash("A new code has been sent to your email.", "success")
+            return redirect(url_for("verify"))
+        return redirect(url_for("login"))
+
     @app.route("/logout", methods=["POST"])
     @login_required
     def logout():
