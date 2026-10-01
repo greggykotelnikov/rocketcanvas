@@ -98,8 +98,8 @@
           <canvas id="hologram-canvas"></canvas>
           <div class="canvas-glitch-overlay" id="canvasGlitch"></div>
           <div class="canvas-telemetry">
-            <span id="statusText" style="display:none;"></span>
-            <span id="fpsCounter" style="display:none;"></span>
+            <span id="statusText" hidden></span>
+            <span id="fpsCounter" hidden></span>
           </div>
         </div>
         <div class="canvas-controls">
@@ -166,7 +166,7 @@
       } %}
       {% for hitbox_class, cars in grouped.items() | sort %}
         <div class="hitbox-card" id="card-{{ hitbox_class | lower }}">
-          <div class="hitbox-card-header hitbox-{{ hitbox_class | lower }} card-header-click" data-hitbox="{{ hitbox_class }}" style="cursor: pointer;">
+          <div class="hitbox-card-header hitbox-{{ hitbox_class | lower }} card-header-click" data-hitbox="{{ hitbox_class }}">
             <span class="hitbox-class-name">{{ hitbox_class }}</span>
             <span class="hitbox-count">{{ cars | length }} cars</span>
           </div>
@@ -212,6 +212,8 @@
     color: var(--muted);
     font-size: 1rem;
   }
+
+  .card-header-click { cursor: pointer; }
 
   /* Screenshot recogniser */
   .recognise-section {
