@@ -62,7 +62,14 @@
     font-family: var(--mono);
   }
   .profile-bio { font-size: 0.9rem; color: var(--text2); margin-bottom: 0.5rem; }
-  .profile-meta { font-family: var(--mono); font-size: 0.75rem; color: var(--muted); display: flex; gap: 1rem; flex-wrap: wrap; }
+  .profile-meta { font-family: var(--mono); font-size: 0.75rem; color: var(--muted); display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; }
+  .profile-rl { display: flex; align-items: center; gap: 0.4rem; }
+  .profile-rl-icon { opacity: 0.75; }
+  .platform-chip {
+    padding: 0.15rem 0.4rem; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 4px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
+    color: var(--muted); letter-spacing: 0.05em; line-height: 1;
+  }
 
   /* ── QUICK LINKS ─────────────────────────────────────────────────── */
   .quick-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; }
@@ -100,6 +107,7 @@
 
   /* ── EDIT PANEL ─────────────────────────────────────────────────── */
   .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .form-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
   @media(max-width: 600px) {
     .form-grid { grid-template-columns: 1fr; }
     .profile-hero { flex-direction: column; text-align: center; }
@@ -117,6 +125,19 @@
     background: var(--accent-glow2); border: 1px solid var(--accent);
     color: var(--accent); margin-left: 0.5rem; vertical-align: middle;
   }
+  /* Per-tier colours: text + border in the tier colour, ~10% tinted fill */
+  .rank-badge.tiered { color: var(--tier); border-color: var(--tier); background: color-mix(in srgb, var(--tier) 10%, transparent); }
+  .rank-ssl     { --tier: #ffffff; }
+  .rank-gc      { --tier: #ef4444; }
+  .rank-champ   { --tier: #ec4899; }
+  .rank-diamond { --tier: #3b82f6; }
+  .rank-plat    { --tier: #38bdf8; }
+  .rank-gold    { --tier: #eab308; }
+  .rank-silver  { --tier: #94a3b8; }
+  .rank-bronze  { --tier: #d97706; }
+  .preset-hint { font-size: 0.85rem; color: var(--muted); margin-bottom: 1rem; }
+  .preset-form { display: flex; gap: 1rem; flex-wrap: wrap; }
+  .preset-submit { width: 100%; margin-top: 0.5rem; }
 </style>
 
 <!-- Profile hero -->
@@ -135,36 +156,37 @@
 
   <div class="profile-info">
     {% set r = current_user.rank or "" %}
-    {% set r_col = "var(--accent)" %}
-    {% if "Supersonic" in r %} {% set r_col = "#ffffff" %}
-    {% elif "Grand Champion" in r %} {% set r_col = "#ef4444" %}
-    {% elif "Champion" in r %} {% set r_col = "#ec4899" %}
-    {% elif "Diamond" in r %} {% set r_col = "#3b82f6" %}
-    {% elif "Platinum" in r %} {% set r_col = "#38bdf8" %}
-    {% elif "Gold" in r %} {% set r_col = "#eab308" %}
-    {% elif "Silver" in r %} {% set r_col = "#94a3b8" %}
-    {% elif "Bronze" in r %} {% set r_col = "#d97706" %}
+    {# Rank tier -> .rank-<tier> colour class (inline style attributes are blocked by the CSP) #}
+    {% set tier = "" %}
+    {% if "Supersonic" in r %} {% set tier = "ssl" %}
+    {% elif "Grand Champion" in r %} {% set tier = "gc" %}
+    {% elif "Champion" in r %} {% set tier = "champ" %}
+    {% elif "Diamond" in r %} {% set tier = "diamond" %}
+    {% elif "Platinum" in r %} {% set tier = "plat" %}
+    {% elif "Gold" in r %} {% set tier = "gold" %}
+    {% elif "Silver" in r %} {% set tier = "silver" %}
+    {% elif "Bronze" in r %} {% set tier = "bronze" %}
     {% endif %}
     <div class="profile-username">
       {{ current_user.username }}
       {% if current_user.rank %}
-        <span class="rank-badge" style="color: {{ r_col }}; border-color: {{ r_col }}; background: {{ r_col }}1a;">{{ current_user.rank }}</span>
+        <span class="rank-badge{% if tier %} tiered rank-{{ tier }}{% endif %}">{{ current_user.rank }}</span>
       {% endif %}
     </div>
     {% if current_user.bio %}
       <div class="profile-bio">{{ current_user.bio }}</div>
     {% endif %}
-    <div class="profile-meta" style="align-items: center;">
+    <div class="profile-meta">
       <span>{{ current_user.email }}</span>
       <span>Member since {{ current_user.created_at.strftime('%B %Y') }}</span>
       {% if current_user.rl_username %}
-        <span style="display: flex; align-items: center; gap: 0.4rem;">
+        <span class="profile-rl">
           {% if current_user.platform %}
-            <span style="padding: 0.15rem 0.4rem; background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; color: var(--muted); letter-spacing: 0.05em; line-height: 1;">
+            <span class="platform-chip">
               {{ current_user.platform }}
             </span>
           {% else %}
-            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity: 0.75;"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M12 12h.01M15 10v4M17 12h-4M7 12h2M8 11v2"/></svg>
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="profile-rl-icon"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M12 12h.01M15 10v4M17 12h-4M7 12h2M8 11v2"/></svg>
           {% endif %}
           {{ current_user.rl_username }}
         </span>
@@ -184,7 +206,7 @@
   <div class="section-title">Edit Profile</div>
   <form method="POST" action="{{ url_for('update_profile') }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-    <div class="form-grid" style="grid-template-columns: 1fr 1fr 1fr;">
+    <div class="form-grid form-grid-3">
       <div class="field">
         <label>RL Username</label>
         <input class="input" type="text" name="rl_username"
@@ -221,8 +243,8 @@
 <!-- Preset Avatars -->
 <div class="card">
   <div class="section-title">Choose an Avatar</div>
-  <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 1rem;">Select one of RocketCanvas' stylish placeholder avatars.</p>
-  <form method="POST" action="{{ url_for('set_preset_avatar') }}" style="display: flex; gap: 1rem; flex-wrap: wrap;">
+  <p class="preset-hint">Select one of RocketCanvas' stylish placeholder avatars.</p>
+  <form method="POST" action="{{ url_for('set_preset_avatar') }}" class="preset-form">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
     
     <label class="preset-label">
@@ -240,7 +262,7 @@
       <img src="{{ url_for('static', filename='avatars/placeholders/fennec.png') }}" class="preset-img" alt="Cyber Fennec"/>
     </label>
     
-    <div style="width: 100%; margin-top: 0.5rem;">
+    <div class="preset-submit">
       <button class="btn btn-ghost btn-sm" type="submit">Set Selected Avatar</button>
     </div>
   </form>

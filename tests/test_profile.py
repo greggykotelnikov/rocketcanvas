@@ -43,3 +43,9 @@ def test_my_stats_button(app, auth_client, monkeypatch):
     assert b"My stats" in auth_client.get("/dashboard").data
     assert b"My stats" in auth_client.get("/analytics?player=someone").data
     assert b"My stats" not in auth_client.get("/dashboard?player=Pilot").data
+
+
+def test_rank_badge_uses_tier_class(auth_client):
+    auth_client.post("/profile/update", data={"rank": "Grand Champion II"})
+    html = auth_client.get("/profile").get_data(as_text=True)
+    assert 'class="rank-badge tiered rank-gc"' in html
