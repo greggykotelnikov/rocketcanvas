@@ -63,6 +63,12 @@ limiter = Limiter(
     storage_uri="memory://",
 )
 
+@limiter.request_filter
+def _exempt_static_assets():
+    # Pages pull in dozens of CSS/JS/sprite files; counting those against the
+    # global limit locks users out after a couple of page loads.
+    return request.endpoint in ("static", "manifest", "service_worker")
+
 login_manager = LoginManager(app)
 login_manager.login_view = "login"
 
@@ -70,7 +76,7 @@ login_manager.login_view = "login"
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-register_auth_routes(app, mail)
+register_auth_routes(app, mail, limiter)
 
 # ── DB init + column migration shim ────────────────────────────────────
 with app.app_context():

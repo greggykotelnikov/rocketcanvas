@@ -33,8 +33,9 @@ def send_2fa_email(mail, user):
     mail.send(msg)
     return code
 
-def register_auth_routes(app, mail):
+def register_auth_routes(app, mail, limiter):
     @app.route("/register", methods=["GET", "POST"])
+    @limiter.limit("5 per minute; 20 per hour", methods=["POST"])
     def register():
         if request.method == "POST":
             email    = request.form.get("email", "").strip().lower()
@@ -80,6 +81,7 @@ def register_auth_routes(app, mail):
         return render_template("login.html", mode="register")
 
     @app.route("/login", methods=["GET", "POST"])
+    @limiter.limit("5 per minute; 30 per hour", methods=["POST"])
     def login():
         if request.method == "POST":
             email    = request.form.get("email", "").strip().lower()
@@ -97,6 +99,7 @@ def register_auth_routes(app, mail):
         return render_template("login.html", mode="login")
 
     @app.route("/verify", methods=["GET", "POST"])
+    @limiter.limit("10 per minute", methods=["POST"])
     def verify():
         user_id = session.get("pending_user_id")
         if not user_id:
