@@ -27,6 +27,7 @@ import requests
 from ballchasing import search_replays_by_player, BallchasingConfigError
 from models import CarHitbox, CarDesign
 from sqlalchemy import func
+from sqlalchemy.orm import joinedload
 
 load_dotenv()
 
@@ -370,7 +371,12 @@ def set_preset_avatar():
 @app.route("/gallery")
 @login_required
 def gallery():
-    designs = CarDesign.query.order_by(CarDesign.created_at.desc()).all()
+    # joinedload: each card shows the author's name, which otherwise costs
+    # one extra query per design.
+    designs = (CarDesign.query
+               .options(joinedload(CarDesign.user))
+               .order_by(CarDesign.created_at.desc())
+               .all())
     return render_template("gallery.html", designs=designs)
 
 @app.route("/garage")
