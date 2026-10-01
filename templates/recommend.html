@@ -39,6 +39,14 @@
     margin-top: 0.5rem;
   }
   
+  .rec-rank { color: var(--accent); }
+  .rec-note {
+    font-size: 0.85rem; color: var(--muted); line-height: 1.5;
+    max-width: 600px; margin: 0 auto;
+  }
+  .no-rank-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 1rem; }
+  .no-rank-text { color: var(--muted); margin-bottom: 1.5rem; font-size: 0.95rem; }
+
   .no-rank-state {
     text-align: center; padding: 3rem; background: var(--surface);
     border: 1px solid var(--border); border-radius: var(--radius2);
@@ -67,17 +75,17 @@
   <div class="rec-card">
     <div class="rec-label">Your Perfect Match</div>
     <div class="rec-text">
-      Based on your rank (<strong style="color: var(--accent);">{{ current_user.rank }}</strong>), the best car for you is:<br/>
+      Based on your rank (<strong class="rec-rank">{{ current_user.rank }}</strong>), the best car for you is:<br/>
       <span class="rec-car">{{ rec }}</span>
     </div>
-    <p style="font-size: 0.85rem; color: var(--muted); max-width: 600px; margin: 0 auto; line-height: 1.5;">
+    <p class="rec-note">
       Different ranks have different playstyles. Our system recommends cars that fit the mechanics typically required at your level. Equip it in-game and see if your win rate improves!
     </p>
   </div>
 {% else %}
   <div class="no-rank-state">
-    <div style="font-size: 1.2rem; font-weight: 700; margin-bottom: 1rem;">We need your rank!</div>
-    <div style="color: var(--muted); margin-bottom: 1.5rem; font-size: 0.95rem;">To give you a personalised car recommendation, please set your Rocket League rank in your profile.</div>
+    <div class="no-rank-title">We need your rank!</div>
+    <div class="no-rank-text">To give you a personalised car recommendation, please set your Rocket League rank in your profile.</div>
     <a href="{{ url_for('profile') }}" class="btn btn-primary">Go to Profile</a>
   </div>
 {% endif %}
