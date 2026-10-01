@@ -176,7 +176,7 @@ User-submitted car design images displayed in the gallery.
 | GET/POST | `/register` | No | Create a new account |
 | GET/POST | `/login` | No | Log in with email and password |
 | GET/POST | `/verify` | No | Submit 2FA code |
-| GET | `/logout` | Yes | Log out and clear session |
+| POST | `/logout` | Yes | Log out and clear session (CSRF-protected) |
 | GET | `/profile` | Yes | View profile page |
 | POST | `/profile/update` | Yes | Update username, rank, bio, platform |
 | POST | `/profile/avatar` | Yes | Upload and crop a custom avatar |

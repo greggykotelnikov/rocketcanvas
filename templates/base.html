@@ -121,10 +121,16 @@
     }
     .nav-center::-webkit-scrollbar { display: none; }
     .nav-center a:first-child { margin-left: auto; }
-    .nav-center a:last-child { margin-right: auto; }
+    .nav-center a:last-child,
+    .nav-center .nav-logout { margin-right: auto; }
     .nav-right   { display: flex; gap: 0.6rem; align-items: center; flex-shrink: 0; }
 
-    .nav-center a {
+    .nav-logout { display: flex; margin: 0; }
+    .nav-logout button {
+      background: none; border: none; cursor: pointer; font-family: inherit;
+    }
+    .nav-center a,
+    .nav-logout button {
       color: var(--muted);
       font-size: clamp(0.7rem, 0.8vw, 0.8rem);
       font-weight: 600;
@@ -135,7 +141,8 @@
       position: relative;
       white-space: nowrap;
     }
-    .nav-center a:hover { color: var(--text); background: var(--surface2); }
+    .nav-center a:hover,
+    .nav-logout button:hover { color: var(--text); background: var(--surface2); }
     .nav-center a.active {
       color: var(--accent);
       background: var(--accent-glow2);
@@ -174,7 +181,8 @@
         scrollbar-width: none;  
       }
       .nav-center::-webkit-scrollbar { display: none; }
-      .nav-center a { white-space: nowrap; font-size: 0.75rem; padding: 0.4rem 0.6rem; }
+      .nav-center a,
+      .nav-logout button { white-space: nowrap; font-size: 0.75rem; padding: 0.4rem 0.6rem; }
     }
 
     /* ── UTILITIES ──────────────────────────────────────────────────── */
@@ -635,7 +643,11 @@
     <a href="{{ url_for('heatmap') }}"    {% if request.endpoint == 'heatmap'    %}class="active"{% endif %}>Heatmap</a>
     <a href="{{ url_for('hitbox_lookup') }}" {% if request.endpoint == 'hitbox_lookup' %}class="active"{% endif %}>Hitbox</a>
     <a href="{{ url_for('recommend') }}"    {% if request.endpoint == 'recommend'    %}class="active"{% endif %}>Recommend</a>
-    <a href="{{ url_for('logout') }}">Logout</a>
+    {# POST + CSRF token: a GET logout link can be triggered by any site via <img src=".../logout"> #}
+    <form class="nav-logout" method="POST" action="{{ url_for('logout') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+      <button type="submit">Logout</button>
+    </form>
   </div>
 
   <div class="nav-right">

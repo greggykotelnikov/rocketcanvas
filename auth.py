@@ -162,8 +162,10 @@ def register_auth_routes(app, mail, limiter):
 
         return render_template("verify.html")
 
-    @app.route("/logout")
+    @app.route("/logout", methods=["POST"])
     @login_required
     def logout():
+        # POST-only (CSRF-protected) so other sites can't log users out
+        # with a simple <img src="/logout">.
         logout_user()
         return redirect(url_for("login"))

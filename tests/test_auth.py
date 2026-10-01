@@ -24,7 +24,7 @@ def test_code_cannot_be_reused(app, client):
     register(client)
     code = app.sent_codes[-1]
     client.post("/verify", data={"code": code})
-    client.get("/logout")
+    client.post("/logout")
     # No pending login any more, so /verify bounces to /login.
     resp = client.post("/verify", data={"code": code})
     assert resp.location.endswith("/login")
@@ -62,3 +62,15 @@ def test_protected_pages_require_login(client):
         resp = client.get(path)
         assert resp.status_code == 302, path
         assert "/login" in resp.location
+
+
+def test_logout_requires_post(auth_client):
+    assert auth_client.get("/logout").status_code == 405
+    assert auth_client.get("/profile").status_code == 200
+    auth_client.post("/logout")
+    assert auth_client.get("/profile").status_code == 302
+
+
+def test_nav_renders_logout_form(auth_client):
+    html = auth_client.get("/profile").get_data(as_text=True)
+    assert 'class="nav-logout" method="POST"' in html
